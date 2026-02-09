@@ -32,7 +32,7 @@ interface FoiaRowProps {
 
 const priorityStars: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
 
-export function FoiaRow({ request, onSubmit, onUpdateStatus, onViewDetail }: FoiaRowProps) {
+export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, onViewDetail }: FoiaRowProps) {
   const [expanded, setExpanded] = useState(false);
   const stars = priorityStars[request.priority] || 2;
   const dueDate = request.due_date ? new Date(request.due_date) : null;

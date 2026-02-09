@@ -12,7 +12,7 @@ interface SettingsState {
   clearError: () => void;
 }
 
-export const useSettingsStore = create<SettingsState>((set, get) => ({
+export const useSettingsStore = create<SettingsState>((set, _get) => ({
   settings: {},
   loading: false,
   saving: false,

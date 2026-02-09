@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext } from '@dnd-kit/sortable';
 import { KanbanColumn } from './KanbanColumn';
 import { VideoCard } from './VideoCard';
-import { VIDEO_STATUSES } from '@/lib/constants';
 
 interface Video {
   id: string;

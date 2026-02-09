@@ -1,4 +1,3 @@
-import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui/Badge';
 import { formatDuration } from '@/lib/formatters';
 import { Film, GripVertical } from 'lucide-react';
