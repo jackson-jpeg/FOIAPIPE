@@ -14,7 +14,6 @@ COPY backend/ .
 
 ENV PYTHONPATH=/app
 
-COPY backend/start.sh .
 RUN chmod +x start.sh
 
 # Smart startup script that detects service type from RAILWAY_SERVICE_NAME
