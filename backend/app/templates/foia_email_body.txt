@@ -1,0 +1,11 @@
+Dear Records Custodian,
+
+Please find attached a public records request pursuant to Florida Statute Chapter 119.
+
+Case Reference: {case_number}
+
+{request_text}
+
+Please direct any questions or responses to this email address.
+
+Thank you.

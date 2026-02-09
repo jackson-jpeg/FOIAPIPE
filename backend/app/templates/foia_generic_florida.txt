@@ -1,0 +1,18 @@
+Dear Records Custodian,
+
+Pursuant to Florida's Public Records Act, Chapter 119, Florida Statutes,
+I am requesting copies of the following records:
+
+All body-worn camera footage, dashboard camera footage, and any other
+audio/video recordings related to {incident_description} on {incident_date}
+at {incident_location} involving {agency_name}.
+
+{officer_names_section}
+{case_numbers_section}
+
+I am willing to pay reasonable duplication costs. Please notify me if
+costs will exceed $25.00 before proceeding.
+
+Please provide responsive records in electronic format where available.
+
+Thank you for your prompt attention to this request.

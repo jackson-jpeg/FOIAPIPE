@@ -1,0 +1,104 @@
+import { useEffect, useState } from 'react';
+import { TimeRangeSelector } from '@/components/analytics/TimeRangeSelector';
+import { RevenueChart } from '@/components/analytics/RevenueChart';
+import { ViewsChart } from '@/components/analytics/ViewsChart';
+import { TopVideosTable } from '@/components/analytics/TopVideosTable';
+import { FunnelChart } from '@/components/analytics/FunnelChart';
+import { StatCard } from '@/components/ui/StatCard';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { DollarSign, Eye, Users, TrendingUp } from 'lucide-react';
+import * as analyticsApi from '@/api/analytics';
+
+export function AnalyticsPage() {
+  const [range, setRange] = useState('30d');
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<any>(null);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [viewsData, setViewsData] = useState<any[]>([]);
+  const [topVideos, setTopVideos] = useState<any[]>([]);
+  const [funnel, setFunnel] = useState<any>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [ov, rev, views, top, fun] = await Promise.all([
+          analyticsApi.getOverview(range),
+          analyticsApi.getRevenue(range),
+          analyticsApi.getViews(range),
+          analyticsApi.getTopVideos(range),
+          analyticsApi.getFunnel(),
+        ]);
+        setOverview(ov);
+        setRevenueData(rev.data || []);
+        setViewsData(views.data || []);
+        setTopVideos(top || []);
+        setFunnel(fun);
+      } catch {
+        // Silently handle errors for empty state
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [range]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-text-primary">Analytics</h1>
+        <TimeRangeSelector value={range} onChange={setRange} />
+      </div>
+
+      {/* Stat Cards */}
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+      ) : overview ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            label="Gross Revenue"
+            value={`$${overview.total_revenue?.toLocaleString() || '0'}`}
+            trend={overview.trends?.revenue ? { value: overview.trends.revenue.value, isPositive: overview.trends.revenue.is_positive } : undefined}
+            accentColor="green"
+            icon={<DollarSign className="h-5 w-5" />}
+          />
+          <StatCard
+            label="Total Views"
+            value={overview.total_views?.toLocaleString() || '0'}
+            trend={overview.trends?.views ? { value: overview.trends.views.value, isPositive: overview.trends.views.is_positive } : undefined}
+            accentColor="cyan"
+            icon={<Eye className="h-5 w-5" />}
+          />
+          <StatCard
+            label="Subscribers"
+            value={overview.total_subscribers?.toLocaleString() || '0'}
+            accentColor="purple"
+            icon={<Users className="h-5 w-5" />}
+          />
+          <StatCard
+            label="Avg RPM"
+            value={`$${overview.avg_rpm?.toFixed(2) || '0.00'}`}
+            accentColor="amber"
+            icon={<TrendingUp className="h-5 w-5" />}
+          />
+        </div>
+      ) : null}
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RevenueChart data={revenueData} />
+        <ViewsChart data={viewsData} />
+      </div>
+
+      {/* Top Videos & Funnel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <TopVideosTable videos={topVideos} />
+        </div>
+        {funnel && <FunnelChart steps={funnel.steps || []} />}
+      </div>
+    </div>
+  );
+}

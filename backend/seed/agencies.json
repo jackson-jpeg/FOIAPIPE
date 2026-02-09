@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Tampa Police Department",
+    "abbreviation": "TPD",
+    "foia_email": "records@tampagov.net",
+    "jurisdiction": "City of Tampa",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.tampagov.net/police"
+  },
+  {
+    "name": "Hillsborough County Sheriff's Office",
+    "abbreviation": "HCSO",
+    "foia_email": "records@teamhcso.com",
+    "jurisdiction": "Hillsborough County",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.teamhcso.com"
+  },
+  {
+    "name": "St. Petersburg Police Department",
+    "abbreviation": "SPPD",
+    "foia_email": "records@stpete.org",
+    "jurisdiction": "City of St. Petersburg",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.stpete.org/police"
+  },
+  {
+    "name": "Pinellas County Sheriff's Office",
+    "abbreviation": "PCSO",
+    "foia_email": "records@pcsonet.com",
+    "jurisdiction": "Pinellas County",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.pcsoweb.com"
+  },
+  {
+    "name": "Clearwater Police Department",
+    "abbreviation": "CPD",
+    "foia_email": "records@myclearwater.com",
+    "jurisdiction": "City of Clearwater",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.myclearwater.com/police"
+  },
+  {
+    "name": "Pasco County Sheriff's Office",
+    "abbreviation": "PaSO",
+    "foia_email": "records@pascosheriff.com",
+    "jurisdiction": "Pasco County",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.pascosheriff.com"
+  },
+  {
+    "name": "Temple Terrace Police Department",
+    "abbreviation": "TTPD",
+    "foia_email": "records@templeterrace.com",
+    "jurisdiction": "City of Temple Terrace",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.templeterrace.com/police"
+  },
+  {
+    "name": "Plant City Police Department",
+    "abbreviation": "PCPD",
+    "foia_email": "records@plantcitygov.com",
+    "jurisdiction": "City of Plant City",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.plantcitygov.com/police"
+  },
+  {
+    "name": "Florida Highway Patrol - Troop C",
+    "abbreviation": "FHP",
+    "foia_email": "records@flhsmv.gov",
+    "jurisdiction": "State of Florida - Tampa District",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.flhsmv.gov/fhp"
+  },
+  {
+    "name": "University of South Florida Police Department",
+    "abbreviation": "USFPD",
+    "foia_email": "records@usf.edu",
+    "jurisdiction": "University of South Florida Campus",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.usf.edu/administrative-services/university-police"
+  }
+]
