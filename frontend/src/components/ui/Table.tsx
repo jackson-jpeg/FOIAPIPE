@@ -49,15 +49,15 @@ export function Table<T extends Record<string, unknown>>({
 
   if (loading) {
     return (
-      <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+      <div className="overflow-hidden rounded-xl bg-white shadow-card">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-surface-border bg-surface-tertiary/50">
+            <tr className="bg-surface-tertiary">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    'px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary',
+                    'px-5 py-3 text-left text-xs font-medium text-text-secondary',
                     col.width
                   )}
                 >
@@ -66,11 +66,11 @@ export function Table<T extends Record<string, unknown>>({
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-surface-border/30">
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i} className="border-b border-surface-border/30">
+              <tr key={i} className="hover:bg-surface-hover transition-colors">
                 {columns.map((col) => (
-                  <td key={col.key} className={cn('px-4 py-4', col.width)}>
+                  <td key={col.key} className={cn('px-5 py-3', col.width)}>
                     <Skeleton variant="text" className="h-3.5 w-3/4" />
                   </td>
                 ))}
@@ -84,27 +84,27 @@ export function Table<T extends Record<string, unknown>>({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center rounded-xl border border-surface-border py-16 text-text-tertiary">
+      <div className="flex items-center justify-center rounded-xl bg-white shadow-card py-16 text-text-tertiary">
         <p className="text-sm">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+    <div className="overflow-hidden rounded-xl bg-white shadow-card">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-surface-border bg-surface-tertiary/50">
+          <tr className="bg-surface-tertiary">
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={cn(
-                  'px-4 py-2.5 text-left text-2xs font-medium text-text-tertiary',
-                  col.sortable && 'cursor-pointer select-none transition-colors hover:text-text-secondary'
+                  'px-5 py-3 text-left text-xs font-medium text-text-secondary',
+                  col.sortable && 'cursor-pointer select-none transition-colors hover:text-text-primary'
                 )}
                 onClick={() => col.sortable && onSort?.(col.key)}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   {col.label}
                   {renderSortIcon(col)}
                 </div>
@@ -117,7 +117,7 @@ export function Table<T extends Record<string, unknown>>({
             <tr
               key={idx}
               className={cn(
-                'border-b border-surface-border/30 transition-colors',
+                'transition-colors',
                 striped && idx % 2 === 1 && 'bg-surface-tertiary/30',
                 onRowClick && 'cursor-pointer hover:bg-surface-hover'
               )}
@@ -125,7 +125,7 @@ export function Table<T extends Record<string, unknown>>({
               {columns.map((col) => (
                 <td
                   key={col.key}
-                  className="px-4 py-2.5 text-sm text-text-secondary"
+                  className="px-5 py-3.5 text-sm text-text-primary"
                   onClick={() => onRowClick?.(item)}
                 >
                   {col.render ? col.render(item) : (item[col.key] as ReactNode)}

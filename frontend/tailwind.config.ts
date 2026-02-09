@@ -6,41 +6,40 @@ const config: Config = {
     extend: {
       colors: {
         surface: {
-          DEFAULT: '#0a0a0b',
-          primary: '#0a0a0b',
-          secondary: '#111113',
-          tertiary: '#1a1a1e',
-          'tertiary-glass': 'rgba(26, 26, 30, 0.7)', // Glass variant with 70% opacity
-          border: '#232328',
-          'border-light': '#2e2e35',
-          hover: '#1e1e23',
-        },
-        accent: {
-          primary: '#e8614d',
-          'primary-hover': '#d4553f',
-          'primary-subtle': 'rgba(232, 97, 77, 0.06)',
-          'primary-muted': 'rgba(232, 97, 77, 0.14)',
-          green: '#34d399',
-          'green-subtle': 'rgba(52, 211, 153, 0.06)',
-          'green-muted': 'rgba(52, 211, 153, 0.12)',
-          amber: '#fbbf24',
-          'amber-subtle': 'rgba(251, 191, 36, 0.06)',
-          'amber-muted': 'rgba(251, 191, 36, 0.12)',
-          red: '#f87171',
-          'red-subtle': 'rgba(248, 113, 113, 0.06)',
-          'red-muted': 'rgba(248, 113, 113, 0.12)',
-          purple: '#a78bfa',
-          'purple-subtle': 'rgba(167, 139, 250, 0.06)',
-          'purple-muted': 'rgba(167, 139, 250, 0.12)',
-          blue: '#60a5fa',
-          'blue-subtle': 'rgba(96, 165, 250, 0.06)',
-          'blue-muted': 'rgba(96, 165, 250, 0.12)',
+          DEFAULT: '#faf8f6',       // Warm cream background (Claude-style)
+          primary: '#faf8f6',
+          secondary: '#ffffff',     // Pure white for cards
+          tertiary: '#f5f3f1',      // Subtle elevated surfaces
+          hover: '#f0eeec',         // Hover state
+          border: '#e6e4e2',        // Subtle borders (rarely used)
+          'border-light': '#efefed',
         },
         text: {
-          primary: '#ededef',
-          secondary: '#a1a1a9', // Improved from #8f8f97 for 7:1 contrast
-          tertiary: '#56565e',
-          quaternary: '#52525a', // Fixed WCAG AA failure from #3d3d44 (2.8:1 → 4.5:1)
+          primary: '#1a1816',       // Near-black for primary text
+          secondary: '#666461',     // Gray for secondary text
+          tertiary: '#9a9894',      // Lighter gray for metadata
+          quaternary: '#c4c2bf',    // Placeholder text
+        },
+        accent: {
+          primary: '#d97706',       // Warm amber (journalism/alert)
+          'primary-hover': '#b45309',
+          'primary-subtle': 'rgba(217, 119, 6, 0.08)',
+          'primary-muted': 'rgba(217, 119, 6, 0.15)',
+          green: '#059669',         // Emerald for success
+          'green-subtle': 'rgba(5, 150, 105, 0.08)',
+          'green-muted': 'rgba(5, 150, 105, 0.15)',
+          amber: '#d97706',
+          'amber-subtle': 'rgba(217, 119, 6, 0.08)',
+          'amber-muted': 'rgba(217, 119, 6, 0.15)',
+          red: '#dc2626',           // Red for danger
+          'red-subtle': 'rgba(220, 38, 38, 0.08)',
+          'red-muted': 'rgba(220, 38, 38, 0.15)',
+          blue: '#2563eb',          // Blue for info
+          'blue-subtle': 'rgba(37, 99, 235, 0.08)',
+          'blue-muted': 'rgba(37, 99, 235, 0.15)',
+          purple: '#7c3aed',        // Purple for special
+          'purple-subtle': 'rgba(124, 58, 237, 0.08)',
+          'purple-muted': 'rgba(124, 58, 237, 0.15)',
         },
       },
       fontFamily: {
@@ -77,13 +76,14 @@ const config: Config = {
         '2xl': '1rem',
       },
       boxShadow: {
-        'card': '0 0 0 1px rgba(255,255,255,0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.25)',
-        'card-hover': '0 0 0 1px rgba(255,255,255,0.04), 0 2px 8px 0 rgba(0, 0, 0, 0.35)',
-        'elevated': '0 0 0 1px rgba(255,255,255,0.03), 0 8px 24px -4px rgba(0, 0, 0, 0.5)',
-        'overlay': '0 0 0 1px rgba(255,255,255,0.04), 0 24px 48px -8px rgba(0, 0, 0, 0.6)',
-        'glow-sm': '0 0 12px -2px rgba(232, 97, 77, 0.15)',
-        'glow': '0 0 20px -4px rgba(232, 97, 77, 0.2)',
-        'inner-ring': 'inset 0 0 0 1px rgba(255,255,255,0.04)',
+        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.08)',
+        'elevated': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+        'overlay': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+        'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)',
+        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
       },
       animation: {
         'fade-in': 'fadeIn 200ms ease-out',

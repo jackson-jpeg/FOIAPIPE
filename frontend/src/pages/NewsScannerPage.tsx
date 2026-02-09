@@ -180,12 +180,12 @@ export function NewsScannerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">News Scanner</h1>
-          <p className="text-sm text-text-secondary">
+          <h1 className="text-4xl font-bold tracking-tight text-text-primary mb-2">News Scanner</h1>
+          <p className="text-base text-text-secondary">
             Monitor and classify police accountability news from Tampa Bay sources
           </p>
         </div>
@@ -197,15 +197,15 @@ export function NewsScannerPage() {
       <ScannerStatus {...scanStatus} />
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1 border-b border-surface-border">
+      <div className="flex items-center gap-1 border-b border-surface-border/50">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => { setActiveTab(tab.key); setPage(1); }}
-            className={`px-4 pb-3 text-sm font-medium transition-colors border-b-[3px] -mb-px ${
+            className={`px-4 pb-3 text-sm font-medium transition-all border-b-2 -mb-px ${
               activeTab === tab.key
-                ? 'text-text-primary border-accent-primary'
-                : 'text-text-tertiary border-transparent hover:text-text-secondary'
+                ? 'text-accent-primary border-accent-primary'
+                : 'text-text-tertiary border-transparent hover:text-text-primary hover:border-surface-border'
             }`}
           >
             {tab.label}
@@ -228,9 +228,9 @@ export function NewsScannerPage() {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-accent-primary/15 bg-accent-primary-subtle px-4 py-3 animate-slide-up">
-          <span className="text-sm font-medium text-text-primary">{selectedIds.size} selected</span>
-          <div className="h-4 w-px bg-surface-border" />
+        <div className="flex items-center gap-3 rounded-xl bg-accent-primary-subtle px-5 py-4 shadow-sm animate-slide-up">
+          <span className="text-sm font-semibold text-text-primary">{selectedIds.size} selected</span>
+          <div className="h-4 w-px bg-accent-primary/30" />
           <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />}>
             File FOIAs
           </Button>

@@ -22,14 +22,14 @@ export function Sidebar({
   const sidebarContent = (
     <div
       className={cn(
-        'flex h-full flex-col bg-surface-secondary border-r border-surface-border transition-[width] duration-200 ease-out-expo',
-        collapsed ? 'w-16' : 'w-64' // Updated from 52px/208px to 64px/256px
+        'flex h-full flex-col bg-white shadow-sm transition-[width] duration-200 ease-out-expo',
+        collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Logo */}
       <div
         className={cn(
-          'flex h-14 items-center border-b border-surface-border shrink-0',
+          'flex h-14 items-center shrink-0',
           collapsed ? 'justify-center px-2' : 'px-5'
         )}
       >
@@ -66,16 +66,13 @@ export function Sidebar({
                 'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150',
                 collapsed && 'justify-center px-2',
                 isActive
-                  ? 'bg-surface-tertiary/80 text-text-primary'
-                  : 'text-text-tertiary hover:bg-surface-tertiary/40 hover:text-text-secondary'
+                  ? 'bg-accent-primary-subtle text-accent-primary font-medium'
+                  : 'text-text-tertiary hover:bg-surface-hover hover:text-text-primary'
               )
             }
           >
             {({ isActive }) => (
               <>
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-accent-primary" />
-                )}
                 <item.icon className="shrink-0" size={18} strokeWidth={1.75} />
                 {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
               </>
@@ -86,10 +83,10 @@ export function Sidebar({
 
       {/* Collapse toggle */}
       {!isMobile && (
-        <div className="border-t border-surface-border p-2">
+        <div className="p-2">
           <button
             onClick={onToggleCollapse}
-            className="flex w-full items-center justify-center rounded-lg p-2 text-text-quaternary transition-colors hover:bg-surface-tertiary hover:text-text-tertiary"
+            className="flex w-full items-center justify-center rounded-lg p-2 text-text-quaternary transition-colors hover:bg-surface-hover hover:text-text-primary"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
@@ -108,7 +105,7 @@ export function Sidebar({
       <>
         {mobileOpen && (
           <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] animate-fade-in"
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm animate-fade-in"
             onClick={onMobileClose}
           />
         )}

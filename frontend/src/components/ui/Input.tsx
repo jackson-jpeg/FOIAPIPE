@@ -25,13 +25,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={cn(
-              'h-10 w-full rounded-lg border bg-surface-tertiary/40 px-4 text-base text-text-primary placeholder:text-text-quaternary',
+              'h-11 w-full rounded-lg border bg-white shadow-inner px-4 text-base text-text-primary placeholder:text-text-quaternary',
               'transition-all duration-150',
-              'focus:border-accent-primary/50 focus:bg-surface-tertiary/60 focus:outline-none focus:ring-2 focus:ring-accent-primary/30',
-              'disabled:pointer-events-none disabled:opacity-40',
+              'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:shadow-sm',
+              'disabled:pointer-events-none disabled:opacity-40 disabled:bg-surface-tertiary',
               error
-                ? 'border-accent-red/50 focus:border-accent-red/50 focus:ring-accent-red/30'
-                : 'border-surface-border hover:border-surface-border-light',
+                ? 'border-accent-red focus:border-accent-red focus:ring-accent-red/20'
+                : 'border-surface-border hover:border-accent-primary/50',
               icon && 'pl-11',
               className
             )}

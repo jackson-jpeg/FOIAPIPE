@@ -38,13 +38,13 @@ export function Select({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           className={cn(
-            'h-8 w-full appearance-none rounded-lg border bg-surface-tertiary/40 pl-3 pr-8 text-sm text-text-primary',
+            'h-10 w-full appearance-none rounded-lg border bg-white shadow-inner pl-4 pr-10 text-sm text-text-primary',
             'transition-all duration-150',
-            'focus:border-accent-primary/50 focus:bg-surface-tertiary/60 focus:outline-none focus:ring-2 focus:ring-accent-primary/10',
-            'disabled:pointer-events-none disabled:opacity-40',
+            'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:shadow-sm',
+            'disabled:pointer-events-none disabled:opacity-40 disabled:bg-surface-tertiary',
             error
-              ? 'border-accent-red/50 focus:border-accent-red/50 focus:ring-accent-red/10'
-              : 'border-surface-border hover:border-surface-border-light',
+              ? 'border-accent-red focus:border-accent-red focus:ring-accent-red/20'
+              : 'border-surface-border hover:border-accent-primary/50',
             className
           )}
           disabled={disabled}

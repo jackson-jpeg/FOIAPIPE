@@ -39,11 +39,11 @@ export function AppShell({ children }: AppShellProps) {
 
       <main
         className={cn(
-          'px-8 py-6 transition-all duration-200 ease-out-expo',
+          'px-10 py-8 transition-all duration-200 ease-out-expo',
           !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
         )}
       >
-        <div className="animate-fade-in-fast">
+        <div className="max-w-[1800px] mx-auto animate-fade-in-fast">
           {children}
         </div>
       </main>

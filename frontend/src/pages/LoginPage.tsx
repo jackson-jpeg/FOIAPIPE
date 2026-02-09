@@ -21,24 +21,24 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-primary p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-4">
       <div className="w-full max-w-md animate-fade-in">
-        <div className="mb-10 text-center">
-          <div className="flex items-center justify-center gap-2.5 mb-3">
-            <span className="relative flex h-2 w-2">
+        <div className="mb-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="relative flex h-3 w-3">
               <span className="absolute inline-flex h-full w-full animate-pulse-subtle rounded-full bg-accent-primary opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-primary" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-accent-primary" />
             </span>
-            <h1 className="text-base font-semibold text-text-primary tracking-widest">
+            <h1 className="text-2xl font-bold text-text-primary tracking-wider">
               FOIAPIPE
             </h1>
           </div>
-          <p className="text-xs text-text-tertiary">
+          <p className="text-sm text-text-secondary">
             Bodycam FOIA Pipeline
           </p>
         </div>
 
-        <div className="rounded-xl border border-surface-border bg-surface-secondary p-6 shadow-card">
+        <div className="rounded-2xl bg-white p-8 shadow-overlay">
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="Username"
@@ -65,7 +65,7 @@ export function LoginPage() {
             />
 
             {error && (
-              <div className="rounded-lg bg-accent-red-subtle border border-accent-red/10 px-4 py-3 text-xs text-accent-red">
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}

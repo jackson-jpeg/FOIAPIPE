@@ -11,15 +11,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles = {
   primary:
-    'bg-accent-primary text-white shadow-sm shadow-accent-primary/20 hover:bg-accent-primary-hover disabled:opacity-40 disabled:shadow-none',
+    'bg-gradient-to-br from-accent-primary to-accent-primary-hover text-white shadow-sm hover:shadow-md disabled:opacity-40 disabled:shadow-none',
   secondary:
-    'bg-surface-tertiary text-text-primary shadow-card hover:bg-surface-hover hover:shadow-card-hover disabled:opacity-40',
+    'bg-surface-tertiary text-text-primary shadow-sm hover:bg-surface-hover hover:shadow-md disabled:opacity-40',
   danger:
-    'bg-accent-red text-white shadow-sm shadow-accent-red/20 hover:bg-accent-red/90 disabled:opacity-40 disabled:shadow-none',
+    'bg-gradient-to-br from-accent-red to-red-700 text-white shadow-sm hover:shadow-md disabled:opacity-40 disabled:shadow-none',
   ghost:
-    'text-text-secondary hover:text-text-primary hover:bg-surface-tertiary disabled:opacity-40',
+    'text-text-secondary hover:text-text-primary hover:bg-accent-primary-subtle disabled:opacity-40',
   outline:
-    'border border-surface-border-light text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:border-surface-border-light disabled:opacity-40',
+    'border border-surface-border text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:border-accent-primary/30 disabled:opacity-40',
 };
 
 const sizeStyles = {
@@ -43,7 +43,7 @@ export function Button({
       className={cn(
         'inline-flex items-center justify-center font-medium transition-all duration-150 ease-spring',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary',
-        'active:scale-[0.98]', // Spring scale on press
+        'hover:scale-105 active:scale-95', // Tactile scale feedback
         variantStyles[variant],
         sizeStyles[size],
         (disabled || loading) && 'pointer-events-none',

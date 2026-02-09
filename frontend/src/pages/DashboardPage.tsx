@@ -69,12 +69,14 @@ export function DashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="heading-3 mb-2">Dashboard</h1>
-        <p className="text-sm text-text-secondary">
-          Monitor your FOIA pipeline performance and recent activity
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 p-8 shadow-sm">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+          FOIA Pipeline
+        </h1>
+        <p className="mt-2 text-lg text-gray-600">
+          Monitor your accountability journalism workflow
         </p>
       </div>
 
@@ -82,7 +84,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-surface-border bg-surface-secondary p-4 space-y-3">
+            <div key={i} className="rounded-xl bg-white shadow-card p-6 space-y-3">
               <Skeleton variant="text" className="h-3 w-16" />
               <Skeleton variant="text" className="h-5 w-12" />
               <Skeleton variant="text" className="h-2.5 w-10" />
@@ -94,31 +96,36 @@ export function DashboardPage() {
               label="Total Articles"
               value={stats ? formatCompactNumber(stats.total_articles) : '0'}
               trend={stats ? { value: stats.articles_trend, isPositive: stats.articles_trend >= 0 } : undefined}
-              icon={<Newspaper size={16} />}
+              icon={<Newspaper size={20} />}
+              gradient="amber"
             />
             <StatCard
               label="Active FOIAs"
               value={stats ? formatCompactNumber(stats.active_foias) : '0'}
               trend={stats ? { value: stats.foias_trend, isPositive: stats.foias_trend >= 0 } : undefined}
-              icon={<FileText size={16} />}
+              icon={<FileText size={20} />}
+              gradient="blue"
             />
             <StatCard
               label="Videos in Pipeline"
               value={stats ? formatCompactNumber(stats.videos_in_pipeline) : '0'}
               trend={stats ? { value: stats.videos_trend, isPositive: stats.videos_trend >= 0 } : undefined}
-              icon={<Video size={16} />}
+              icon={<Video size={20} />}
+              gradient="purple"
             />
             <StatCard
               label="Total Views"
               value={stats ? formatCompactNumber(stats.total_views) : '0'}
               trend={stats ? { value: stats.views_trend, isPositive: stats.views_trend >= 0 } : undefined}
-              icon={<Eye size={16} />}
+              icon={<Eye size={20} />}
+              gradient="emerald"
             />
             <StatCard
               label="Revenue MTD"
               value={stats ? formatCurrency(stats.revenue_mtd) : '$0.00'}
               trend={stats ? { value: stats.revenue_trend, isPositive: stats.revenue_trend >= 0 } : undefined}
-              icon={<DollarSign size={16} />}
+              icon={<DollarSign size={20} />}
+              gradient="rose"
             />
           </>
         )}

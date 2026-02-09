@@ -9,21 +9,21 @@ interface BadgeProps {
 }
 
 const variantStyles = {
-  success: 'bg-accent-green-muted text-accent-green',
-  warning: 'bg-accent-amber-muted text-accent-amber',
-  danger: 'bg-accent-red-muted text-accent-red',
-  info: 'bg-accent-blue-muted text-accent-blue',
-  purple: 'bg-accent-purple-muted text-accent-purple',
-  default: 'bg-surface-tertiary text-text-secondary',
+  success: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
+  warning: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
+  danger: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
+  info: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
+  purple: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20',
+  default: 'bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/20',
 };
 
 const dotColorStyles = {
-  success: 'bg-accent-green',
-  warning: 'bg-accent-amber',
-  danger: 'bg-accent-red',
-  info: 'bg-accent-blue',
-  purple: 'bg-accent-purple',
-  default: 'bg-text-tertiary',
+  success: 'bg-emerald-600',
+  warning: 'bg-amber-600',
+  danger: 'bg-red-600',
+  info: 'bg-blue-600',
+  purple: 'bg-purple-600',
+  default: 'bg-gray-600',
 };
 
 const sizeStyles = {

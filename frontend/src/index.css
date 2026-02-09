@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  /* Remove default border color - use borders intentionally */
   *, *::before, *::after {
-    @apply border-surface-border;
+    border-color: transparent;
   }
 
   body {
@@ -14,26 +15,26 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Focus ring defaults - Increased opacity from 10% to 30% for visibility */
+  /* Focus ring defaults - Amber accent for light theme */
   :focus-visible {
     @apply outline-none ring-2 ring-offset-2;
-    --tw-ring-color: rgba(232, 97, 77, 0.3); /* Improved from 0.1 (10%) to 0.3 (30%) */
-    --tw-ring-offset-color: #0a0a0b;
+    --tw-ring-color: rgba(217, 119, 6, 0.3);
+    --tw-ring-offset-color: #faf8f6;
   }
 
   /* Selection */
   ::selection {
-    background-color: rgba(232, 97, 77, 0.2);
-    color: #ededef;
+    background-color: rgba(217, 119, 6, 0.2);
+    color: #1a1816;
   }
 
-  /* Scrollbar */
+  /* Scrollbar - Light theme */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #232328 transparent;
+    scrollbar-color: #e6e4e2 transparent;
   }
   *:hover {
-    scrollbar-color: #2e2e35 transparent;
+    scrollbar-color: #c4c2bf transparent;
   }
 
   /* Number input spinners */
@@ -46,9 +47,9 @@
     -moz-appearance: textfield;
   }
 
-  /* Custom checkbox */
+  /* Custom checkbox - Light theme */
   input[type="checkbox"] {
-    @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-surface-border-light bg-surface-tertiary;
+    @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-surface-border bg-white;
     transition: all 100ms ease;
   }
   input[type="checkbox"]:checked {
@@ -60,8 +61,8 @@
   }
   input[type="checkbox"]:focus-visible {
     @apply ring-2 ring-offset-1;
-    --tw-ring-color: rgba(232, 97, 77, 0.4);
-    --tw-ring-offset-color: #0a0a0b;
+    --tw-ring-color: rgba(217, 119, 6, 0.4);
+    --tw-ring-offset-color: #faf8f6;
   }
 
   /* Textarea */
@@ -71,7 +72,7 @@
 }
 
 @layer components {
-  /* Shimmer skeleton - Dual-layer with base + flowing overlay */
+  /* Shimmer skeleton - Light theme */
   .shimmer {
     @apply bg-surface-tertiary relative overflow-hidden;
   }
@@ -81,10 +82,35 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0.6) 50%,
       transparent 100%
     );
     animation: shimmerFlow 2.5s ease-in-out infinite;
+  }
+
+  /* Gradient utilities for personality */
+  .gradient-soft {
+    background: linear-gradient(135deg, #ffffff 0%, #f5f3f1 100%);
+  }
+
+  .gradient-amber {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  }
+
+  .gradient-emerald {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  }
+
+  .gradient-blue {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  }
+
+  .gradient-purple {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  }
+
+  .gradient-rose {
+    background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
   }
 
   /* Heading utility classes for semantic H1-H6 */
@@ -123,20 +149,20 @@
     display: none;
   }
 
-  /* Glass effect - Enhanced for semi-transparent panels */
+  /* Glass effect - Light theme */
   .glass {
     @apply backdrop-blur-lg;
-    background-color: rgba(10, 10, 11, 0.8);
+    background-color: rgba(255, 255, 255, 0.8);
   }
 
   .glass-surface {
     @apply backdrop-blur-xl;
-    background-color: rgba(26, 26, 30, 0.7);
+    background-color: rgba(255, 255, 255, 0.95);
   }
 
-  /* Text gradient */
+  /* Text gradient - Amber to orange */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(to right, #e8614d, #fbbf24);
+    background-image: linear-gradient(to right, #d97706, #ea580c);
   }
 }

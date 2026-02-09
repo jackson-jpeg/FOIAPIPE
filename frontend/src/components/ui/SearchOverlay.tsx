@@ -177,20 +177,20 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px]" />
-      <div className="relative w-full max-w-2xl rounded-xl border border-surface-border bg-surface-secondary shadow-overlay animate-scale-in">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-md" />
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-overlay animate-scale-in">
         {/* Search Input */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-surface-border">
-          <Search className="h-4 w-4 shrink-0 text-text-tertiary" />
+        <div className="flex items-center gap-4 px-6 py-5 border-b border-surface-border/30">
+          <Search className="h-5 w-5 shrink-0 text-text-tertiary" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search or type a command..."
-            className="w-full bg-transparent text-base text-text-primary placeholder:text-text-quaternary outline-none"
+            className="w-full bg-transparent text-lg text-text-primary placeholder:text-text-quaternary outline-none"
           />
-          <kbd className="shrink-0 rounded border border-surface-border bg-surface-tertiary px-2 py-1 text-xs text-text-quaternary font-mono">
+          <kbd className="shrink-0 rounded-lg bg-surface-tertiary px-2 py-1.5 text-xs text-text-tertiary font-mono font-medium">
             ESC
           </kbd>
         </div>
@@ -206,15 +206,15 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               </p>
             </div>
           ) : (
-            <div className="py-2">
+            <div className="py-3">
               {Object.entries(groupedActions).map(([category, actions]) => (
-                <div key={category} className="mb-2 last:mb-0">
-                  <div className="px-5 py-2">
-                    <h3 className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
+                <div key={category} className="mb-3 last:mb-0">
+                  <div className="px-6 py-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">
                       {categoryLabels[category as keyof typeof categoryLabels]}
                     </h3>
                   </div>
-                  <div className="px-2">
+                  <div className="px-3">
                     {actions.map((action) => {
                       const globalIndex = filteredActions.indexOf(action);
                       const isSelected = globalIndex === selectedIndex;
@@ -225,16 +225,16 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                           onClick={action.action}
                           onMouseEnter={() => setSelectedIndex(globalIndex)}
                           className={cn(
-                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left',
+                            'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left',
                             isSelected
-                              ? 'bg-surface-tertiary text-text-primary'
-                              : 'text-text-secondary hover:bg-surface-tertiary/50'
+                              ? 'bg-accent-primary-subtle text-text-primary shadow-sm'
+                              : 'text-text-secondary hover:bg-surface-hover'
                           )}
                         >
                           <div
                             className={cn(
-                              'shrink-0 transition-colors',
-                              isSelected ? 'text-accent-primary' : 'text-text-tertiary'
+                              'shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
+                              isSelected ? 'bg-amber-100 text-accent-primary' : 'bg-surface-tertiary text-text-tertiary'
                             )}
                           >
                             {action.icon}
@@ -243,12 +243,12 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                             {action.label}
                           </span>
                           {action.shortcut && (
-                            <kbd className="shrink-0 rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 text-xs text-text-quaternary font-mono">
+                            <kbd className="shrink-0 rounded-lg bg-surface-tertiary px-2 py-1 text-xs text-text-tertiary font-mono font-medium">
                               {action.shortcut}
                             </kbd>
                           )}
                           {isSelected && (
-                            <ArrowRight className="h-4 w-4 text-text-tertiary" />
+                            <ArrowRight className="h-4 w-4 text-accent-primary" />
                           )}
                         </button>
                       );
@@ -261,22 +261,22 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         </div>
 
         {/* Footer with keyboard hints */}
-        <div className="flex items-center justify-between gap-4 px-5 py-3 border-t border-surface-border bg-surface-tertiary/30">
-          <div className="flex items-center gap-3 text-xs text-text-tertiary">
-            <div className="flex items-center gap-1">
-              <kbd className="rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-t border-surface-border/30 bg-surface-tertiary/50">
+          <div className="flex items-center gap-4 text-xs text-text-secondary">
+            <div className="flex items-center gap-1.5">
+              <kbd className="rounded-lg bg-white px-2 py-1 font-mono font-medium shadow-sm">
                 ↑↓
               </kbd>
               <span>Navigate</span>
             </div>
-            <div className="flex items-center gap-1">
-              <kbd className="rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono">
+            <div className="flex items-center gap-1.5">
+              <kbd className="rounded-lg bg-white px-2 py-1 font-mono font-medium shadow-sm">
                 ↵
               </kbd>
               <span>Open</span>
             </div>
-            <div className="flex items-center gap-1">
-              <kbd className="rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono">
+            <div className="flex items-center gap-1.5">
+              <kbd className="rounded-lg bg-white px-2 py-1 font-mono font-medium shadow-sm">
                 ESC
               </kbd>
               <span>Close</span>
