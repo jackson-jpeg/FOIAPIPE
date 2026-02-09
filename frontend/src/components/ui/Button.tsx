@@ -11,19 +11,19 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles = {
   primary:
-    'bg-accent-cyan text-surface-primary hover:bg-accent-cyan/90 active:bg-accent-cyan/80 disabled:bg-accent-cyan/40',
+    'bg-accent-primary text-white shadow-sm shadow-accent-primary/20 hover:bg-accent-primary-hover active:bg-accent-primary-hover/90 disabled:opacity-40 disabled:shadow-none',
   danger:
-    'bg-accent-red text-white hover:bg-accent-red/90 active:bg-accent-red/80 disabled:bg-accent-red/40',
+    'bg-accent-red text-white shadow-sm shadow-accent-red/20 hover:bg-accent-red/80 active:bg-accent-red/70 disabled:opacity-40 disabled:shadow-none',
   ghost:
-    'bg-transparent text-text-secondary hover:bg-surface-tertiary hover:text-text-primary active:bg-surface-border disabled:text-text-tertiary',
+    'text-text-secondary hover:text-text-primary hover:bg-surface-tertiary active:bg-surface-border disabled:opacity-40',
   outline:
-    'bg-transparent border border-surface-border text-text-secondary hover:border-accent-cyan hover:text-accent-cyan active:bg-surface-tertiary disabled:border-surface-border/50 disabled:text-text-tertiary',
+    'border border-surface-border-light text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:border-surface-border-light active:bg-surface-tertiary disabled:opacity-40',
 };
 
 const sizeStyles = {
-  sm: 'px-3 py-1.5 text-xs gap-1.5',
-  md: 'px-4 py-2 text-sm gap-2',
-  lg: 'px-6 py-3 text-base gap-2.5',
+  sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md',
+  md: 'h-8 px-3 text-sm gap-1.5 rounded-lg',
+  lg: 'h-10 px-4 text-sm gap-2 rounded-lg',
 };
 
 export function Button({
@@ -39,10 +39,12 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary',
+        'inline-flex items-center justify-center font-medium transition-all duration-100 ease-out',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-primary',
+        'active:scale-[0.97]',
         variantStyles[variant],
         sizeStyles[size],
-        (disabled || loading) && 'cursor-not-allowed',
+        (disabled || loading) && 'pointer-events-none',
         className
       )}
       disabled={disabled || loading}

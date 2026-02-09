@@ -47,20 +47,20 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="New FOIA Request" size="lg">
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         <Select label="Agency" options={agencyOptions} value={agencyId} onChange={setAgencyId} placeholder="Select agency..." />
         <Select label="Priority" options={priorityOptions} value={priority} onChange={setPriority} />
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1.5">Request Text</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1.5">Request Text</label>
           <textarea
-            className="w-full rounded-lg border border-surface-border bg-surface-tertiary px-3 py-2 text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 min-h-[200px]"
+            className="w-full rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[180px] transition-all duration-150"
             value={requestText}
             onChange={e => setRequestText(e.target.value)}
             placeholder="Enter your FOIA request text..."
           />
         </div>
       </div>
-      <div className="flex justify-end gap-3 mt-6">
+      <div className="flex justify-end gap-2 mt-5">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button variant="primary" onClick={handleSubmit} loading={submitting} disabled={!agencyId || !requestText}>
           Create Request

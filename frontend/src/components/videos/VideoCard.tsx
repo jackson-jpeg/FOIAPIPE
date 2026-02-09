@@ -19,13 +19,13 @@ interface VideoCardProps {
 export function VideoCard({ video, onClick, dragHandleProps }: VideoCardProps) {
   return (
     <div
-      className="bg-surface-secondary border border-surface-border rounded-lg p-3 cursor-pointer hover:border-accent-cyan/50 transition-colors group"
+      className="bg-surface-secondary border border-surface-border rounded-lg p-2.5 cursor-pointer transition-all duration-150 hover:border-surface-border-light hover:shadow-card-hover group"
       onClick={onClick}
     >
       <div className="flex items-start gap-2">
         {dragHandleProps && (
           <div {...dragHandleProps} className="mt-1 cursor-grab active:cursor-grabbing" onClick={e => e.stopPropagation()}>
-            <GripVertical className="h-4 w-4 text-text-tertiary" />
+            <GripVertical className="h-3.5 w-3.5 text-text-quaternary" />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -35,23 +35,23 @@ export function VideoCard({ video, onClick, dragHandleProps }: VideoCardProps) {
               <img src={`/api/videos/${video.id}/thumbnail`} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Film className="h-8 w-8 text-text-tertiary" />
+                <Film className="h-6 w-6 text-text-quaternary" />
               </div>
             )}
             {video.duration_seconds && (
-              <span className="absolute bottom-1 right-1 bg-black/80 text-white text-xs font-mono px-1.5 py-0.5 rounded">
+              <span className="absolute bottom-1 right-1 bg-black/75 text-white text-2xs font-mono px-1 py-0.5 rounded">
                 {formatDuration(video.duration_seconds)}
               </span>
             )}
           </div>
           {/* Title */}
-          <p className="text-sm text-text-primary truncate font-medium">
+          <p className="text-xs text-text-primary truncate font-medium">
             {video.title || 'Untitled Video'}
           </p>
           {/* Meta */}
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-1.5 mt-1">
             {video.foia_case_number && (
-              <span className="text-xs font-mono text-text-tertiary">{video.foia_case_number}</span>
+              <span className="text-2xs font-mono text-text-quaternary">{video.foia_case_number}</span>
             )}
             {video.priority > 0 && (
               <Badge variant="warning" size="sm">P{video.priority}</Badge>

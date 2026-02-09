@@ -42,15 +42,15 @@ export function DeadlineCalendar({ deadlines, onDateClick }: DeadlineCalendarPro
   const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="rounded-lg border border-surface-border bg-surface-secondary p-4">
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="sm" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-        <h3 className="text-sm font-medium text-text-primary">{monthName}</h3>
-        <Button variant="ghost" size="sm" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
+    <div className="rounded-xl border border-surface-border bg-surface-secondary p-4 shadow-card animate-slide-up">
+      <div className="flex items-center justify-between mb-3">
+        <Button variant="ghost" size="sm" onClick={prevMonth}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+        <h3 className="text-xs font-medium text-text-primary">{monthName}</h3>
+        <Button variant="ghost" size="sm" onClick={nextMonth}><ChevronRight className="h-3.5 w-3.5" /></Button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-7 gap-0.5 text-center">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-          <div key={d} className="text-xs text-text-tertiary py-1">{d}</div>
+          <div key={d} className="text-2xs text-text-quaternary py-1">{d}</div>
         ))}
         {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
         {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -70,17 +70,17 @@ export function DeadlineCalendar({ deadlines, onDateClick }: DeadlineCalendarPro
               key={day}
               onClick={() => hasDeadlines && onDateClick?.(new Date(year, month, day), dayDeadlines)}
               className={cn(
-                'relative p-1.5 text-xs rounded-md transition-colors',
-                isToday && 'ring-1 ring-accent-cyan',
-                hasDeadlines ? 'cursor-pointer hover:bg-surface-tertiary' : 'cursor-default',
-                'text-text-secondary'
+                'relative p-1.5 text-2xs rounded-lg transition-colors',
+                isToday && 'ring-1 ring-accent-primary/50',
+                hasDeadlines ? 'cursor-pointer hover:bg-surface-tertiary font-medium' : 'cursor-default',
+                isToday ? 'text-text-primary' : 'text-text-secondary'
               )}
             >
               {day}
               {hasDeadlines && (
                 <span className={cn(
-                  'absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full',
-                  hasOverdue ? 'bg-accent-red' : hasApproaching ? 'bg-accent-amber' : 'bg-accent-cyan'
+                  'absolute bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-2.5 rounded-full',
+                  hasOverdue ? 'bg-accent-red' : hasApproaching ? 'bg-accent-amber' : 'bg-accent-primary/60'
                 )} />
               )}
             </button>

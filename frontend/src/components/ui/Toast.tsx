@@ -27,22 +27,22 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 let toastCounter = 0;
 
-const typeStyles = {
+const typeConfig = {
   success: {
-    border: 'border-l-accent-green',
     icon: <CheckCircle className="h-4 w-4 text-accent-green" />,
+    accent: 'border-l-accent-green',
   },
   error: {
-    border: 'border-l-accent-red',
     icon: <AlertCircle className="h-4 w-4 text-accent-red" />,
+    accent: 'border-l-accent-red',
   },
   info: {
-    border: 'border-l-accent-cyan',
-    icon: <Info className="h-4 w-4 text-accent-cyan" />,
+    icon: <Info className="h-4 w-4 text-accent-blue" />,
+    accent: 'border-l-accent-blue',
   },
   warning: {
-    border: 'border-l-accent-amber',
     icon: <AlertTriangle className="h-4 w-4 text-accent-amber" />,
+    accent: 'border-l-accent-amber',
   },
 };
 
@@ -66,23 +66,23 @@ function ToastItem({
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
 
-  const style = typeStyles[toast.type];
+  const config = typeConfig[toast.type];
 
   return (
     <div
       className={cn(
-        'flex w-80 items-start gap-3 rounded-lg border border-l-4 border-surface-border bg-surface-secondary p-4 shadow-lg transition-all duration-200',
-        style.border,
+        'flex w-72 items-start gap-2.5 rounded-lg border border-l-2 border-surface-border bg-surface-secondary p-3 shadow-elevated transition-all duration-200 ease-out-expo',
+        config.accent,
         isVisible
           ? 'translate-x-0 opacity-100'
-          : 'translate-x-full opacity-0'
+          : 'translate-x-8 opacity-0'
       )}
     >
-      <div className="shrink-0 mt-0.5">{style.icon}</div>
+      <div className="shrink-0 mt-0.5">{config.icon}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-text-primary">{toast.title}</p>
+        <p className="text-xs font-medium text-text-primary">{toast.title}</p>
         {toast.message && (
-          <p className="mt-1 text-xs text-text-secondary">{toast.message}</p>
+          <p className="mt-0.5 text-2xs text-text-secondary leading-relaxed">{toast.message}</p>
         )}
       </div>
       <button
@@ -90,9 +90,9 @@ function ToastItem({
           setIsVisible(false);
           setTimeout(() => onRemove(toast.id), 200);
         }}
-        className="shrink-0 rounded p-0.5 text-text-tertiary transition-colors hover:text-text-primary"
+        className="shrink-0 rounded p-0.5 text-text-quaternary transition-colors hover:text-text-tertiary"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3 w-3" />
       </button>
     </div>
   );

@@ -2,11 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #1e293b #0a0f1a;
+@layer base {
+  *, *::before, *::after {
+    @apply border-surface-border;
+  }
+
+  body {
+    @apply bg-surface-primary text-text-primary font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Focus ring defaults */
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: rgba(232, 97, 77, 0.4);
+    --tw-ring-offset-color: #0a0a0b;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(232, 97, 77, 0.2);
+    color: #ededef;
+  }
+
+  /* Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #232328 transparent;
+  }
+  *:hover {
+    scrollbar-color: #2e2e35 transparent;
+  }
+
+  /* Number input spinners */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Custom checkbox */
+  input[type="checkbox"] {
+    @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-surface-border-light bg-surface-tertiary;
+    transition: all 100ms ease;
+  }
+  input[type="checkbox"]:checked {
+    @apply border-accent-primary bg-accent-primary;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  input[type="checkbox"]:focus-visible {
+    @apply ring-2 ring-offset-1;
+    --tw-ring-color: rgba(232, 97, 77, 0.4);
+    --tw-ring-offset-color: #0a0a0b;
+  }
+
+  /* Textarea */
+  textarea {
+    @apply resize-y;
+  }
 }
 
-body {
-  @apply bg-surface-primary text-text-primary font-sans antialiased;
+@layer components {
+  /* Shimmer skeleton */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar hide */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply backdrop-blur-lg;
+    background-color: rgba(10, 10, 11, 0.8);
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, #e8614d, #fbbf24);
+  }
 }

@@ -70,18 +70,18 @@ export function VideoPipelinePage() {
   const selectedVideo = selectedId ? videos.find((v: any) => v.id === selectedId) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">Video Pipeline</h1>
-        <Button variant="primary" onClick={handleCreate} icon={<Plus className="h-4 w-4" />}>
+        <h1 className="text-lg font-semibold text-text-primary tracking-tight">Video Pipeline</h1>
+        <Button variant="primary" onClick={handleCreate} icon={<Plus className="h-3.5 w-3.5" />}>
           New Video
         </Button>
       </div>
 
       {loading ? (
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-96 w-72 rounded-lg" />
+            <Skeleton key={i} className="h-80 w-64 rounded-lg" />
           ))}
         </div>
       ) : (

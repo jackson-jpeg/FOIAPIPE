@@ -16,8 +16,8 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'animate-pulse bg-surface-tertiary',
-        variant === 'text' && 'h-4 rounded',
+        'rounded bg-surface-tertiary/60 shimmer',
+        variant === 'text' && 'h-3.5',
         variant === 'circular' && 'rounded-full',
         variant === 'rectangular' && 'rounded-lg',
         className

@@ -1,5 +1,6 @@
 import { type SelectHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
+import { ChevronDown } from 'lucide-react';
 
 interface SelectOption {
   value: string;
@@ -32,32 +33,36 @@ export function Select({
           {label}
         </label>
       )}
-      <select
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        className={cn(
-          'w-full appearance-none rounded-lg border bg-surface-tertiary px-3 py-2 pr-8 text-sm text-text-primary transition-colors',
-          'focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          error
-            ? 'border-accent-red focus:border-accent-red focus:ring-accent-red'
-            : 'border-surface-border',
-          className
-        )}
-        disabled={disabled}
-        {...props}
-      >
-        {placeholder && (
-          <option value="" disabled>
-            {placeholder}
-          </option>
-        )}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          className={cn(
+            'h-8 w-full appearance-none rounded-lg border bg-surface-tertiary/40 pl-3 pr-8 text-sm text-text-primary',
+            'transition-all duration-150',
+            'focus:border-accent-primary/50 focus:bg-surface-tertiary/60 focus:outline-none focus:ring-2 focus:ring-accent-primary/10',
+            'disabled:pointer-events-none disabled:opacity-40',
+            error
+              ? 'border-accent-red/50 focus:border-accent-red/50 focus:ring-accent-red/10'
+              : 'border-surface-border hover:border-surface-border-light',
+            className
+          )}
+          disabled={disabled}
+          {...props}
+        >
+          {placeholder && (
+            <option value="" disabled>
+              {placeholder}
+            </option>
+          )}
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
+      </div>
       {error && <p className="text-xs text-accent-red">{error}</p>}
     </div>
   );

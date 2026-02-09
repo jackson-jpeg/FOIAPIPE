@@ -81,7 +81,6 @@ export function NewsScannerPage() {
   };
 
   const handleFileFoia = async (id: string) => {
-    // Load agencies if not loaded yet
     if (agencies.length === 0) {
       try {
         const data = await agenciesApi.getAgencies({ page_size: 100 });
@@ -181,10 +180,10 @@ export function NewsScannerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">News Scanner</h1>
-        <Button variant="primary" onClick={handleScanNow} loading={scanning} icon={<RefreshCw className="h-4 w-4" />}>
+        <h1 className="text-lg font-semibold text-text-primary tracking-tight">News Scanner</h1>
+        <Button variant="primary" onClick={handleScanNow} loading={scanning} icon={<RefreshCw className="h-3.5 w-3.5" />}>
           Scan Now
         </Button>
       </div>
@@ -192,15 +191,15 @@ export function NewsScannerPage() {
       <ScannerStatus {...scanStatus} />
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-6 border-b border-surface-border">
+      <div className="flex items-center gap-0.5 border-b border-surface-border">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => { setActiveTab(tab.key); setPage(1); }}
-            className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-3 pb-2 text-xs font-medium transition-colors border-b-[2px] -mb-px ${
               activeTab === tab.key
-                ? 'text-accent-cyan border-accent-cyan'
-                : 'text-text-secondary border-transparent hover:text-text-primary'
+                ? 'text-text-primary border-accent-primary'
+                : 'text-text-tertiary border-transparent hover:text-text-secondary'
             }`}
           >
             {tab.label}
@@ -209,8 +208,8 @@ export function NewsScannerPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-sm">
+      <div className="flex items-center gap-2.5">
+        <div className="flex-1 max-w-xs">
           <Input placeholder="Search headlines..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select
@@ -223,16 +222,17 @@ export function NewsScannerPage() {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-accent-cyan/30 bg-accent-cyan/5 px-4 py-2.5">
-          <span className="text-sm text-text-secondary">{selectedIds.size} selected</span>
-          <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />}>
-            File FOIAs ({selectedIds.size})
+        <div className="flex items-center gap-2.5 rounded-lg border border-accent-primary/15 bg-accent-primary-subtle px-3.5 py-2 animate-slide-up">
+          <span className="text-xs text-text-secondary">{selectedIds.size} selected</span>
+          <div className="h-3 w-px bg-surface-border" />
+          <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3 w-3" />}>
+            File FOIAs
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('dismiss')} icon={<X className="h-3.5 w-3.5" />}>
-            Dismiss All
+          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('dismiss')} icon={<X className="h-3 w-3" />}>
+            Dismiss
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('mark_reviewed')} icon={<Check className="h-3.5 w-3.5" />}>
-            Mark Reviewed
+          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('mark_reviewed')} icon={<Check className="h-3 w-3" />}>
+            Reviewed
           </Button>
         </div>
       )}
@@ -255,16 +255,17 @@ export function NewsScannerPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-text-secondary">
-            Showing {((page - 1) * 25) + 1}&ndash;{Math.min(page * 25, total)} of {total}
+          <span className="text-2xs text-text-quaternary tabular-nums">
+            {((page - 1) * 25) + 1}&ndash;{Math.min(page * 25, total)} of {total}
           </span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
-            <span className="text-sm text-text-secondary px-2">Page {page} of {totalPages}</span>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
+            <span className="text-2xs text-text-quaternary px-2 tabular-nums">{page}/{totalPages}</span>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
           </div>
         </div>
       )}
+
       {/* Agency Selection Modal */}
       <Modal
         isOpen={foiaModalArticleId !== null}

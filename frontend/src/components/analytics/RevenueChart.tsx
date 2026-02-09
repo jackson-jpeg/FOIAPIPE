@@ -8,25 +8,25 @@ interface RevenueChartProps {
 export function RevenueChart({ data }: RevenueChartProps) {
   return (
     <Card title="Revenue">
-      <div className="h-64">
+      <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                <stop offset="0%" stopColor="#34d399" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="date" stroke="#64748b" fontSize={11} tickFormatter={d => d.slice(5)} />
-            <YAxis stroke="#64748b" fontSize={11} tickFormatter={v => `$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#232328" vertical={false} />
+            <XAxis dataKey="date" stroke="#56565e" fontSize={10} tickFormatter={d => d.slice(5)} axisLine={false} tickLine={false} />
+            <YAxis stroke="#56565e" fontSize={10} tickFormatter={v => `$${v}`} axisLine={false} tickLine={false} width={40} />
             <Tooltip
-              contentStyle={{ backgroundColor: '#0f1724', border: '1px solid #1e293b', borderRadius: '8px' }}
-              labelStyle={{ color: '#94a3b8' }}
-              itemStyle={{ color: '#22c55e' }}
+              contentStyle={{ backgroundColor: '#111113', border: '1px solid #232328', borderRadius: '8px', boxShadow: '0 8px 24px -4px rgba(0,0,0,0.5)', fontSize: '11px' }}
+              labelStyle={{ color: '#56565e', fontSize: '10px' }}
+              itemStyle={{ color: '#34d399' }}
               formatter={(v: number) => [`$${v.toFixed(2)}`, 'Revenue']}
             />
-            <Area type="monotone" dataKey="value" stroke="#22c55e" fillOpacity={1} fill="url(#revenueGradient)" />
+            <Area type="monotone" dataKey="value" stroke="#34d399" strokeWidth={1.5} fillOpacity={1} fill="url(#revenueGradient)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>

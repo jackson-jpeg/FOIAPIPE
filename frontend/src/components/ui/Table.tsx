@@ -36,24 +36,24 @@ export function Table<T extends Record<string, unknown>>({
 
     if (sortKey === column.key) {
       return sortDirection === 'asc' ? (
-        <ChevronUp className="h-3.5 w-3.5" />
+        <ChevronUp className="h-3 w-3" />
       ) : (
-        <ChevronDown className="h-3.5 w-3.5" />
+        <ChevronDown className="h-3 w-3" />
       );
     }
-    return <ChevronsUpDown className="h-3.5 w-3.5 text-text-tertiary" />;
+    return <ChevronsUpDown className="h-3 w-3 text-text-quaternary" />;
   };
 
   if (loading) {
     return (
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-surface-border">
+            <tr className="border-b border-surface-border bg-surface-tertiary/50">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary"
+                  className="px-4 py-2.5 text-left text-2xs font-medium text-text-tertiary"
                 >
                   {col.label}
                 </th>
@@ -62,10 +62,10 @@ export function Table<T extends Record<string, unknown>>({
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i} className="border-b border-surface-border/50">
+              <tr key={i} className="border-b border-surface-border/30">
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3">
-                    <Skeleton variant="text" className="h-4 w-3/4" />
+                  <td key={col.key} className="px-4 py-2.5">
+                    <Skeleton variant="text" className="h-3.5 w-3/4" />
                   </td>
                 ))}
               </tr>
@@ -78,27 +78,27 @@ export function Table<T extends Record<string, unknown>>({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-text-tertiary">
+      <div className="flex items-center justify-center rounded-xl border border-surface-border py-16 text-text-tertiary">
         <p className="text-sm">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-surface-border">
+          <tr className="border-b border-surface-border bg-surface-tertiary/50">
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary',
-                  col.sortable && 'cursor-pointer select-none hover:text-text-secondary'
+                  'px-4 py-2.5 text-left text-2xs font-medium text-text-tertiary',
+                  col.sortable && 'cursor-pointer select-none transition-colors hover:text-text-secondary'
                 )}
                 onClick={() => col.sortable && onSort?.(col.key)}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   {col.label}
                   {renderSortIcon(col)}
                 </div>
@@ -111,13 +111,16 @@ export function Table<T extends Record<string, unknown>>({
             <tr
               key={idx}
               className={cn(
-                'border-b border-surface-border/50 transition-colors',
-                onRowClick && 'cursor-pointer hover:bg-surface-tertiary'
+                'border-b border-surface-border/30 transition-colors',
+                onRowClick && 'cursor-pointer hover:bg-surface-hover'
               )}
-              onClick={() => onRowClick?.(item)}
             >
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-sm text-text-secondary">
+                <td
+                  key={col.key}
+                  className="px-4 py-2.5 text-sm text-text-secondary"
+                  onClick={() => onRowClick?.(item)}
+                >
                   {col.render ? col.render(item) : (item[col.key] as ReactNode)}
                 </td>
               ))}

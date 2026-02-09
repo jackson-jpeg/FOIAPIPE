@@ -40,28 +40,28 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh] animate-fade-in"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative w-full max-w-xl rounded-xl border border-surface-border bg-surface-primary shadow-2xl">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px]" />
+      <div className="relative w-full max-w-lg rounded-xl border border-surface-border bg-surface-secondary shadow-overlay animate-scale-in">
         <div className="flex items-center gap-3 px-4">
-          <Search className="h-5 w-5 shrink-0 text-text-tertiary" />
+          <Search className="h-4 w-4 shrink-0 text-text-tertiary" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Press Cmd+K to search"
-            className="w-full bg-transparent py-4 text-base text-text-primary placeholder-text-tertiary outline-none"
+            placeholder="Search..."
+            className="w-full bg-transparent py-3 text-sm text-text-primary placeholder:text-text-quaternary outline-none"
           />
-          <kbd className="shrink-0 rounded-md border border-surface-border bg-surface-secondary px-2 py-0.5 text-xs text-text-tertiary">
+          <kbd className="shrink-0 rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 text-2xs text-text-quaternary font-mono">
             ESC
           </kbd>
         </div>
-        <div className="border-t border-surface-border px-4 py-3">
-          <p className="text-xs text-text-tertiary">
-            Type to search across articles, FOIA requests, and videos...
+        <div className="border-t border-surface-border px-4 py-2">
+          <p className="text-2xs text-text-quaternary">
+            Search articles, FOIA requests, and videos
           </p>
         </div>
       </div>

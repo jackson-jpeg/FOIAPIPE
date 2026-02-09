@@ -69,15 +69,15 @@ export function DashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-surface-border bg-surface-secondary p-5 space-y-3">
-              <Skeleton variant="text" className="h-3 w-20" />
-              <Skeleton variant="text" className="h-7 w-16" />
-              <Skeleton variant="text" className="h-3 w-12" />
+            <div key={i} className="rounded-xl border border-surface-border bg-surface-secondary p-4 space-y-3">
+              <Skeleton variant="text" className="h-3 w-16" />
+              <Skeleton variant="text" className="h-5 w-12" />
+              <Skeleton variant="text" className="h-2.5 w-10" />
             </div>
           ))
         ) : (
@@ -86,71 +86,66 @@ export function DashboardPage() {
               label="Total Articles"
               value={stats ? formatCompactNumber(stats.total_articles) : '0'}
               trend={stats ? { value: stats.articles_trend, isPositive: stats.articles_trend >= 0 } : undefined}
-              accentColor="cyan"
-              icon={<Newspaper size={20} />}
+              icon={<Newspaper size={16} />}
             />
             <StatCard
               label="Active FOIAs"
               value={stats ? formatCompactNumber(stats.active_foias) : '0'}
               trend={stats ? { value: stats.foias_trend, isPositive: stats.foias_trend >= 0 } : undefined}
-              accentColor="purple"
-              icon={<FileText size={20} />}
+              icon={<FileText size={16} />}
             />
             <StatCard
               label="Videos in Pipeline"
               value={stats ? formatCompactNumber(stats.videos_in_pipeline) : '0'}
               trend={stats ? { value: stats.videos_trend, isPositive: stats.videos_trend >= 0 } : undefined}
-              accentColor="amber"
-              icon={<Video size={20} />}
+              icon={<Video size={16} />}
             />
             <StatCard
               label="Total Views"
               value={stats ? formatCompactNumber(stats.total_views) : '0'}
               trend={stats ? { value: stats.views_trend, isPositive: stats.views_trend >= 0 } : undefined}
-              accentColor="green"
-              icon={<Eye size={20} />}
+              icon={<Eye size={16} />}
             />
             <StatCard
               label="Revenue MTD"
               value={stats ? formatCurrency(stats.revenue_mtd) : '$0.00'}
               trend={stats ? { value: stats.revenue_trend, isPositive: stats.revenue_trend >= 0 } : undefined}
-              accentColor="green"
-              icon={<DollarSign size={20} />}
+              icon={<DollarSign size={16} />}
             />
           </>
         )}
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Recent Articles */}
         <Card title="Recent Articles">
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
-                    <Skeleton variant="text" className="h-4 w-full" />
-                    <Skeleton variant="text" className="h-3 w-24" />
+                    <Skeleton variant="text" className="h-3 w-full" />
+                    <Skeleton variant="text" className="h-2.5 w-24" />
                   </div>
-                  <Skeleton variant="text" className="h-5 w-16" />
+                  <Skeleton variant="text" className="h-4 w-12" />
                 </div>
               ))}
             </div>
           ) : articles.length === 0 ? (
-            <p className="text-sm text-text-tertiary">No recent articles</p>
+            <p className="text-xs text-text-quaternary py-4 text-center">No recent articles</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-0.5">
               {articles.map((article) => (
                 <div
                   key={article.id}
-                  className="flex items-start justify-between gap-4 rounded-lg p-2 transition-colors hover:bg-surface-tertiary"
+                  className="group flex items-start justify-between gap-3 rounded-lg px-2.5 py-2 -mx-2.5 transition-colors hover:bg-surface-hover cursor-pointer"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text-primary">
+                    <p className="truncate text-sm text-text-primary group-hover:text-text-primary">
                       {article.title}
                     </p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">
+                    <p className="mt-0.5 text-2xs text-text-quaternary">
                       {article.source} &middot; {formatRelativeTime(article.created_at)}
                     </p>
                   </div>
@@ -163,7 +158,6 @@ export function DashboardPage() {
                         : 'success'
                     }
                     size="sm"
-                    dot
                   >
                     {article.severity}
                   </Badge>
@@ -176,31 +170,31 @@ export function DashboardPage() {
         {/* Top Videos */}
         <Card title="Top Videos">
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
-                    <Skeleton variant="text" className="h-4 w-full" />
-                    <Skeleton variant="text" className="h-3 w-24" />
+                    <Skeleton variant="text" className="h-3 w-full" />
+                    <Skeleton variant="text" className="h-2.5 w-24" />
                   </div>
-                  <Skeleton variant="text" className="h-5 w-16" />
+                  <Skeleton variant="text" className="h-4 w-12" />
                 </div>
               ))}
             </div>
           ) : videos.length === 0 ? (
-            <p className="text-sm text-text-tertiary">No videos yet</p>
+            <p className="text-xs text-text-quaternary py-4 text-center">No videos yet</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-0.5">
               {videos.map((video) => (
                 <div
                   key={video.id}
-                  className="flex items-start justify-between gap-4 rounded-lg p-2 transition-colors hover:bg-surface-tertiary"
+                  className="group flex items-start justify-between gap-3 rounded-lg px-2.5 py-2 -mx-2.5 transition-colors hover:bg-surface-hover cursor-pointer"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text-primary">
+                    <p className="truncate text-sm text-text-primary">
                       {video.title}
                     </p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">
+                    <p className="mt-0.5 text-2xs text-text-quaternary">
                       {formatCompactNumber(video.views)} views &middot;{' '}
                       {video.published_at ? formatRelativeTime(video.published_at) : 'Unpublished'}
                     </p>
@@ -227,26 +221,26 @@ export function DashboardPage() {
       {/* Activity Feed */}
       <Card title="Activity Feed">
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
-                <Skeleton variant="circular" className="h-2 w-2" />
-                <Skeleton variant="text" className="h-4 flex-1" />
-                <Skeleton variant="text" className="h-3 w-20" />
+                <Skeleton variant="circular" className="h-1.5 w-1.5" />
+                <Skeleton variant="text" className="h-3 flex-1" />
+                <Skeleton variant="text" className="h-2.5 w-16" />
               </div>
             ))}
           </div>
         ) : activities.length === 0 ? (
-          <p className="text-sm text-text-tertiary">No recent activity</p>
+          <p className="text-xs text-text-quaternary py-4 text-center">No recent activity</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {activities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-cyan" />
-                <p className="flex-1 text-sm text-text-secondary">
+              <div key={activity.id} className="flex items-center gap-3 rounded-lg px-2.5 py-1.5 -mx-2.5 transition-colors hover:bg-surface-hover">
+                <span className="h-1 w-1 shrink-0 rounded-full bg-accent-primary/50" />
+                <p className="flex-1 text-xs text-text-secondary">
                   {activity.message}
                 </p>
-                <span className="shrink-0 text-xs text-text-tertiary">
+                <span className="shrink-0 text-2xs text-text-quaternary tabular-nums">
                   {formatRelativeTime(activity.timestamp)}
                 </span>
               </div>

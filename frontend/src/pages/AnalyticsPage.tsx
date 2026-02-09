@@ -44,56 +44,52 @@ export function AnalyticsPage() {
   }, [range]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">Analytics</h1>
+        <h1 className="text-lg font-semibold text-text-primary tracking-tight">Analytics</h1>
         <TimeRangeSelector value={range} onChange={setRange} />
       </div>
 
       {/* Stat Cards */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
       ) : overview ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard
             label="Gross Revenue"
             value={`$${overview.total_revenue?.toLocaleString() || '0'}`}
             trend={overview.trends?.revenue ? { value: overview.trends.revenue.value, isPositive: overview.trends.revenue.is_positive } : undefined}
-            accentColor="green"
-            icon={<DollarSign className="h-5 w-5" />}
+            icon={<DollarSign className="h-4 w-4" />}
           />
           <StatCard
             label="Total Views"
             value={overview.total_views?.toLocaleString() || '0'}
             trend={overview.trends?.views ? { value: overview.trends.views.value, isPositive: overview.trends.views.is_positive } : undefined}
-            accentColor="cyan"
-            icon={<Eye className="h-5 w-5" />}
+            icon={<Eye className="h-4 w-4" />}
           />
           <StatCard
             label="Subscribers"
             value={overview.total_subscribers?.toLocaleString() || '0'}
-            accentColor="purple"
-            icon={<Users className="h-5 w-5" />}
+            icon={<Users className="h-4 w-4" />}
           />
           <StatCard
             label="Avg RPM"
             value={`$${overview.avg_rpm?.toFixed(2) || '0.00'}`}
-            accentColor="amber"
-            icon={<TrendingUp className="h-5 w-5" />}
+            icon={<TrendingUp className="h-4 w-4" />}
           />
         </div>
       ) : null}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <RevenueChart data={revenueData} />
         <ViewsChart data={viewsData} />
       </div>
 
       {/* Top Videos & Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2">
           <TopVideosTable videos={topVideos} />
         </div>

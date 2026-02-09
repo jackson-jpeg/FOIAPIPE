@@ -12,26 +12,26 @@ interface FunnelChartProps {
 
 export function FunnelChart({ steps }: FunnelChartProps) {
   const maxCount = Math.max(...steps.map(s => s.count), 1);
-  const colors = ['#06b6d4', '#3b82f6', '#a855f7', '#22c55e', '#f59e0b'];
+  const colors = ['#e8614d', '#60a5fa', '#a78bfa', '#34d399', '#fbbf24'];
 
   return (
     <Card title="Pipeline Funnel">
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {steps.map((step, i) => (
           <div key={step.label} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-text-secondary">{step.label}</span>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-text-primary">{step.count}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-text-primary tabular-nums">{step.count}</span>
                 {step.conversion_rate !== undefined && i > 0 && (
-                  <span className="text-xs text-text-tertiary">({step.conversion_rate}%)</span>
+                  <span className="text-2xs text-text-quaternary tabular-nums">({step.conversion_rate}%)</span>
                 )}
               </div>
             </div>
-            <div className="h-6 bg-surface-tertiary rounded-md overflow-hidden">
+            <div className="h-4 bg-surface-tertiary/50 rounded-md overflow-hidden">
               <div
-                className="h-full rounded-md transition-all duration-500"
-                style={{ width: `${(step.count / maxCount) * 100}%`, backgroundColor: colors[i % colors.length] }}
+                className="h-full rounded-md transition-all duration-700 ease-out-expo"
+                style={{ width: `${(step.count / maxCount) * 100}%`, backgroundColor: colors[i % colors.length], opacity: 0.8 }}
               />
             </div>
           </div>

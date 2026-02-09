@@ -170,14 +170,17 @@ async def _auto_submit_async(article_id: str):
             agency_name=agency.name,
         )
 
+        response_days = agency.avg_response_days or 30
+        now = datetime.now(timezone.utc)
+
         foia = FoiaRequest(
             case_number=case_number,
             agency_id=agency.id,
             news_article_id=article.id,
             status=FoiaStatus.submitted,
             request_text=request_text,
-            submitted_at=datetime.now(timezone.utc),
-            due_date=datetime.now(timezone.utc) + timedelta(days=30),
+            submitted_at=now,
+            due_date=now + timedelta(days=response_days),
             is_auto_submitted=True,
         )
         db.add(foia)

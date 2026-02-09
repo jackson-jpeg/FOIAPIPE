@@ -15,14 +15,16 @@ interface TimeRangeSelectorProps {
 
 export function TimeRangeSelector({ value, onChange }: TimeRangeSelectorProps) {
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-surface-border bg-surface-secondary p-1">
+    <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-surface-secondary p-0.5">
       {ranges.map(r => (
         <button
           key={r.key}
           onClick={() => onChange(r.key)}
           className={cn(
-            'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-            value === r.key ? 'bg-accent-cyan text-white' : 'text-text-secondary hover:text-text-primary hover:bg-surface-tertiary'
+            'px-2.5 py-1 text-2xs font-medium rounded-md transition-all duration-100',
+            value === r.key
+              ? 'bg-accent-primary text-white shadow-sm shadow-accent-primary/20'
+              : 'text-text-tertiary hover:text-text-secondary hover:bg-surface-tertiary/50'
           )}
         >
           {r.label}

@@ -17,9 +17,9 @@ interface FoiaTableProps {
 export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit, onUpdateStatus, onViewDetail }: FoiaTableProps) {
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          <Skeleton key={i} className="h-12 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -28,7 +28,7 @@ export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit
   if (requests.length === 0) {
     return (
       <EmptyState
-        icon={<FileText className="h-12 w-12" />}
+        icon={<FileText className="h-10 w-10" />}
         title="No FOIA requests"
         message="File your first FOIA from the News Scanner."
       />
@@ -37,30 +37,30 @@ export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit
 
   const SortHeader = ({ label, field }: { label: string; field: string }) => (
     <th
-      className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider cursor-pointer hover:text-text-secondary"
+      className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary cursor-pointer transition-colors hover:text-text-secondary"
       onClick={() => onSort(field)}
     >
       <div className="flex items-center gap-1">
         {label}
-        {sortBy === field && <span className="text-accent-cyan">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>}
+        {sortBy === field && <span className="text-accent-primary">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>}
       </div>
     </th>
   );
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-surface-border">
+    <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
       <table className="w-full">
-        <thead className="bg-surface-tertiary">
+        <thead className="bg-surface-tertiary/50">
           <tr>
             <SortHeader label="Case #" field="case_number" />
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Agency</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Incident</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Agency</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Incident</th>
             <SortHeader label="Status" field="status" />
             <SortHeader label="Submitted" field="submitted_at" />
             <SortHeader label="Due Date" field="due_date" />
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Cost</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Priority</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase w-28">Actions</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Cost</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Priority</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary w-24">Actions</th>
           </tr>
         </thead>
         <tbody>

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn';
-import { Activity, Pause } from 'lucide-react';
+import { Activity, Clock } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/formatters';
 
 interface ScannerStatusProps {
@@ -11,30 +11,31 @@ interface ScannerStatusProps {
 
 export function ScannerStatus({ isScanning, lastScanAt, nextScanAt, articlesFoundLastScan }: ScannerStatusProps) {
   return (
-    <div className="flex items-center gap-6 rounded-lg border border-surface-border bg-surface-secondary px-4 py-3">
+    <div className="flex items-center gap-5 rounded-xl border border-surface-border bg-surface-secondary px-4 py-2.5 shadow-card">
       <div className="flex items-center gap-2">
         <span className={cn(
-          'h-2.5 w-2.5 rounded-full',
-          isScanning ? 'bg-accent-cyan animate-pulse' : 'bg-text-tertiary'
+          'h-2 w-2 rounded-full transition-colors',
+          isScanning ? 'bg-accent-green animate-pulse-subtle' : 'bg-text-quaternary'
         )} />
-        <span className="text-sm font-medium text-text-primary">
+        <span className="text-xs font-medium text-text-primary">
           {isScanning ? 'Scanning...' : 'Idle'}
         </span>
       </div>
+      <div className="h-3 w-px bg-surface-border" />
       {lastScanAt && (
-        <div className="flex items-center gap-1.5 text-sm text-text-secondary">
-          <Activity className="h-3.5 w-3.5" />
-          <span>Last scan: {formatRelativeTime(lastScanAt)}</span>
+        <div className="flex items-center gap-1.5 text-2xs text-text-tertiary">
+          <Activity className="h-3 w-3" />
+          <span>Last: {formatRelativeTime(lastScanAt)}</span>
         </div>
       )}
       {!isScanning && nextScanAt && (
-        <div className="flex items-center gap-1.5 text-sm text-text-secondary">
-          <Pause className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-1.5 text-2xs text-text-tertiary">
+          <Clock className="h-3 w-3" />
           <span>Next: {formatRelativeTime(nextScanAt)}</span>
         </div>
       )}
-      <div className="text-sm text-text-secondary">
-        <span className="font-mono text-text-primary">{articlesFoundLastScan}</span> articles last scan
+      <div className="text-2xs text-text-tertiary">
+        <span className="font-medium text-text-secondary tabular-nums">{articlesFoundLastScan}</span> found last scan
       </div>
     </div>
   );

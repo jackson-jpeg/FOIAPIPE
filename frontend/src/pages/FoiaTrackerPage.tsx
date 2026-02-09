@@ -13,19 +13,6 @@ import { FOIA_STATUSES } from '@/lib/constants';
 import { Plus, Calendar } from 'lucide-react';
 import * as foiaApi from '@/api/foia';
 
-const statusAccentMap: Record<string, 'cyan' | 'green' | 'amber' | 'red' | 'purple'> = {
-  draft: 'cyan',
-  ready: 'cyan',
-  submitted: 'cyan',
-  acknowledged: 'cyan',
-  processing: 'purple',
-  fulfilled: 'green',
-  partial: 'amber',
-  denied: 'red',
-  appealed: 'amber',
-  closed: 'cyan',
-};
-
 export function FoiaTrackerPage() {
   const { requests, loading, total, fetchRequests } = useFoiaStore();
   const { addToast } = useToast();
@@ -59,8 +46,9 @@ export function FoiaTrackerPage() {
       await foiaApi.submitFoiaRequest(id);
       addToast({ type: 'success', title: 'FOIA submitted' });
       loadData();
-    } catch {
-      addToast({ type: 'error', title: 'Submit failed' });
+    } catch (error: any) {
+      const detail = error.response?.data?.detail || 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Submit failed', description: detail });
     }
   };
 
@@ -69,8 +57,9 @@ export function FoiaTrackerPage() {
       await foiaApi.updateFoiaRequest(id, { status });
       addToast({ type: 'success', title: 'Status updated' });
       loadData();
-    } catch {
-      addToast({ type: 'error', title: 'Update failed' });
+    } catch (error: any) {
+      const detail = error.response?.data?.detail || 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Update failed', description: detail });
     }
   };
 
@@ -78,8 +67,9 @@ export function FoiaTrackerPage() {
     try {
       await foiaApi.updateFoiaRequest(id, { notes });
       addToast({ type: 'success', title: 'Notes saved' });
-    } catch {
-      addToast({ type: 'error', title: 'Failed to save notes' });
+    } catch (error: any) {
+      const detail = error.response?.data?.detail || 'An unexpected error occurred';
+      addToast({ type: 'error', title: 'Failed to save notes', description: detail });
     }
   };
 
@@ -95,14 +85,14 @@ export function FoiaTrackerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">FOIA Tracker</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowCalendar(!showCalendar)} icon={<Calendar className="h-4 w-4" />}>
+        <h1 className="text-lg font-semibold text-text-primary tracking-tight">FOIA Tracker</h1>
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" onClick={() => setShowCalendar(!showCalendar)} icon={<Calendar className="h-3.5 w-3.5" />}>
             Deadlines
           </Button>
-          <Button variant="primary" onClick={() => setShowForm(true)} icon={<Plus className="h-4 w-4" />}>
+          <Button variant="primary" onClick={() => setShowForm(true)} icon={<Plus className="h-3.5 w-3.5" />}>
             New Request
           </Button>
         </div>
@@ -110,7 +100,7 @@ export function FoiaTrackerPage() {
 
       {/* Status Summary Cards */}
       {statusCards.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {statusCards.map(status => {
             const info = FOIA_STATUSES[status as keyof typeof FOIA_STATUSES];
             return (
@@ -118,7 +108,6 @@ export function FoiaTrackerPage() {
                 key={status}
                 label={info?.label || status}
                 value={String(statusSummary[status] || 0)}
-                accentColor={statusAccentMap[status] || 'cyan'}
               />
             );
           })}
@@ -131,8 +120,8 @@ export function FoiaTrackerPage() {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-sm">
+      <div className="flex items-center gap-2.5">
+        <div className="flex-1 max-w-xs">
           <Input placeholder="Search by case number..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select options={statusOptions} value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} />
@@ -153,9 +142,9 @@ export function FoiaTrackerPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-text-secondary">Page {page} of {totalPages}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
+          <span className="text-2xs text-text-quaternary tabular-nums">Page {page} of {totalPages}</span>
+          <div className="flex gap-1.5">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
           </div>
         </div>

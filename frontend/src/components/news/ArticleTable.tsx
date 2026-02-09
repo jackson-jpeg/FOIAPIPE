@@ -40,9 +40,9 @@ export function ArticleTable({
 }: ArticleTableProps) {
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          <Skeleton key={i} className="h-12 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -51,7 +51,7 @@ export function ArticleTable({
   if (articles.length === 0) {
     return (
       <EmptyState
-        icon={<Newspaper className="h-12 w-12" />}
+        icon={<Newspaper className="h-10 w-10" />}
         title="No articles found"
         message="Scanner is searching for news articles. Try adjusting your filters."
       />
@@ -60,13 +60,13 @@ export function ArticleTable({
 
   const SortHeader = ({ label, field }: { label: string; field: string }) => (
     <th
-      className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider cursor-pointer hover:text-text-secondary"
+      className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary cursor-pointer transition-colors hover:text-text-secondary"
       onClick={() => onSort(field)}
     >
       <div className="flex items-center gap-1">
         {label}
         {sortBy === field && (
-          <span className="text-accent-cyan">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>
+          <span className="text-accent-primary">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>
         )}
       </div>
     </th>
@@ -75,26 +75,25 @@ export function ArticleTable({
   const allSelected = articles.length > 0 && articles.every(a => selectedIds.has(a.id));
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-surface-border">
+    <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
       <table className="w-full">
-        <thead className="bg-surface-tertiary">
+        <thead className="bg-surface-tertiary/50">
           <tr>
-            <th className="px-3 py-3 w-10">
+            <th className="px-3 py-2.5 w-10">
               <input
                 type="checkbox"
                 checked={allSelected}
                 onChange={onToggleSelectAll}
-                className="h-4 w-4 rounded border-surface-border bg-surface-tertiary accent-accent-cyan"
               />
             </th>
             <SortHeader label="Sev" field="severity_score" />
             <SortHeader label="Headline" field="headline" />
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Source</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Agency</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Type</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Source</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Agency</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Type</th>
             <SortHeader label="Published" field="published_at" />
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase">Status</th>
-            <th className="px-3 py-3 text-left text-xs font-medium text-text-tertiary uppercase w-24">Actions</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Status</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary w-20">Actions</th>
           </tr>
         </thead>
         <tbody>

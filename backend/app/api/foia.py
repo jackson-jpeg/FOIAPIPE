@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
@@ -29,6 +30,8 @@ from app.services.foia_generator import (
     generate_pdf,
     generate_request_text,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/foia", tags=["foia"])
 
@@ -234,6 +237,24 @@ async def create_foia_request(
             status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
         )
 
+    # Duplicate guard: same agency + same article
+    if body.news_article_id:
+        existing = (
+            await db.execute(
+                select(FoiaRequest).where(
+                    and_(
+                        FoiaRequest.agency_id == body.agency_id,
+                        FoiaRequest.news_article_id == body.news_article_id,
+                    )
+                )
+            )
+        ).scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"A FOIA request already exists for this agency and article (case {existing.case_number}).",
+            )
+
     # Auto-generate case number
     case_number = await assign_case_number(db)
 
@@ -360,10 +381,23 @@ async def submit_foia_request(
             detail=f"Failed to send email: {result['message']}",
         )
 
+    # Upload PDF to S3 (non-critical — email is the priority)
+    storage_key = f"foia/{foia.case_number}.pdf"
+    try:
+        from app.services.storage import upload_file
+        upload_file(pdf_bytes, storage_key, content_type="application/pdf")
+    except Exception as e:
+        logger.warning(f"S3 upload failed for {storage_key}: {e}")
+
+    # Calculate due date from agency response time (fallback: 30 days)
+    response_days = agency.avg_response_days or 30
+    now = datetime.now(timezone.utc)
+
     # Update FOIA record
     foia.status = FoiaStatus.submitted
-    foia.submitted_at = datetime.now(timezone.utc)
-    foia.pdf_storage_key = f"foia/{foia.case_number}.pdf"
+    foia.submitted_at = now
+    foia.due_date = now + timedelta(days=response_days)
+    foia.pdf_storage_key = storage_key
     await db.flush()
     await db.refresh(foia)
 
@@ -387,7 +421,17 @@ async def regenerate_pdf(
             status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
         )
 
-    pdf_bytes = generate_pdf(foia.request_text, foia.case_number)
+    # Try to retrieve stored PDF from S3 first
+    pdf_bytes = None
+    if foia.pdf_storage_key:
+        try:
+            from app.services.storage import download_file
+            pdf_bytes = download_file(foia.pdf_storage_key)
+        except Exception:
+            pass  # Fall through to regeneration
+
+    if not pdf_bytes:
+        pdf_bytes = generate_pdf(foia.request_text, foia.case_number)
 
     return Response(
         content=pdf_bytes,

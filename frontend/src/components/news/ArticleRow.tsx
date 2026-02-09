@@ -41,39 +41,38 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
   return (
     <>
       <tr
-        className="border-b border-surface-border hover:bg-surface-tertiary/50 cursor-pointer transition-colors"
+        className="border-b border-surface-border/30 hover:bg-surface-hover cursor-pointer transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={selected}
             onChange={onToggleSelect}
-            className="h-4 w-4 rounded border-surface-border bg-surface-tertiary accent-accent-cyan"
           />
         </td>
-        <td className="px-3 py-3">
+        <td className="px-3 py-2.5">
           <SeverityDot score={article.severity_score ?? 0} />
         </td>
-        <td className="px-3 py-3 max-w-md">
-          <div className="flex items-center gap-2">
-            {expanded ? <ChevronDown className="h-4 w-4 text-text-tertiary flex-shrink-0" /> : <ChevronRight className="h-4 w-4 text-text-tertiary flex-shrink-0" />}
+        <td className="px-3 py-2.5 max-w-md">
+          <div className="flex items-center gap-1.5">
+            {expanded ? <ChevronDown className="h-3.5 w-3.5 text-text-quaternary flex-shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-text-quaternary flex-shrink-0" />}
             <span className="text-sm text-text-primary truncate">{article.headline}</span>
           </div>
         </td>
-        <td className="px-3 py-3 text-sm text-text-secondary">{article.source}</td>
-        <td className="px-3 py-3 text-sm text-text-secondary">{article.detected_agency || '\u2014'}</td>
-        <td className="px-3 py-3">
+        <td className="px-3 py-2.5 text-xs text-text-secondary">{article.source}</td>
+        <td className="px-3 py-2.5 text-xs text-text-secondary">{article.detected_agency || '\u2014'}</td>
+        <td className="px-3 py-2.5">
           {incidentInfo && (
             <Badge variant={incidentInfo.variant as 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default'} size="sm">
               {incidentInfo.label}
             </Badge>
           )}
         </td>
-        <td className="px-3 py-3 text-sm text-text-secondary font-mono">
+        <td className="px-3 py-2.5 text-xs text-text-tertiary tabular-nums">
           {article.published_at ? formatDateTime(article.published_at) : '\u2014'}
         </td>
-        <td className="px-3 py-3">
+        <td className="px-3 py-2.5">
           <div className="flex items-center gap-1">
             {article.is_reviewed && <Badge variant="success" size="sm">Reviewed</Badge>}
             {article.is_dismissed && <Badge variant="default" size="sm">Dismissed</Badge>}
@@ -81,44 +80,44 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
             {article.auto_foia_eligible && !article.auto_foia_filed && <Badge variant="purple" size="sm">Eligible</Badge>}
           </div>
         </td>
-        <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             {!article.auto_foia_filed && !article.is_dismissed && (
               <Button variant="primary" size="sm" onClick={() => onFileFoia(article.id)}>
-                <FileText className="h-3.5 w-3.5" />
+                <FileText className="h-3 w-3" />
               </Button>
             )}
             {!article.is_dismissed && (
               <Button variant="ghost" size="sm" onClick={() => onDismiss(article.id)}>
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3" />
               </Button>
             )}
           </div>
         </td>
       </tr>
       {expanded && (
-        <tr className="border-b border-surface-border bg-surface-tertiary/30">
-          <td colSpan={9} className="px-6 py-4">
+        <tr className="border-b border-surface-border/30 bg-surface-tertiary/20">
+          <td colSpan={9} className="px-6 py-4 animate-fade-in-fast">
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <p className="text-sm text-text-primary font-medium">{article.headline}</p>
-                  <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                  <div className="flex items-center gap-3 text-2xs text-text-tertiary">
                     <span>{article.source}</span>
                     {article.detected_agency && <span>Agency: {article.detected_agency}</span>}
                     <SeverityDot score={article.severity_score ?? 0} size="sm" showLabel />
                   </div>
                 </div>
-                <a href={article.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-accent-cyan hover:underline">
-                  Original Article <ExternalLink className="h-3 w-3" />
+                <a href={article.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-2xs text-accent-primary hover:underline shrink-0">
+                  Original <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
               {(article.body || article.summary) && (
-                <p className="text-sm text-text-secondary leading-relaxed max-h-40 overflow-y-auto">
+                <p className="text-xs text-text-secondary leading-relaxed max-h-36 overflow-y-auto">
                   {article.body || article.summary}
                 </p>
               )}
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-1.5 pt-1">
                 {!article.is_reviewed && (
                   <Button variant="outline" size="sm" onClick={() => onMarkReviewed(article.id)}>Mark Reviewed</Button>
                 )}

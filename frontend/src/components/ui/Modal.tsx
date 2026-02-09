@@ -48,31 +48,30 @@ export function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px]" />
       <div
         className={cn(
-          'relative w-full rounded-xl border border-surface-border bg-surface-secondary shadow-2xl',
-          'animate-in fade-in zoom-in-95 duration-200',
+          'relative w-full rounded-xl border border-surface-border bg-surface-secondary shadow-overlay animate-scale-in',
           sizeStyles[size]
         )}
       >
-        <div className="flex items-center justify-between border-b border-surface-border px-5 py-4">
-          <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+        <div className="flex items-center justify-between border-b border-surface-border px-5 py-3.5">
+          <h2 className="text-sm font-semibold text-text-primary tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-text-tertiary transition-colors hover:bg-surface-tertiary hover:text-text-primary"
+            className="rounded-md p-1 text-text-tertiary transition-colors hover:bg-surface-tertiary hover:text-text-secondary"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="p-5">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-surface-border px-5 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-surface-border px-5 py-3">
             {footer}
           </div>
         )}

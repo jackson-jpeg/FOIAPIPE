@@ -22,22 +22,25 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-primary p-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-xs animate-fade-in">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-text-primary font-mono tracking-tight">
-            FOIAPIPE
-          </h1>
-          <p className="mt-2 text-sm text-text-tertiary">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="h-2 w-2 rounded-full bg-accent-primary" />
+            <h1 className="text-sm font-semibold text-text-primary tracking-widest">
+              FOIAPIPE
+            </h1>
+          </div>
+          <p className="text-2xs text-text-quaternary">
             Bodycam FOIA Pipeline
           </p>
         </div>
 
-        <div className="rounded-xl border border-surface-border bg-surface-secondary p-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-xl border border-surface-border bg-surface-secondary p-5 shadow-card">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <Input
               label="Username"
               type="text"
-              placeholder="Enter your username"
+              placeholder="admin"
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
@@ -49,7 +52,7 @@ export function LoginPage() {
             <Input
               label="Password"
               type="password"
-              placeholder="Enter your password"
+              placeholder="Enter password"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -59,7 +62,7 @@ export function LoginPage() {
             />
 
             {error && (
-              <div className="rounded-lg bg-accent-red/10 px-3 py-2 text-xs text-accent-red">
+              <div className="rounded-lg bg-accent-red-subtle border border-accent-red/10 px-3 py-2 text-2xs text-accent-red">
                 {error}
               </div>
             )}
@@ -75,8 +78,8 @@ export function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-text-tertiary">
-          Internal tool. Authorized access only.
+        <p className="mt-5 text-center text-2xs text-text-quaternary">
+          Internal tool &middot; Authorized access only
         </p>
       </div>
     </div>
