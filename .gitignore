@@ -68,3 +68,9 @@ backend/alembic/versions/__pycache__/
 *.tmp
 .vercel
 .env*.local
+# Deployment files with credentials
+RAILWAY_COMPLETE_SETUP.md
+RAILWAY_ENV_VARS.txt
+railway-*.exp
+railway-*.json
+railway_deploy.py
