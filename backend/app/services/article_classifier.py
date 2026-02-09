@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import json
+import logging
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from app.models.news_article import NewsArticle
@@ -222,6 +228,111 @@ def score_severity(incident_type: str, text: str) -> int:
     return min(score, 10)
 
 
+async def classify_article_with_ai(
+    headline: str,
+    body: str,
+    agency_names: list[str],
+) -> dict:
+    """Classify article using Claude Haiku for semantic understanding.
+
+    Args:
+        headline: Article headline
+        body: Article body text (will be truncated to 1000 chars)
+        agency_names: List of known agency names to choose from
+
+    Returns:
+        dict with keys: detected_agency, incident_type, severity, confidence, reasoning
+        Falls back to regex classification if API key not available.
+    """
+    # Fallback to regex if no API key
+    if not settings.ANTHROPIC_API_KEY:
+        logger.info("No ANTHROPIC_API_KEY, using regex classification")
+        return {
+            "detected_agency": detect_agency(f"{headline} {body}", agency_names),
+            "incident_type": classify_incident(headline, body),
+            "severity": score_severity(classify_incident(headline, body), f"{headline} {body}"),
+            "confidence": "medium",
+            "reasoning": "Regex-based classification (no API key)",
+            "method": "regex",
+        }
+
+    try:
+        import anthropic
+        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+        # Truncate body to 1000 chars for cost optimization
+        truncated_body = body[:1000] if len(body) > 1000 else body
+
+        prompt = f"""Analyze this law enforcement news article and extract structured information.
+
+HEADLINE: {headline}
+
+BODY: {truncated_body}
+
+KNOWN AGENCIES (choose the best match or "unknown"):
+{', '.join(agency_names)}
+
+INCIDENT TYPES (choose one):
+- ois (officer-involved shooting)
+- use_of_force (physical force, baton, restraint)
+- pursuit (vehicle/foot chase)
+- taser (conducted energy weapon)
+- k9 (police dog deployment)
+- dui (impaired driving by officer or suspect)
+- arrest (routine arrest)
+- other
+
+Provide ONLY valid JSON in this exact format:
+{{
+  "detected_agency": "<agency name from list or 'unknown'>",
+  "incident_type": "<one of the incident types above>",
+  "severity": <integer 1-10, where 1=routine, 5=notable, 10=critical>,
+  "confidence": "<high|medium|low>",
+  "reasoning": "<1 sentence explaining your classification>"
+}}
+
+Severity scoring guidance:
+- 1-3: Routine incident (standard arrest, minor complaint)
+- 4-6: Notable incident (use of force, pursuit, injuries)
+- 7-8: Serious incident (OIS, significant injuries, multiple officers)
+- 9-10: Critical incident (fatality, major controversy, identified officer)"""
+
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=512,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text.strip()
+
+        # Extract JSON from response
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start >= 0 and end > start:
+            result = json.loads(text[start:end])
+            result["method"] = "claude_haiku"
+            logger.info(
+                f"AI classified: agency={result.get('detected_agency')}, "
+                f"type={result.get('incident_type')}, "
+                f"severity={result.get('severity')}, "
+                f"confidence={result.get('confidence')}"
+            )
+            return result
+
+        raise ValueError("No JSON found in Claude response")
+
+    except Exception as e:
+        logger.error(f"AI classification failed: {e}, falling back to regex")
+        return {
+            "detected_agency": detect_agency(f"{headline} {body}", agency_names),
+            "incident_type": classify_incident(headline, body),
+            "severity": score_severity(classify_incident(headline, body), f"{headline} {body}"),
+            "confidence": "medium",
+            "reasoning": f"Regex fallback (AI error: {str(e)})",
+            "method": "regex_fallback",
+        }
+
+
 def assess_auto_foia_eligibility(
     severity_score: int,
     agency_has_email: bool,
@@ -238,24 +349,39 @@ async def classify_and_score_article(
     """Run full classification pipeline on an article. Mutates and returns the article."""
     from app.models.agency import Agency
 
-    text = f"{article.headline or ''} {article.body or ''} {article.summary or ''}"
+    # Fetch all agency names for AI classification
+    agency_result = await db.execute(select(Agency.name))
+    agency_names = [name for (name,) in agency_result.all()]
 
-    # Detect agency
-    detected = detect_agency(text)
-    article.detected_agency = detected
-
-    # Classify incident
-    article.incident_type = classify_incident(
-        article.headline or "", article.body or ""
+    # Use AI classification (falls back to regex if no API key)
+    classification = await classify_article_with_ai(
+        headline=article.headline or "",
+        body=article.body or "",
+        agency_names=agency_names,
     )
 
-    # Score severity
-    article.severity_score = score_severity(article.incident_type, text)
+    # Apply classification results
+    article.detected_agency = classification.get("detected_agency")
+    if article.detected_agency == "unknown":
+        article.detected_agency = None
+
+    article.incident_type = classification.get("incident_type", "other")
+    article.severity_score = classification.get("severity", 5)
+
+    # Store AI reasoning in summary field if available
+    if classification.get("reasoning"):
+        article.summary = classification.get("reasoning")
+
+    logger.info(
+        f"Classified article {article.id}: method={classification.get('method')}, "
+        f"agency={article.detected_agency}, type={article.incident_type}, "
+        f"severity={article.severity_score}, confidence={classification.get('confidence')}"
+    )
 
     # Check auto-FOIA eligibility
-    if detected:
+    if article.detected_agency:
         result = await db.execute(
-            select(Agency).where(Agency.name == detected).limit(1)
+            select(Agency).where(Agency.name == article.detected_agency).limit(1)
         )
         agency = result.scalar_one_or_none()
         if agency:

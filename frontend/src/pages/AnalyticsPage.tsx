@@ -67,23 +67,29 @@ export function AnalyticsPage() {
             label="Gross Revenue"
             value={`$${overview.total_revenue?.toLocaleString() || '0'}`}
             trend={overview.trends?.revenue ? { value: overview.trends.revenue.value, isPositive: overview.trends.revenue.is_positive } : undefined}
-            icon={<DollarSign className="h-4 w-4" />}
+            icon={<DollarSign className="h-5 w-5" />}
+            gradient="emerald"
+            sparkline={revenueData.slice(-7).map(d => d.value)}
           />
           <StatCard
             label="Total Views"
             value={overview.total_views?.toLocaleString() || '0'}
             trend={overview.trends?.views ? { value: overview.trends.views.value, isPositive: overview.trends.views.is_positive } : undefined}
-            icon={<Eye className="h-4 w-4" />}
+            icon={<Eye className="h-5 w-5" />}
+            gradient="blue"
+            sparkline={viewsData.slice(-7).map(d => d.value)}
           />
           <StatCard
             label="Subscribers"
             value={overview.total_subscribers?.toLocaleString() || '0'}
-            icon={<Users className="h-4 w-4" />}
+            icon={<Users className="h-5 w-5" />}
+            gradient="purple"
           />
           <StatCard
             label="Avg RPM"
             value={`$${overview.avg_rpm?.toFixed(2) || '0.00'}`}
-            icon={<TrendingUp className="h-4 w-4" />}
+            icon={<TrendingUp className="h-5 w-5" />}
+            gradient="amber"
           />
         </div>
       ) : null}

@@ -23,6 +23,8 @@ async def _check_inbox_async():
 
     from app.database import async_session_factory
     from app.models.foia_request import FoiaRequest, FoiaStatus
+    from app.models.foia_status_change import FoiaStatusChange
+    from app.models.notification import Notification, NotificationType
     from app.services.email_monitor import check_inbox
 
     responses = await check_inbox()
@@ -43,6 +45,9 @@ async def _check_inbox_async():
             )
             foia = result.scalar_one_or_none()
             if not foia:
+                logger.warning(
+                    f"Received email for unknown case number: {case_number}"
+                )
                 continue
 
             response_type = resp.get("response_type", "unknown")
@@ -54,12 +59,58 @@ async def _check_inbox_async():
                 "cost_estimate": FoiaStatus.processing,
             }
 
-            if response_type in status_map:
-                foia.status = status_map[response_type]
+            old_status = foia.status
+            new_status = status_map.get(response_type)
+
+            if new_status and new_status != old_status:
+                # Record audit trail BEFORE status change
+                audit_entry = FoiaStatusChange(
+                    foia_request_id=foia.id,
+                    from_status=old_status.value,
+                    to_status=new_status.value,
+                    changed_by="email_monitor",
+                    reason=f"Agency email response: {response_type}",
+                    metadata={
+                        "from": resp.get("from"),
+                        "subject": resp.get("subject"),
+                        "date": resp.get("date"),
+                        "has_attachments": resp.get("has_attachments"),
+                    },
+                )
+                db.add(audit_entry)
+
+                # Update status
+                foia.status = new_status
                 if response_type == "acknowledged":
                     foia.acknowledged_at = datetime.now(timezone.utc)
                 elif response_type == "fulfilled":
                     foia.fulfilled_at = datetime.now(timezone.utc)
+
+                # Create user notification
+                notification_title = {
+                    "acknowledged": "FOIA Acknowledged",
+                    "fulfilled": "FOIA Fulfilled",
+                    "denied": "FOIA Denied",
+                    "processing": "FOIA Processing",
+                }
+                notification = Notification(
+                    type=NotificationType.info
+                    if response_type != "denied"
+                    else NotificationType.warning,
+                    title=notification_title.get(response_type, "FOIA Update"),
+                    message=f"Case {case_number}: {resp.get('subject', 'Agency response received')}",
+                    metadata={
+                        "foia_id": str(foia.id),
+                        "case_number": case_number,
+                        "response_type": response_type,
+                        "from": resp.get("from"),
+                    },
+                )
+                db.add(notification)
+
+                logger.info(
+                    f"Updated FOIA {case_number}: {old_status.value} → {new_status.value}"
+                )
 
             if resp.get("estimated_cost") is not None:
                 foia.estimated_cost = resp["estimated_cost"]

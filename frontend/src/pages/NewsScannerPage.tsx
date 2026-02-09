@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { StatusOrb } from '@/components/ui/StatusOrb';
 import { useNewsStore } from '@/stores/newsStore';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { RefreshCw, FileText, X, Check } from 'lucide-react';
+import { RefreshCw, FileText, X, Check, Sparkles } from 'lucide-react';
 import { INCIDENT_TYPES } from '@/lib/constants';
 import * as newsApi from '@/api/news';
 import * as agenciesApi from '@/api/agencies';
@@ -228,8 +229,8 @@ export function NewsScannerPage() {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-xl bg-accent-primary-subtle px-5 py-4 shadow-sm animate-slide-up">
-          <span className="text-sm font-semibold text-text-primary">{selectedIds.size} selected</span>
+        <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-accent-amber/20 px-5 py-4 shadow-elevated animate-slide-up">
+          <span className="text-sm font-bold text-text-primary">{selectedIds.size} selected</span>
           <div className="h-4 w-px bg-accent-primary/30" />
           <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />}>
             File FOIAs
@@ -293,6 +294,19 @@ export function NewsScannerPage() {
         }
       >
         <div className="space-y-6">
+          {/* Workflow Progression Indicator */}
+          <div className="flex items-center gap-3 pb-4 border-b border-surface-border">
+            <StatusOrb size="sm" color="success" label="Article Analyzed" />
+            <div className="h-px flex-1 bg-surface-border" />
+            <StatusOrb
+              size="sm"
+              color={selectedAgencyId ? "success" : "default"}
+              label="Agency Selected"
+            />
+            <div className="h-px flex-1 bg-surface-border" />
+            <StatusOrb size="sm" color="default" label="Draft Generated" />
+          </div>
+
           {/* Article Preview */}
           {foiaModalArticleId && (() => {
             const article = articles.find(a => a.id === foiaModalArticleId);
@@ -324,8 +338,11 @@ export function NewsScannerPage() {
 
           {/* AI-Generated Draft Preview */}
           {selectedAgencyId && (
-            <div className="rounded-lg border border-surface-border bg-surface-secondary p-4">
-              <h3 className="text-sm font-semibold text-text-primary mb-3">AI-Generated Draft</h3>
+            <div className="rounded-lg border-2 border-dashed border-accent-purple/20 bg-gradient-to-br from-purple-50/50 to-blue-50/50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-accent-purple" />
+                <h3 className="text-sm font-semibold text-text-primary">AI-Generated Draft</h3>
+              </div>
               <p className="text-xs text-text-secondary leading-relaxed">
                 A FOIA request will be automatically generated based on the article content and submitted to the selected agency. You can edit the request in Focus Mode after filing.
               </p>
