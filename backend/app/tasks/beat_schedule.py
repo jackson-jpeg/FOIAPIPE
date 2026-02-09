@@ -25,7 +25,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "poll-youtube-analytics": {
         "task": "app.tasks.youtube_tasks.poll_youtube_analytics",
-        "schedule": crontab(hour=6, minute=0),  # Daily 6 AM EST
+        "schedule": crontab(hour=2, minute=0),  # Daily 2 AM EST
         "options": {"queue": "default"},
     },
     "generate-daily-summary": {

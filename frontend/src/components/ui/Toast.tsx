@@ -30,19 +30,15 @@ let toastCounter = 0;
 const typeConfig = {
   success: {
     icon: <CheckCircle className="h-4 w-4 text-accent-green" />,
-    accent: 'border-l-accent-green',
   },
   error: {
     icon: <AlertCircle className="h-4 w-4 text-accent-red" />,
-    accent: 'border-l-accent-red',
   },
   info: {
     icon: <Info className="h-4 w-4 text-accent-blue" />,
-    accent: 'border-l-accent-blue',
   },
   warning: {
     icon: <AlertTriangle className="h-4 w-4 text-accent-amber" />,
-    accent: 'border-l-accent-amber',
   },
 };
 
@@ -61,7 +57,7 @@ function ToastItem({
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => onRemove(toast.id), 200);
-    }, 5000); // Increased from 4s to 5s
+    }, 3000); // Auto-dismiss after 3s
 
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
@@ -71,8 +67,7 @@ function ToastItem({
   return (
     <div
       className={cn(
-        'flex w-full max-w-md min-w-[20rem] items-start gap-3 rounded-lg border border-l-2 border-surface-border bg-surface-secondary p-4 shadow-elevated transition-all duration-200 ease-out-expo',
-        config.accent,
+        'flex w-full max-w-md min-w-[20rem] items-start gap-3 rounded-lg bg-text-primary p-4 shadow-overlay transition-all duration-200 ease-out-expo',
         isVisible
           ? 'translate-y-0 opacity-100'
           : 'translate-y-2 opacity-0'
@@ -80,9 +75,9 @@ function ToastItem({
     >
       <div className="shrink-0 mt-0.5">{config.icon}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-text-primary">{toast.title}</p>
+        <p className="text-sm font-medium text-surface-primary">{toast.title}</p>
         {toast.message && (
-          <p className="mt-1 text-xs text-text-secondary leading-relaxed">{toast.message}</p>
+          <p className="mt-1 text-xs text-surface-primary/80 leading-relaxed">{toast.message}</p>
         )}
       </div>
       <button
@@ -90,7 +85,7 @@ function ToastItem({
           setIsVisible(false);
           setTimeout(() => onRemove(toast.id), 200);
         }}
-        className="shrink-0 rounded p-0.5 text-text-quaternary transition-colors hover:text-text-tertiary"
+        className="shrink-0 rounded p-0.5 text-surface-primary/60 transition-colors hover:text-surface-primary"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -113,7 +108,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 px-4 w-full max-w-md">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col-reverse gap-2 px-4 w-full max-w-md">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}

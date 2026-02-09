@@ -24,6 +24,7 @@ from app.models.base import Base
 if TYPE_CHECKING:
     from app.models.foia_request import FoiaRequest
     from app.models.video_analytics import VideoAnalytics
+    from app.models.video_status_change import VideoStatusChange
 
 
 class VideoStatus(str, enum.Enum):
@@ -87,6 +88,12 @@ class Video(Base):
         "VideoAnalytics",
         back_populates="video",
         lazy="selectin",
+    )
+    status_changes: Mapped[list[VideoStatusChange]] = relationship(
+        "VideoStatusChange",
+        back_populates="video",
+        lazy="selectin",
+        order_by="VideoStatusChange.created_at",
     )
 
     def __repr__(self) -> str:

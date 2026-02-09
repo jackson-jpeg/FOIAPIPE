@@ -11,6 +11,7 @@ from app.models.revenue_transaction import RevenueTransaction, TransactionType
 from app.models.scan_log import ScanLog, ScanStatus, ScanType
 from app.models.video import Video, VideoStatus
 from app.models.video_analytics import VideoAnalytics
+from app.models.video_status_change import VideoStatusChange
 
 __all__ = [
     # Models
@@ -25,6 +26,7 @@ __all__ = [
     "ScanLog",
     "Video",
     "VideoAnalytics",
+    "VideoStatusChange",
     # Enums
     "FoiaPriority",
     "FoiaStatus",

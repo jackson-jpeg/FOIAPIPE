@@ -24,6 +24,13 @@ async def _poll_analytics_async():
     from app.database import async_session_factory
     from app.models.video import Video, VideoStatus
     from app.models.video_analytics import VideoAnalytics
+    from app.services.youtube_client import get_video_stats
+    from app.config import settings
+
+    # Check if YouTube API is configured
+    if not settings.YOUTUBE_CLIENT_ID or not settings.YOUTUBE_REFRESH_TOKEN:
+        logger.warning("YouTube API not configured, skipping analytics sync")
+        return {"skipped": True, "reason": "YouTube API not configured"}
 
     async with async_session_factory() as db:
         stmt = select(Video).where(
@@ -33,25 +40,46 @@ async def _poll_analytics_async():
         videos = (await db.execute(stmt)).scalars().all()
 
         updated = 0
-        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).date()
+        today = datetime.now(timezone.utc).date()
 
         for video in videos:
             try:
-                # YouTube API call would go here
-                # For now, create a placeholder analytics entry
+                # Call YouTube Data API to get current stats
+                stats = get_video_stats(video.youtube_video_id)
+
+                if stats.get("error"):
+                    logger.error(f"Failed to get stats for {video.youtube_video_id}: {stats['error']}")
+                    continue
+
+                # Check if we already have analytics for today
                 existing = await db.execute(
                     select(VideoAnalytics).where(
                         VideoAnalytics.video_id == video.id,
-                        VideoAnalytics.date == yesterday,
+                        VideoAnalytics.date == today,
                     )
                 )
-                if not existing.scalar_one_or_none():
+                existing_analytics = existing.scalar_one_or_none()
+
+                if existing_analytics:
+                    # Update existing record
+                    existing_analytics.views = stats.get("views", 0)
+                    existing_analytics.likes = stats.get("likes", 0)
+                    existing_analytics.comments = stats.get("comments", 0)
+                    logger.info(f"Updated analytics for video {video.id}: {stats.get('views')} views")
+                else:
+                    # Create new analytics snapshot
                     analytics = VideoAnalytics(
                         video_id=video.id,
-                        date=yesterday,
+                        date=today,
+                        views=stats.get("views", 0),
+                        likes=stats.get("likes", 0),
+                        comments=stats.get("comments", 0),
                     )
                     db.add(analytics)
-                    updated += 1
+                    logger.info(f"Created analytics for video {video.id}: {stats.get('views')} views")
+
+                updated += 1
+
             except Exception as e:
                 logger.error(f"Analytics error for video {video.id}: {e}")
 

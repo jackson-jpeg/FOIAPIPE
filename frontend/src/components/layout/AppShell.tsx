@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { useBreakpoint } from '@/hooks/useMediaQuery';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { CommandBar } from '@/components/ui/CommandBar';
 import { NAV_ITEMS } from '@/lib/constants';
 
 interface AppShellProps {
@@ -23,6 +24,9 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-surface-primary">
+      {/* Command Bar (Cmd+K) */}
+      <CommandBar />
+
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}

@@ -115,6 +115,31 @@ def get_video_status(video_id: str) -> dict:
     }
 
 
+def get_video_stats(video_id: str) -> dict:
+    """Get current statistics for a YouTube video (views, likes, comments, etc)."""
+    youtube = _get_youtube_service()
+    response = youtube.videos().list(
+        part="statistics,snippet",
+        id=video_id
+    ).execute()
+
+    items = response.get("items", [])
+    if not items:
+        return {"error": "Video not found"}
+
+    item = items[0]
+    stats = item.get("statistics", {})
+    snippet = item.get("snippet", {})
+
+    return {
+        "video_id": video_id,
+        "views": int(stats.get("viewCount", 0)),
+        "likes": int(stats.get("likeCount", 0)),
+        "comments": int(stats.get("commentCount", 0)),
+        "published_at": snippet.get("publishedAt"),
+    }
+
+
 def get_analytics(video_id: str, start_date: date, end_date: date) -> dict:
     """Pull analytics for a specific video from YouTube Analytics API."""
     analytics = _get_analytics_service()
