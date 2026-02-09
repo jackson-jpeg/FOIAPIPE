@@ -14,5 +14,8 @@ COPY backend/ .
 
 ENV PYTHONPATH=/app
 
-# Run migrations, then start the server
-CMD ["sh", "-c", "alembic -c alembic/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+COPY backend/start.sh .
+RUN chmod +x start.sh
+
+# Smart startup script that detects service type from RAILWAY_SERVICE_NAME
+CMD ["./start.sh"]
