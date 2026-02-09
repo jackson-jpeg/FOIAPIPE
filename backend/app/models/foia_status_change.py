@@ -32,8 +32,8 @@ class FoiaStatusChange(Base):
         String(100), nullable=False
     )  # "admin", "system", "email_monitor"
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata: Mapped[Any | None] = mapped_column(
-        JSON, nullable=True
+    extra_metadata: Mapped[Any | None] = mapped_column(
+        JSON, nullable=True, name="metadata"
     )  # Store email content, API responses, etc.
 
     # ── Relationships ─────────────────────────────────────────────────────

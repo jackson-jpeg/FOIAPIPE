@@ -70,7 +70,7 @@ async def _check_inbox_async():
                     to_status=new_status.value,
                     changed_by="email_monitor",
                     reason=f"Agency email response: {response_type}",
-                    metadata={
+                    extra_metadata={
                         "from": resp.get("from"),
                         "subject": resp.get("subject"),
                         "date": resp.get("date"),
@@ -99,7 +99,7 @@ async def _check_inbox_async():
                     else NotificationType.warning,
                     title=notification_title.get(response_type, "FOIA Update"),
                     message=f"Case {case_number}: {resp.get('subject', 'Agency response received')}",
-                    metadata={
+                    extra_metadata={
                         "foia_id": str(foia.id),
                         "case_number": case_number,
                         "response_type": response_type,
@@ -327,7 +327,7 @@ async def _auto_submit_async(article_id: str):
                 to_status=FoiaStatus.submitted.value,
                 changed_by="auto_submit_system",
                 reason=f"Auto-submitted from article: {article.headline}",
-                metadata={
+                extra_metadata={
                     "article_id": str(article.id),
                     "agency_email": agency.foia_email,
                     "storage_key": storage_key,
@@ -357,7 +357,7 @@ async def _auto_submit_async(article_id: str):
                 type=NotificationType.error,
                 title="Auto-Submit Failed",
                 message=f"Failed to auto-submit FOIA for article: {article.headline}. Error: {str(e)}",
-                metadata={
+                extra_metadata={
                     "article_id": str(article.id),
                     "case_number": case_number,
                     "agency": agency.name,

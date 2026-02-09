@@ -407,7 +407,7 @@ async def submit_foia_request(
         to_status=FoiaStatus.submitted.value,
         changed_by=current_user,
         reason="Submitted via email",
-        metadata={
+        extra_metadata={
             "agency_email": agency.foia_email,
             "case_number": foia.case_number,
             "storage_key": storage_key,

@@ -32,8 +32,8 @@ class VideoStatusChange(Base):
         String(100), nullable=False
     )  # "admin", "system", "youtube_upload"
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata: Mapped[Any | None] = mapped_column(
-        JSON, nullable=True
+    extra_metadata: Mapped[Any | None] = mapped_column(
+        JSON, nullable=True, name="metadata"
     )  # Store upload responses, errors, etc.
 
     # ── Relationships ─────────────────────────────────────────────────────
