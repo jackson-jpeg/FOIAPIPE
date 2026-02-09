@@ -25,7 +25,13 @@ export function KanbanBoard({ videos, onStatusChange, onVideoClick }: KanbanBoar
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10, // 10px distance to activate drag
+        delay: 100, // 100ms delay to prevent accidental drags
+        tolerance: 5,
+      },
+    })
   );
 
   const videosByStatus = COLUMN_ORDER.reduce<Record<string, Video[]>>((acc, status) => {
@@ -79,7 +85,7 @@ export function KanbanBoard({ videos, onStatusChange, onVideoClick }: KanbanBoar
       </div>
       <DragOverlay>
         {activeVideo && (
-          <div className="opacity-80">
+          <div className="rotate-2 scale-105 transition-transform duration-300 ease-spring ring-2 ring-accent-primary/30">
             <VideoCard video={activeVideo} onClick={() => {}} />
           </div>
         )}

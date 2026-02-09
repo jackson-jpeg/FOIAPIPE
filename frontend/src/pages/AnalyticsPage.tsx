@@ -44,19 +44,25 @@ export function AnalyticsPage() {
   }, [range]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary tracking-tight">Analytics</h1>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-3 mb-2">Analytics</h1>
+          <p className="text-sm text-text-secondary">
+            Track YouTube performance metrics and revenue insights
+          </p>
+        </div>
         <TimeRangeSelector value={range} onChange={setRange} />
       </div>
 
       {/* Stat Cards */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
       ) : overview ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             label="Gross Revenue"
             value={`$${overview.total_revenue?.toLocaleString() || '0'}`}
@@ -83,13 +89,13 @@ export function AnalyticsPage() {
       ) : null}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RevenueChart data={revenueData} />
         <ViewsChart data={viewsData} />
       </div>
 
       {/* Top Videos & Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <TopVideosTable videos={topVideos} />
         </div>

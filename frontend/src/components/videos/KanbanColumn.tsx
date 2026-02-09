@@ -18,8 +18,10 @@ export function KanbanColumn({ status, videoIds, count, children }: KanbanColumn
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col min-w-[260px] max-w-[300px] rounded-xl border bg-surface-primary shadow-card transition-all duration-150',
-        isOver ? 'border-accent-primary/40 shadow-glow-sm' : 'border-surface-border'
+        'flex flex-col min-w-[260px] max-w-[300px] rounded-xl border-2 bg-surface-primary shadow-card transition-all duration-200',
+        isOver
+          ? 'border-accent-primary shadow-glow ring-2 ring-accent-primary/20'
+          : 'border-dashed border-surface-border'
       )}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-surface-border">

@@ -85,14 +85,20 @@ export function FoiaTrackerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary tracking-tight">FOIA Tracker</h1>
-        <div className="flex items-center gap-1.5">
-          <Button variant="outline" onClick={() => setShowCalendar(!showCalendar)} icon={<Calendar className="h-3.5 w-3.5" />}>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-3 mb-2">FOIA Tracker</h1>
+          <p className="text-sm text-text-secondary">
+            Manage Freedom of Information Act requests and track responses
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowCalendar(!showCalendar)} icon={<Calendar className="h-4 w-4" />}>
             Deadlines
           </Button>
-          <Button variant="primary" onClick={() => setShowForm(true)} icon={<Plus className="h-3.5 w-3.5" />}>
+          <Button variant="primary" onClick={() => setShowForm(true)} icon={<Plus className="h-4 w-4" />}>
             New Request
           </Button>
         </div>
@@ -100,7 +106,7 @@ export function FoiaTrackerPage() {
 
       {/* Status Summary Cards */}
       {statusCards.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {statusCards.map(status => {
             const info = FOIA_STATUSES[status as keyof typeof FOIA_STATUSES];
             return (
@@ -120,8 +126,8 @@ export function FoiaTrackerPage() {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex-1 max-w-xs">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 max-w-md">
           <Input placeholder="Search by case number..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select options={statusOptions} value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} />
@@ -142,8 +148,8 @@ export function FoiaTrackerPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <span className="text-2xs text-text-quaternary tabular-nums">Page {page} of {totalPages}</span>
-          <div className="flex gap-1.5">
+          <span className="text-xs text-text-tertiary tabular-nums">Page {page} of {totalPages}</span>
+          <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
           </div>

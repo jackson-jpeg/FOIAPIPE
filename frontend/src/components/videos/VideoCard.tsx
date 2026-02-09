@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/Badge';
+import { StatusOrb } from '@/components/ui/StatusOrb';
 import { formatDuration } from '@/lib/formatters';
 import { Film, GripVertical } from 'lucide-react';
 
@@ -19,7 +19,7 @@ interface VideoCardProps {
 export function VideoCard({ video, onClick, dragHandleProps }: VideoCardProps) {
   return (
     <div
-      className="bg-surface-secondary border border-surface-border rounded-lg p-2.5 cursor-pointer transition-all duration-150 hover:border-surface-border-light hover:shadow-card-hover group"
+      className="bg-surface-secondary border border-surface-border rounded-lg p-2.5 cursor-grab active:cursor-grabbing transition-all duration-150 hover:border-surface-border-light hover:shadow-card-hover group"
       onClick={onClick}
     >
       <div className="flex items-start gap-2">
@@ -49,12 +49,12 @@ export function VideoCard({ video, onClick, dragHandleProps }: VideoCardProps) {
             {video.title || 'Untitled Video'}
           </p>
           {/* Meta */}
-          <div className="flex items-center gap-1.5 mt-1">
+          <div className="flex items-center gap-2 mt-1.5">
             {video.foia_case_number && (
-              <span className="text-2xs font-mono text-text-quaternary">{video.foia_case_number}</span>
+              <span className="text-xs font-mono text-text-quaternary">{video.foia_case_number}</span>
             )}
             {video.priority > 0 && (
-              <Badge variant="warning" size="sm">P{video.priority}</Badge>
+              <StatusOrb color="warning" size="sm" label={`P${video.priority}`} />
             )}
           </div>
         </div>

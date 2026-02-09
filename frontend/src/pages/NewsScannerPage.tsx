@@ -180,10 +180,16 @@ export function NewsScannerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary tracking-tight">News Scanner</h1>
-        <Button variant="primary" onClick={handleScanNow} loading={scanning} icon={<RefreshCw className="h-3.5 w-3.5" />}>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-3 mb-2">News Scanner</h1>
+          <p className="text-sm text-text-secondary">
+            Monitor and classify police accountability news from Tampa Bay sources
+          </p>
+        </div>
+        <Button variant="primary" onClick={handleScanNow} loading={scanning} icon={<RefreshCw className="h-4 w-4" />}>
           Scan Now
         </Button>
       </div>
@@ -191,12 +197,12 @@ export function NewsScannerPage() {
       <ScannerStatus {...scanStatus} />
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-0.5 border-b border-surface-border">
+      <div className="flex items-center gap-1 border-b border-surface-border">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => { setActiveTab(tab.key); setPage(1); }}
-            className={`px-3 pb-2 text-xs font-medium transition-colors border-b-[2px] -mb-px ${
+            className={`px-4 pb-3 text-sm font-medium transition-colors border-b-[3px] -mb-px ${
               activeTab === tab.key
                 ? 'text-text-primary border-accent-primary'
                 : 'text-text-tertiary border-transparent hover:text-text-secondary'
@@ -208,8 +214,8 @@ export function NewsScannerPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex-1 max-w-xs">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 max-w-md">
           <Input placeholder="Search headlines..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select
@@ -222,16 +228,16 @@ export function NewsScannerPage() {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-2.5 rounded-lg border border-accent-primary/15 bg-accent-primary-subtle px-3.5 py-2 animate-slide-up">
-          <span className="text-xs text-text-secondary">{selectedIds.size} selected</span>
-          <div className="h-3 w-px bg-surface-border" />
-          <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3 w-3" />}>
+        <div className="flex items-center gap-3 rounded-lg border border-accent-primary/15 bg-accent-primary-subtle px-4 py-3 animate-slide-up">
+          <span className="text-sm font-medium text-text-primary">{selectedIds.size} selected</span>
+          <div className="h-4 w-px bg-surface-border" />
+          <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />}>
             File FOIAs
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('dismiss')} icon={<X className="h-3 w-3" />}>
+          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('dismiss')} icon={<X className="h-3.5 w-3.5" />}>
             Dismiss
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('mark_reviewed')} icon={<Check className="h-3 w-3" />}>
+          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('mark_reviewed')} icon={<Check className="h-3.5 w-3.5" />}>
             Reviewed
           </Button>
         </div>
@@ -255,41 +261,77 @@ export function NewsScannerPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <span className="text-2xs text-text-quaternary tabular-nums">
+          <span className="text-xs text-text-tertiary tabular-nums">
             {((page - 1) * 25) + 1}&ndash;{Math.min(page * 25, total)} of {total}
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-            <span className="text-2xs text-text-quaternary px-2 tabular-nums">{page}/{totalPages}</span>
+            <span className="text-xs text-text-tertiary px-2 tabular-nums">{page}/{totalPages}</span>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
           </div>
         </div>
       )}
 
-      {/* Agency Selection Modal */}
+      {/* News-to-FOIA Bridge - Slide-over Panel */}
       <Modal
         isOpen={foiaModalArticleId !== null}
         onClose={() => setFoiaModalArticleId(null)}
-        title="Select Agency for FOIA Request"
-        size="sm"
+        title="Create FOIA Request"
+        variant="slide-over"
         footer={
           <>
             <Button variant="ghost" onClick={() => setFoiaModalArticleId(null)}>Cancel</Button>
-            <Button variant="primary" onClick={handleConfirmFileFoia} loading={filingFoia} disabled={!selectedAgencyId}>
-              File FOIA
+            <Button
+              variant="primary"
+              onClick={handleConfirmFileFoia}
+              loading={filingFoia}
+              disabled={!selectedAgencyId}
+            >
+              File FOIA Request
             </Button>
           </>
         }
       >
-        <Select
-          label="Agency"
-          options={[
-            { value: '', label: 'Select an agency...' },
-            ...agencies.map(a => ({ value: a.id, label: a.name })),
-          ]}
-          value={selectedAgencyId}
-          onChange={setSelectedAgencyId}
-        />
+        <div className="space-y-6">
+          {/* Article Preview */}
+          {foiaModalArticleId && (() => {
+            const article = articles.find(a => a.id === foiaModalArticleId);
+            return article ? (
+              <div className="rounded-lg border border-surface-border bg-surface-tertiary/20 p-4">
+                <h3 className="text-sm font-semibold text-text-primary mb-2">Article</h3>
+                <p className="text-sm text-text-primary font-medium mb-2">{article.headline}</p>
+                <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                  <span>{article.source}</span>
+                  {article.detected_agency && <span>Agency: {article.detected_agency}</span>}
+                </div>
+                {article.summary && (
+                  <p className="mt-3 text-xs text-text-secondary leading-relaxed">{article.summary}</p>
+                )}
+              </div>
+            ) : null;
+          })()}
+
+          {/* Agency Selection */}
+          <Select
+            label="Target Agency"
+            options={[
+              { value: '', label: 'Select an agency...' },
+              ...agencies.map(a => ({ value: a.id, label: a.name })),
+            ]}
+            value={selectedAgencyId}
+            onChange={setSelectedAgencyId}
+          />
+
+          {/* AI-Generated Draft Preview */}
+          {selectedAgencyId && (
+            <div className="rounded-lg border border-surface-border bg-surface-secondary p-4">
+              <h3 className="text-sm font-semibold text-text-primary mb-3">AI-Generated Draft</h3>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                A FOIA request will be automatically generated based on the article content and submitted to the selected agency. You can edit the request in Focus Mode after filing.
+              </p>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

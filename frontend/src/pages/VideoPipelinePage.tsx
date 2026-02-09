@@ -70,10 +70,16 @@ export function VideoPipelinePage() {
   const selectedVideo = selectedId ? videos.find((v: any) => v.id === selectedId) : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary tracking-tight">Video Pipeline</h1>
-        <Button variant="primary" onClick={handleCreate} icon={<Plus className="h-3.5 w-3.5" />}>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-3 mb-2">Video Pipeline</h1>
+          <p className="text-sm text-text-secondary">
+            Manage bodycam video processing from raw footage to YouTube publication
+          </p>
+        </div>
+        <Button variant="primary" onClick={handleCreate} icon={<Plus className="h-4 w-4" />}>
           New Video
         </Button>
       </div>

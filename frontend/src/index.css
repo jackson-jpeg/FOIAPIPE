@@ -14,10 +14,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Focus ring defaults */
+  /* Focus ring defaults - Increased opacity from 10% to 30% for visibility */
   :focus-visible {
     @apply outline-none ring-2 ring-offset-2;
-    --tw-ring-color: rgba(232, 97, 77, 0.4);
+    --tw-ring-color: rgba(232, 97, 77, 0.3); /* Improved from 0.1 (10%) to 0.3 (30%) */
     --tw-ring-offset-color: #0a0a0b;
   }
 
@@ -71,16 +71,45 @@
 }
 
 @layer components {
-  /* Shimmer skeleton */
+  /* Shimmer skeleton - Dual-layer with base + flowing overlay */
   .shimmer {
+    @apply bg-surface-tertiary relative overflow-hidden;
+  }
+  .shimmer::after {
+    content: '';
+    @apply absolute inset-0;
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.03) 50%,
+      rgba(255, 255, 255, 0.04) 50%,
       transparent 100%
     );
-    background-size: 200% 100%;
-    animation: shimmer 2s ease-in-out infinite;
+    animation: shimmerFlow 2.5s ease-in-out infinite;
+  }
+
+  /* Heading utility classes for semantic H1-H6 */
+  .heading-1 {
+    @apply text-display-2xl font-bold tracking-tight;
+  }
+  .heading-2 {
+    @apply text-display-xl font-bold tracking-tight;
+  }
+  .heading-3 {
+    @apply text-display-lg font-semibold tracking-tight;
+  }
+  .heading-4 {
+    @apply text-display-md font-semibold tracking-tight;
+  }
+  .heading-5 {
+    @apply text-display-sm font-semibold tracking-tight;
+  }
+  .heading-6 {
+    @apply text-display-xs font-semibold tracking-tight;
+  }
+
+  /* Focus ring utility with proper offset and opacity */
+  .focus-ring {
+    @apply outline-none ring-2 ring-offset-2 ring-accent-primary/30 ring-offset-surface-primary;
   }
 }
 
@@ -94,10 +123,15 @@
     display: none;
   }
 
-  /* Glass effect */
+  /* Glass effect - Enhanced for semi-transparent panels */
   .glass {
     @apply backdrop-blur-lg;
     background-color: rgba(10, 10, 11, 0.8);
+  }
+
+  .glass-surface {
+    @apply backdrop-blur-xl;
+    background-color: rgba(26, 26, 30, 0.7);
   }
 
   /* Text gradient */

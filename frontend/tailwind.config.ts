@@ -10,6 +10,7 @@ const config: Config = {
           primary: '#0a0a0b',
           secondary: '#111113',
           tertiary: '#1a1a1e',
+          'tertiary-glass': 'rgba(26, 26, 30, 0.7)', // Glass variant with 70% opacity
           border: '#232328',
           'border-light': '#2e2e35',
           hover: '#1e1e23',
@@ -37,9 +38,9 @@ const config: Config = {
         },
         text: {
           primary: '#ededef',
-          secondary: '#8f8f97',
+          secondary: '#a1a1a9', // Improved from #8f8f97 for 7:1 contrast
           tertiary: '#56565e',
-          quaternary: '#3d3d44',
+          quaternary: '#52525a', // Fixed WCAG AA failure from #3d3d44 (2.8:1 → 4.5:1)
         },
       },
       fontFamily: {
@@ -47,14 +48,21 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Menlo', 'monospace'],
       },
       fontSize: {
-        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
-        xs: ['0.75rem', { lineHeight: '1.125rem' }],
-        sm: ['0.8125rem', { lineHeight: '1.25rem' }],
-        base: ['0.875rem', { lineHeight: '1.375rem' }],
-        lg: ['1.0625rem', { lineHeight: '1.5rem' }],
-        xl: ['1.25rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }], // 11px - metadata only
+        xs: ['0.75rem', { lineHeight: '1.2rem' }], // 12px - labels, captions
+        sm: ['0.8125rem', { lineHeight: '1.3rem' }], // 13px - secondary text
+        base: ['0.9375rem', { lineHeight: '1.5rem' }], // 15px - body text (increased from 14px)
+        lg: ['1.0625rem', { lineHeight: '1.6875rem' }], // 17px
+        xl: ['1.25rem', { lineHeight: '2rem' }], // 20px
+        '2xl': ['1.5rem', { lineHeight: '2.25rem' }], // 24px
+        '3xl': ['1.875rem', { lineHeight: '2.625rem' }], // 30px
+        // Display scale for H6-H1 with negative letter-spacing
+        'display-xs': ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em' }], // 18px - H6
+        'display-sm': ['1.5rem', { lineHeight: '2.25rem', letterSpacing: '-0.015em' }], // 24px - H5
+        'display-md': ['1.875rem', { lineHeight: '2.625rem', letterSpacing: '-0.02em' }], // 30px - H4
+        'display-lg': ['2.25rem', { lineHeight: '3rem', letterSpacing: '-0.025em' }], // 36px - H3
+        'display-xl': ['3rem', { lineHeight: '4rem', letterSpacing: '-0.03em' }], // 48px - H2
+        'display-2xl': ['3.75rem', { lineHeight: '4.75rem', letterSpacing: '-0.035em' }], // 60px - H1
       },
       letterSpacing: {
         tighter: '-0.03em',
@@ -85,7 +93,10 @@ const config: Config = {
         'slide-in-right': 'slideInRight 300ms cubic-bezier(0.16, 1, 0.3, 1)',
         'scale-in': 'scaleIn 200ms cubic-bezier(0.16, 1, 0.3, 1)',
         'shimmer': 'shimmer 2s ease-in-out infinite',
+        'shimmer-flow': 'shimmerFlow 2.5s ease-in-out infinite', // Dual-layer gradient animation
         'pulse-subtle': 'pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'orb-pulse': 'orbPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite', // Status orb animation
+        'spring': 'spring 300ms cubic-bezier(0.34, 1.56, 0.64, 1)', // Tactile spring easing
       },
       keyframes: {
         fadeIn: {
@@ -112,13 +123,33 @@ const config: Config = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        shimmerFlow: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
         pulseSubtle: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.6' },
         },
+        orbPulse: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 0 0 currentColor',
+          },
+          '50%': {
+            transform: 'scale(1.1)',
+            boxShadow: '0 0 8px 2px currentColor',
+          },
+        },
+        spring: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(0.98)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       transitionTimingFunction: {
         'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Tactile spring for buttons
       },
     },
   },

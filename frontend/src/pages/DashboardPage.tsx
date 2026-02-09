@@ -3,7 +3,7 @@ import { Newspaper, FileText, Video, Eye, DollarSign } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Badge } from '@/components/ui/Badge';
+import { StatusOrb } from '@/components/ui/StatusOrb';
 import client from '@/api/client';
 import { formatRelativeTime, formatCompactNumber, formatCurrency } from '@/lib/formatters';
 
@@ -69,9 +69,17 @@ export function DashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="heading-3 mb-2">Dashboard</h1>
+        <p className="text-sm text-text-secondary">
+          Monitor your FOIA pipeline performance and recent activity
+        </p>
+      </div>
+
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="rounded-xl border border-surface-border bg-surface-secondary p-4 space-y-3">
@@ -117,7 +125,7 @@ export function DashboardPage() {
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Articles */}
         <Card title="Recent Articles">
           {loading ? (
@@ -135,22 +143,22 @@ export function DashboardPage() {
           ) : articles.length === 0 ? (
             <p className="text-xs text-text-quaternary py-4 text-center">No recent articles</p>
           ) : (
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {articles.map((article) => (
                 <div
                   key={article.id}
-                  className="group flex items-start justify-between gap-3 rounded-lg px-2.5 py-2 -mx-2.5 transition-colors hover:bg-surface-hover cursor-pointer"
+                  className="group flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-surface-hover cursor-pointer"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-text-primary group-hover:text-text-primary">
+                    <p className="truncate text-sm text-text-primary font-medium">
                       {article.title}
                     </p>
-                    <p className="mt-0.5 text-2xs text-text-quaternary">
+                    <p className="mt-1 text-xs text-text-tertiary">
                       {article.source} &middot; {formatRelativeTime(article.created_at)}
                     </p>
                   </div>
-                  <Badge
-                    variant={
+                  <StatusOrb
+                    color={
                       article.severity === 'high'
                         ? 'danger'
                         : article.severity === 'medium'
@@ -158,9 +166,8 @@ export function DashboardPage() {
                         : 'success'
                     }
                     size="sm"
-                  >
-                    {article.severity}
-                  </Badge>
+                    label={article.severity}
+                  />
                 </div>
               ))}
             </div>
@@ -184,23 +191,23 @@ export function DashboardPage() {
           ) : videos.length === 0 ? (
             <p className="text-xs text-text-quaternary py-4 text-center">No videos yet</p>
           ) : (
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {videos.map((video) => (
                 <div
                   key={video.id}
-                  className="group flex items-start justify-between gap-3 rounded-lg px-2.5 py-2 -mx-2.5 transition-colors hover:bg-surface-hover cursor-pointer"
+                  className="group flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-surface-hover cursor-pointer"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-text-primary">
+                    <p className="truncate text-sm text-text-primary font-medium">
                       {video.title}
                     </p>
-                    <p className="mt-0.5 text-2xs text-text-quaternary">
+                    <p className="mt-1 text-xs text-text-tertiary">
                       {formatCompactNumber(video.views)} views &middot;{' '}
                       {video.published_at ? formatRelativeTime(video.published_at) : 'Unpublished'}
                     </p>
                   </div>
-                  <Badge
-                    variant={
+                  <StatusOrb
+                    color={
                       video.status === 'published'
                         ? 'success'
                         : video.status === 'processing'
@@ -208,9 +215,8 @@ export function DashboardPage() {
                         : 'info'
                     }
                     size="sm"
-                  >
-                    {video.status}
-                  </Badge>
+                    label={video.status}
+                  />
                 </div>
               ))}
             </div>
@@ -235,12 +241,12 @@ export function DashboardPage() {
         ) : (
           <div className="space-y-1">
             {activities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3 rounded-lg px-2.5 py-1.5 -mx-2.5 transition-colors hover:bg-surface-hover">
-                <span className="h-1 w-1 shrink-0 rounded-full bg-accent-primary/50" />
-                <p className="flex-1 text-xs text-text-secondary">
+              <div key={activity.id} className="flex items-center gap-3 rounded-lg px-3 py-2 -mx-3 transition-colors hover:bg-surface-hover">
+                <StatusOrb color="info" size="sm" pulse={false} />
+                <p className="flex-1 text-sm text-text-secondary">
                   {activity.message}
                 </p>
-                <span className="shrink-0 text-2xs text-text-quaternary tabular-nums">
+                <span className="shrink-0 text-xs text-text-tertiary tabular-nums">
                   {formatRelativeTime(activity.timestamp)}
                 </span>
               </div>

@@ -3,6 +3,7 @@ import { Menu, Bell, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { StatusOrb } from '@/components/ui/StatusOrb';
 import { formatRelativeTime } from '@/lib/formatters';
 import {
   getNotifications,
@@ -90,28 +91,24 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
   return (
     <header
       className={cn(
-        'sticky top-0 z-20 flex h-12 items-center justify-between border-b border-surface-border glass px-5',
-        !isMobile && (sidebarCollapsed ? 'ml-[52px]' : 'ml-52')
+        'sticky top-0 z-20 flex h-14 items-center justify-between border-b border-surface-border glass px-6',
+        !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <button
           onClick={onMenuToggle}
           className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-surface-tertiary hover:text-text-secondary md:hidden"
         >
           <Menu className="h-4 w-4" />
         </button>
-        <h1 className="text-xs font-medium text-text-secondary">{title}</h1>
+        <h1 className="text-sm font-medium text-text-secondary">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Scanner status */}
-        <div className="mr-1 hidden items-center gap-1.5 sm:flex">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-pulse-subtle rounded-full bg-accent-green opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-green" />
-          </span>
-          <span className="text-2xs text-text-quaternary">Scanner active</span>
+      <div className="flex items-center gap-3">
+        {/* Scanner status with StatusOrb */}
+        <div className="mr-1 hidden items-center sm:flex">
+          <StatusOrb color="success" label="Scanner active" size="sm" />
         </div>
 
         {/* Notification Bell */}
@@ -130,11 +127,11 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
 
           {/* Notification Dropdown */}
           {open && (
-            <div className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border border-surface-border bg-surface-secondary shadow-overlay animate-slide-down">
-              <div className="flex items-center justify-between border-b border-surface-border px-3.5 py-2.5">
-                <h3 className="text-xs font-medium text-text-primary">Notifications</h3>
+            <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-surface-border bg-surface-secondary shadow-overlay animate-slide-down">
+              <div className="flex items-center justify-between border-b border-surface-border px-6 py-4">
+                <h3 className="text-sm font-semibold text-text-primary">Notifications</h3>
                 {unreadCount > 0 && (
-                  <span className="text-2xs text-text-tertiary">
+                  <span className="text-xs text-text-tertiary">
                     {unreadCount} unread
                   </span>
                 )}
@@ -199,12 +196,12 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
               </div>
 
               {notifications.length > 0 && (
-                <div className="border-t border-surface-border px-2 py-1.5">
+                <div className="border-t border-surface-border px-3 py-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleMarkAllRead}
-                    icon={<CheckCheck className="h-3 w-3" />}
+                    icon={<CheckCheck className="h-3.5 w-3.5" />}
                     className="w-full"
                     disabled={unreadCount === 0}
                   >

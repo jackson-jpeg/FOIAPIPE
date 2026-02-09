@@ -8,6 +8,7 @@ export interface Column<T> {
   label: string;
   sortable?: boolean;
   render?: (item: T) => ReactNode;
+  width?: string; // Optional column width (e.g., "w-12", "w-1/4")
 }
 
 interface TableProps<T> {
@@ -19,6 +20,7 @@ interface TableProps<T> {
   onRowClick?: (item: T) => void;
   loading?: boolean;
   emptyMessage?: string;
+  striped?: boolean; // Add striped row backgrounds
 }
 
 export function Table<T extends Record<string, unknown>>({
@@ -30,6 +32,7 @@ export function Table<T extends Record<string, unknown>>({
   onRowClick,
   loading = false,
   emptyMessage = 'No data available',
+  striped = false,
 }: TableProps<T>) {
   const renderSortIcon = (column: Column<T>) => {
     if (!column.sortable) return null;
@@ -53,7 +56,10 @@ export function Table<T extends Record<string, unknown>>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="px-4 py-2.5 text-left text-2xs font-medium text-text-tertiary"
+                  className={cn(
+                    'px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary',
+                    col.width
+                  )}
                 >
                   {col.label}
                 </th>
@@ -64,7 +70,7 @@ export function Table<T extends Record<string, unknown>>({
             {Array.from({ length: 5 }).map((_, i) => (
               <tr key={i} className="border-b border-surface-border/30">
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-2.5">
+                  <td key={col.key} className={cn('px-4 py-4', col.width)}>
                     <Skeleton variant="text" className="h-3.5 w-3/4" />
                   </td>
                 ))}
@@ -112,6 +118,7 @@ export function Table<T extends Record<string, unknown>>({
               key={idx}
               className={cn(
                 'border-b border-surface-border/30 transition-colors',
+                striped && idx % 2 === 1 && 'bg-surface-tertiary/30',
                 onRowClick && 'cursor-pointer hover:bg-surface-hover'
               )}
             >

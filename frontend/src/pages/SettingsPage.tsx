@@ -3,7 +3,7 @@ import { Save, Building2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { StatusOrb } from '@/components/ui/StatusOrb';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useToast } from '@/components/ui/Toast';
@@ -87,16 +87,22 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text-primary tracking-tight">Settings</h1>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-3 mb-2">Settings</h1>
+          <p className="text-sm text-text-secondary">
+            Configure scanner behavior, notifications, and agency management
+          </p>
+        </div>
         <Button
           variant="primary"
           onClick={handleSave}
           loading={saving}
-          icon={<Save className="h-3.5 w-3.5" />}
+          icon={<Save className="h-4 w-4" />}
         >
-          Save
+          Save Changes
         </Button>
       </div>
 
@@ -111,7 +117,7 @@ export function SettingsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Scanner Configuration */}
           <Card title="Scanner Configuration">
             <div className="space-y-4">
@@ -240,19 +246,20 @@ export function SettingsPage() {
                           {(agency as Agency & { phone?: string }).phone || '--'}
                         </td>
                         <td className="whitespace-nowrap px-5 py-2.5">
-                          <Badge
-                            variant={
+                          <StatusOrb
+                            color={
                               (agency as Agency & { active?: boolean }).active !== false
                                 ? 'success'
                                 : 'default'
                             }
                             size="sm"
-                            dot
-                          >
-                            {(agency as Agency & { active?: boolean }).active !== false
-                              ? 'Active'
-                              : 'Inactive'}
-                          </Badge>
+                            label={
+                              (agency as Agency & { active?: boolean }).active !== false
+                                ? 'Active'
+                                : 'Inactive'
+                            }
+                            pulse={false}
+                          />
                         </td>
                       </tr>
                     ))}

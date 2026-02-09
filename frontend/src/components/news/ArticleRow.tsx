@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SeverityDot } from './SeverityDot';
-import { Badge } from '@/components/ui/Badge';
+import { StatusOrb } from '@/components/ui/StatusOrb';
 import { Button } from '@/components/ui/Button';
 import { formatDateTime } from '@/lib/formatters';
 import { INCIDENT_TYPES } from '@/lib/constants';
@@ -64,20 +64,21 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
         <td className="px-3 py-2.5 text-xs text-text-secondary">{article.detected_agency || '\u2014'}</td>
         <td className="px-3 py-2.5">
           {incidentInfo && (
-            <Badge variant={incidentInfo.variant as 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default'} size="sm">
-              {incidentInfo.label}
-            </Badge>
+            <StatusOrb
+              color={incidentInfo.variant as 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default'}
+              size="sm"
+            />
           )}
         </td>
         <td className="px-3 py-2.5 text-xs text-text-tertiary tabular-nums">
           {article.published_at ? formatDateTime(article.published_at) : '\u2014'}
         </td>
         <td className="px-3 py-2.5">
-          <div className="flex items-center gap-1">
-            {article.is_reviewed && <Badge variant="success" size="sm">Reviewed</Badge>}
-            {article.is_dismissed && <Badge variant="default" size="sm">Dismissed</Badge>}
-            {article.auto_foia_filed && <Badge variant="info" size="sm">FOIA Filed</Badge>}
-            {article.auto_foia_eligible && !article.auto_foia_filed && <Badge variant="purple" size="sm">Eligible</Badge>}
+          <div className="flex items-center gap-2">
+            {article.is_reviewed && <StatusOrb color="success" size="sm" label="Reviewed" />}
+            {article.is_dismissed && <StatusOrb color="default" size="sm" label="Dismissed" />}
+            {article.auto_foia_filed && <StatusOrb color="info" size="sm" label="Filed" />}
+            {article.auto_foia_eligible && !article.auto_foia_filed && <StatusOrb color="purple" size="sm" label="Eligible" />}
           </div>
         </td>
         <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>

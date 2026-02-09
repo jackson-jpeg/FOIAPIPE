@@ -61,7 +61,7 @@ function ToastItem({
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => onRemove(toast.id), 200);
-    }, 4000);
+    }, 5000); // Increased from 4s to 5s
 
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
@@ -71,18 +71,18 @@ function ToastItem({
   return (
     <div
       className={cn(
-        'flex w-72 items-start gap-2.5 rounded-lg border border-l-2 border-surface-border bg-surface-secondary p-3 shadow-elevated transition-all duration-200 ease-out-expo',
+        'flex w-full max-w-md min-w-[20rem] items-start gap-3 rounded-lg border border-l-2 border-surface-border bg-surface-secondary p-4 shadow-elevated transition-all duration-200 ease-out-expo',
         config.accent,
         isVisible
-          ? 'translate-x-0 opacity-100'
-          : 'translate-x-8 opacity-0'
+          ? 'translate-y-0 opacity-100'
+          : 'translate-y-2 opacity-0'
       )}
     >
       <div className="shrink-0 mt-0.5">{config.icon}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-text-primary">{toast.title}</p>
+        <p className="text-sm font-medium text-text-primary">{toast.title}</p>
         {toast.message && (
-          <p className="mt-0.5 text-2xs text-text-secondary leading-relaxed">{toast.message}</p>
+          <p className="mt-1 text-xs text-text-secondary leading-relaxed">{toast.message}</p>
         )}
       </div>
       <button
@@ -92,7 +92,7 @@ function ToastItem({
         }}
         className="shrink-0 rounded p-0.5 text-text-quaternary transition-colors hover:text-text-tertiary"
       >
-        <X className="h-3 w-3" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
@@ -113,7 +113,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div className="fixed right-4 top-4 z-[100] flex flex-col gap-2">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 px-4 w-full max-w-md">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}

@@ -9,6 +9,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { NewsScannerPage } from '@/pages/NewsScannerPage';
 import { FoiaTrackerPage } from '@/pages/FoiaTrackerPage';
+import { FoiaEditorPage } from '@/pages/FoiaEditorPage';
 import { VideoPipelinePage } from '@/pages/VideoPipelinePage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
@@ -93,6 +94,7 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/news" element={<NewsScannerPage />} />
               <Route path="/foia" element={<FoiaTrackerPage />} />
+              <Route path="/foia/editor/:id" element={<FoiaEditorPage />} />
               <Route path="/videos" element={<VideoPipelinePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/settings" element={<SettingsPage />} />

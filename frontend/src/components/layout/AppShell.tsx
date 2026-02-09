@@ -39,8 +39,8 @@ export function AppShell({ children }: AppShellProps) {
 
       <main
         className={cn(
-          'px-6 py-5 transition-all duration-200 ease-out-expo',
-          !isMobile && (sidebarCollapsed ? 'ml-[52px]' : 'ml-52')
+          'px-8 py-6 transition-all duration-200 ease-out-expo',
+          !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
         )}
       >
         <div className="animate-fade-in-fast">

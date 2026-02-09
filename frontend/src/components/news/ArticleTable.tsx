@@ -1,5 +1,4 @@
 import { ArticleRow } from './ArticleRow';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Newspaper } from 'lucide-react';
 
@@ -40,10 +39,37 @@ export function ArticleTable({
 }: ArticleTableProps) {
   if (loading) {
     return (
-      <div className="space-y-1.5">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full rounded-lg" />
-        ))}
+      <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+        <table className="w-full">
+          <thead className="bg-surface-tertiary/50">
+            <tr>
+              <th className="px-4 py-4 w-10"></th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Sev</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Headline</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Source</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Agency</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Type</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Published</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Status</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary w-20">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <tr key={i} className="border-b border-surface-border/30">
+                <td className="px-4 py-4"><div className="shimmer h-3.5 w-3.5 rounded" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-2 w-2 rounded-full" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-3.5 w-3/4 rounded" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-3.5 w-20 rounded" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-3.5 w-24 rounded" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-5 w-16 rounded-full" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-3.5 w-28 rounded" /></td>
+                <td className="px-4 py-4"><div className="shimmer h-5 w-20 rounded-full" /></td>
+                <td className="px-4 py-4"><div className="flex gap-1"><div className="shimmer h-8 w-8 rounded" /><div className="shimmer h-8 w-8 rounded" /></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }
