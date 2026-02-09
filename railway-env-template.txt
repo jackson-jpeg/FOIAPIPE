@@ -1,0 +1,53 @@
+# Railway Environment Variables Template
+# Copy these to Railway Dashboard → api service → Variables tab
+# Replace <values> with your actual credentials
+
+# ===== REQUIRED: Database & Redis =====
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}
+
+# ===== REQUIRED: Authentication =====
+SECRET_KEY=<run ./generate-secrets.sh to generate>
+ADMIN_PASSWORD=<choose-strong-password>
+
+# ===== CRITICAL: CORS =====
+CORS_ORIGINS=["https://foiaarchive.com","https://www.foiaarchive.com"]
+
+# ===== REQUIRED: Email (iCloud Custom Domain) =====
+SMTP_HOST=smtp.mail.me.com
+SMTP_PORT=587
+SMTP_USER=recordsrequest@foiaarchive.com
+SMTP_PASSWORD=<icloud-app-specific-password>
+FROM_EMAIL=recordsrequest@foiaarchive.com
+IMAP_HOST=imap.mail.me.com
+IMAP_PORT=993
+IMAP_USER=recordsrequest@foiaarchive.com
+IMAP_PASSWORD=<same-as-smtp-password>
+
+# ===== REQUIRED: S3/R2 Storage =====
+S3_ENDPOINT=<your-r2-endpoint-or-empty-for-aws>
+S3_ACCESS_KEY=<your-access-key>
+S3_SECRET_KEY=<your-secret-key>
+S3_BUCKET_NAME=<your-bucket-name>
+S3_REGION=us-east-1
+
+# ===== OPTIONAL: AI Classification =====
+ANTHROPIC_API_KEY=<your-claude-api-key>
+
+# ===== OPTIONAL: YouTube Analytics =====
+YOUTUBE_CLIENT_ID=<oauth-client-id>
+YOUTUBE_CLIENT_SECRET=<oauth-secret>
+YOUTUBE_REFRESH_TOKEN=<refresh-token>
+
+# ===== OPTIONAL: SMS Notifications =====
+TWILIO_ACCOUNT_SID=<twilio-sid>
+TWILIO_AUTH_TOKEN=<twilio-token>
+TWILIO_FROM_NUMBER=<twilio-number>
+NOTIFICATION_PHONE=<your-phone>
+
+# ===== Notes =====
+# 1. DATABASE_URL and REDIS_URL: Use ${{Postgres.DATABASE_URL}} syntax to reference Railway services
+# 2. CORS_ORIGINS: MUST match your Vercel domain exactly (no trailing slashes!)
+# 3. Email: Generate app-specific password at appleid.apple.com
+# 4. S3: Cloudflare R2 recommended (free tier available)
+# 5. Optional vars: App works without these, features gracefully degrade
