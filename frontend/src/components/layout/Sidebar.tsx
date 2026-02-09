@@ -71,12 +71,10 @@ export function Sidebar({
               )
             }
           >
-            {({ isActive }) => (
-              <>
-                <item.icon className="shrink-0" size={18} strokeWidth={1.75} />
-                {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
-              </>
-            )}
+            <>
+              <item.icon className="shrink-0" size={18} strokeWidth={1.75} />
+              {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+            </>
           </NavLink>
         ))}
       </nav>
