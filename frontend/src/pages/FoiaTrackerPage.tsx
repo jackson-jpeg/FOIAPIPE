@@ -48,7 +48,7 @@ export function FoiaTrackerPage() {
       loadData();
     } catch (error: any) {
       const detail = error.response?.data?.detail || 'An unexpected error occurred';
-      addToast({ type: 'error', title: 'Submit failed', description: detail });
+      addToast({ type: 'error', title: 'Submit failed', message: detail });
     }
   };
 
@@ -59,7 +59,7 @@ export function FoiaTrackerPage() {
       loadData();
     } catch (error: any) {
       const detail = error.response?.data?.detail || 'An unexpected error occurred';
-      addToast({ type: 'error', title: 'Update failed', description: detail });
+      addToast({ type: 'error', title: 'Update failed', message: detail });
     }
   };
 
@@ -69,7 +69,7 @@ export function FoiaTrackerPage() {
       addToast({ type: 'success', title: 'Notes saved' });
     } catch (error: any) {
       const detail = error.response?.data?.detail || 'An unexpected error occurred';
-      addToast({ type: 'error', title: 'Failed to save notes', description: detail });
+      addToast({ type: 'error', title: 'Failed to save notes', message: detail });
     }
   };
 
