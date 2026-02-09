@@ -16,14 +16,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.news_article import NewsArticle
 from app.models.scan_log import ScanLog, ScanStatus, ScanType
 
-# Tampa Bay area RSS feeds
+# Tampa Bay area RSS feeds — validated 2026-02-09
 RSS_FEEDS = [
-    {"url": "https://www.tampabay.com/feeds/rss/crime/", "source": "Tampa Bay Times"},
-    {"url": "https://www.wfla.com/feed/", "source": "WFLA"},
-    {"url": "https://www.fox13news.com/feeds/rss/fox-13-news-tampa-bay.xml", "source": "Fox 13"},
-    {"url": "https://www.baynews9.com/feeds/rss", "source": "Bay News 9"},
-    {"url": "https://www.wtsp.com/feeds/rss/local/", "source": "10 Tampa Bay"},
-    {"url": "https://patch.com/feeds/tampa/rss", "source": "Patch Tampa"},
+    {"url": "https://www.wfla.com/news/crime/feed/", "source": "WFLA"},
+    {"url": "https://www.wfla.com/news/local-news/feed/", "source": "WFLA Local"},
+    {"url": "https://www.fox13news.com/rss/category/local-news", "source": "Fox 13"},
+    {"url": "https://www.abcactionnews.com/news/crime.rss", "source": "ABC Action News"},
+    {"url": "https://www.abcactionnews.com/news/local-news.rss", "source": "ABC Action News Local"},
+    {
+        "url": (
+            "https://news.google.com/rss/search?"
+            "q=Tampa+Bay+police+%22officer-involved%22+OR+%22shooting%22+"
+            "OR+%22arrest%22+OR+%22bodycam%22+OR+%22use+of+force%22"
+            "&hl=en-US&gl=US&ceid=US:en"
+        ),
+        "source": "Google News",
+    },
 ]
 
 DEDUP_SIMILARITY_THRESHOLD = 85
@@ -35,7 +43,11 @@ async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> di
     stats: dict = {"found": 0, "new": 0, "duplicate": 0, "errors": 0}
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(feed_url, follow_redirects=True)
+            response = await client.get(
+                feed_url,
+                follow_redirects=True,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAPipe/1.0)"},
+            )
             response.raise_for_status()
 
         feed = feedparser.parse(response.text)
@@ -85,19 +97,29 @@ async def scan_all_rss(db: AsyncSession) -> dict:
     await db.flush()
 
     total: dict = {"found": 0, "new": 0, "duplicate": 0, "errors": 0}
+    error_messages: list[str] = []
 
-    for feed in RSS_FEEDS:
-        stats = await scan_rss_feed(feed["url"], feed["source"], db)
-        total["found"] += stats["found"]
-        total["new"] += stats["new"]
-        total["duplicate"] += stats["duplicate"]
-        total["errors"] += stats["errors"]
+    try:
+        for feed in RSS_FEEDS:
+            stats = await scan_rss_feed(feed["url"], feed["source"], db)
+            total["found"] += stats["found"]
+            total["new"] += stats["new"]
+            total["duplicate"] += stats["duplicate"]
+            total["errors"] += stats["errors"]
+            if "error_message" in stats:
+                error_messages.append(f"{feed['source']}: {stats['error_message']}")
 
-    log.status = ScanStatus.completed
+        log.status = ScanStatus.completed
+    except Exception as exc:
+        log.status = ScanStatus.failed
+        error_messages.append(f"Fatal: {exc}")
+
     log.completed_at = datetime.now(timezone.utc)
     log.articles_found = total["found"]
     log.articles_new = total["new"]
     log.articles_duplicate = total["duplicate"]
+    if error_messages:
+        log.error_message = "; ".join(error_messages)
     if log.started_at:
         log.duration_seconds = (log.completed_at - log.started_at).total_seconds()
 

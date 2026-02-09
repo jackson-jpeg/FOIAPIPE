@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app.tasks.celery_app import celery_app
 
@@ -10,22 +10,48 @@ logger = logging.getLogger(__name__)
 
 
 def _run_async(coro):
-    """Helper to run async code in sync Celery tasks."""
+    """Run an async coroutine in a new event loop.
+
+    Each Celery task invocation gets a fresh loop to avoid conflicts
+    with the main asyncio loop or other tasks.
+    """
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         return loop.run_until_complete(coro)
     finally:
         loop.close()
 
 
+async def _check_scan_running(db) -> bool:
+    """Return True if an RSS scan is already running (idempotency guard)."""
+    from sqlalchemy import select
+    from app.models.scan_log import ScanLog, ScanStatus, ScanType
+
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    result = await db.execute(
+        select(ScanLog).where(
+            ScanLog.scan_type == ScanType.rss,
+            ScanLog.status == ScanStatus.running,
+            ScanLog.started_at >= cutoff,
+        ).limit(1)
+    )
+    return result.scalar_one_or_none() is not None
+
+
 async def _scan_rss_async():
+    from sqlalchemy import select
     from app.database import async_session_factory
     from app.models.news_article import NewsArticle
     from app.services.article_classifier import classify_and_score_article
     from app.services.news_scanner import scan_all_rss
-    from sqlalchemy import select
 
     async with async_session_factory() as db:
+        # Idempotency: skip if a scan is already in progress
+        if await _check_scan_running(db):
+            logger.info("RSS scan already running, skipping")
+            return {"skipped": True, "reason": "scan_already_running"}
+
         result = await scan_all_rss(db)
 
         # Classify new unscored articles
@@ -41,18 +67,18 @@ async def _scan_rss_async():
             try:
                 await classify_and_score_article(article, db)
             except Exception as e:
-                logger.error(f"Classification error for article {article.id}: {e}")
+                logger.error("Classification error for article %s: %s", article.id, e)
 
         await db.commit()
         return result
 
 
 async def _scan_scrape_async():
+    from sqlalchemy import select
     from app.database import async_session_factory
     from app.models.news_article import NewsArticle
     from app.services.article_classifier import classify_and_score_article
     from app.services.news_scanner import scrape_article
-    from sqlalchemy import select
 
     async with async_session_factory() as db:
         # Find articles without body text
@@ -76,7 +102,7 @@ async def _scan_scrape_async():
                 await classify_and_score_article(article, db)
                 scraped_count += 1
             except Exception as e:
-                logger.error(f"Scrape error for {article.url}: {e}")
+                logger.error("Scrape error for %s: %s", article.url, e)
 
         await db.commit()
         return {"scraped": scraped_count}
@@ -88,10 +114,10 @@ def scan_news_rss(self):
     logger.info("Starting RSS scan")
     try:
         result = _run_async(_scan_rss_async())
-        logger.info(f"RSS scan complete: {result}")
+        logger.info("RSS scan complete: %s", result)
         return result
     except Exception as exc:
-        logger.error(f"RSS scan failed: {exc}")
+        logger.error("RSS scan failed: %s", exc)
         raise self.retry(exc=exc, countdown=60)
 
 
@@ -101,8 +127,8 @@ def scan_news_scrape(self):
     logger.info("Starting article scrape")
     try:
         result = _run_async(_scan_scrape_async())
-        logger.info(f"Scrape complete: {result}")
+        logger.info("Scrape complete: %s", result)
         return result
     except Exception as exc:
-        logger.error(f"Scrape failed: {exc}")
+        logger.error("Scrape failed: %s", exc)
         raise self.retry(exc=exc, countdown=120)
