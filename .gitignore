@@ -43,6 +43,9 @@ yarn-error.log*
 # ── Build output ──────────────────────────────────────────────────────────────
 frontend/dist/
 frontend/build/
+*.tsbuildinfo
+*.d.ts
+!frontend/src/vite-env.d.ts
 
 # ── Test / Coverage ───────────────────────────────────────────────────────────
 .coverage
@@ -63,3 +66,5 @@ backend/alembic/versions/__pycache__/
 *.seed
 *.bak
 *.tmp
+.vercel
+.env*.local
