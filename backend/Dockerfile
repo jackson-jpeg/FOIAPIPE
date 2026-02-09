@@ -17,4 +17,4 @@ ENV PYTHONPATH=/app
 RUN chmod +x start.sh
 
 # Smart startup script that detects service type from RAILWAY_SERVICE_NAME
-CMD ["./start.sh"]
+CMD ["sh", "./start.sh"]
