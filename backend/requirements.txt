@@ -23,6 +23,7 @@ anthropic==0.34.2
 structlog==24.4.0
 uuid7==0.1.0
 Pillow==10.4.0
+tenacity==8.2.3
 
 # Testing
 pytest==8.3.3

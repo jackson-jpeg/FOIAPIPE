@@ -41,6 +41,18 @@ const config: Config = {
           'purple-subtle': 'rgba(124, 58, 237, 0.08)',
           'purple-muted': 'rgba(124, 58, 237, 0.15)',
         },
+        chart: {
+          revenue: '#059669',        // accent.green
+          views: '#2563eb',          // accent.blue
+          grid: '#e6e4e2',          // surface.border
+          axis: '#9a9894',          // text.tertiary
+          tooltip: {
+            bg: '#ffffff',          // surface.secondary
+            border: '#e6e4e2',      // surface.border
+            text: '#1a1816',        // text.primary
+            label: '#9a9894',       // text.tertiary
+          }
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.models.agency import Agency
 from app.models.foia_request import FoiaPriority, FoiaRequest, FoiaStatus
+from app.models.foia_status_change import FoiaStatusChange
 from app.models.news_article import NewsArticle
 from app.schemas.foia import (
     FoiaDeadline,
@@ -381,17 +382,38 @@ async def submit_foia_request(
             detail=f"Failed to send email: {result['message']}",
         )
 
-    # Upload PDF to S3 (non-critical — email is the priority)
+    # Upload PDF to S3 (CRITICAL — must succeed for audit trail)
+    # Retry logic with exponential backoff (3 attempts, 2-10s wait)
     storage_key = f"foia/{foia.case_number}.pdf"
     try:
         from app.services.storage import upload_file
         upload_file(pdf_bytes, storage_key, content_type="application/pdf")
+        logger.info(f"S3 upload successful for {storage_key}")
     except Exception as e:
-        logger.warning(f"S3 upload failed for {storage_key}: {e}")
+        logger.error(f"S3 upload failed for {storage_key} after retries: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to store FOIA PDF: {str(e)}",
+        )
 
     # Calculate due date from agency response time (fallback: 30 days)
     response_days = agency.avg_response_days or 30
     now = datetime.now(timezone.utc)
+
+    # Record status change for audit trail (BEFORE updating status)
+    audit_entry = FoiaStatusChange(
+        foia_request_id=foia.id,
+        from_status=foia.status.value,
+        to_status=FoiaStatus.submitted.value,
+        changed_by=current_user,
+        reason="Submitted via email",
+        metadata={
+            "agency_email": agency.foia_email,
+            "case_number": foia.case_number,
+            "storage_key": storage_key,
+        },
+    )
+    db.add(audit_entry)
 
     # Update FOIA record
     foia.status = FoiaStatus.submitted

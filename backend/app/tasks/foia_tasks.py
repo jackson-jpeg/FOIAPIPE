@@ -127,20 +127,65 @@ async def _check_deadlines_async():
 
 
 async def _auto_submit_async(article_id: str):
-    from sqlalchemy import select
+    from sqlalchemy import func, select
 
     from app.database import async_session_factory
     from app.models.agency import Agency
+    from app.models.app_setting import AppSetting
     from app.models.foia_request import FoiaRequest, FoiaStatus
+    from app.models.foia_status_change import FoiaStatusChange
     from app.models.news_article import NewsArticle
+    from app.models.notification import Notification, NotificationType
     from app.services.email_sender import send_foia_email
     from app.services.foia_generator import (
         assign_case_number,
         generate_pdf,
         generate_request_text,
     )
+    from app.services.storage import upload_file
 
     async with async_session_factory() as db:
+        # ── Safety Check 1: Auto-submit enabled? ──────────────────────────
+        auto_submit_setting = (
+            await db.execute(
+                select(AppSetting).where(AppSetting.key == "auto_submit_enabled")
+            )
+        ).scalar_one_or_none()
+
+        if not auto_submit_setting or auto_submit_setting.value != "true":
+            logger.info("Auto-submit disabled in settings, skipping")
+            return {"skipped": True, "reason": "Auto-submit disabled"}
+
+        # ── Safety Check 2: Daily quota ───────────────────────────────────
+        max_per_day_setting = (
+            await db.execute(
+                select(AppSetting).where(AppSetting.key == "max_auto_submits_per_day")
+            )
+        ).scalar_one_or_none()
+
+        max_per_day = int(max_per_day_setting.value) if max_per_day_setting else 5
+        today_start = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        today_count = (
+            await db.execute(
+                select(func.count(FoiaRequest.id))
+                .where(FoiaRequest.is_auto_submitted == True)
+                .where(FoiaRequest.submitted_at >= today_start)
+            )
+        ).scalar_one()
+
+        if today_count >= max_per_day:
+            logger.warning(
+                f"Daily auto-submit quota reached ({today_count}/{max_per_day})"
+            )
+            return {
+                "skipped": True,
+                "reason": f"Daily quota reached ({today_count}/{max_per_day})",
+            }
+
+        # ── Safety Check 3: Idempotency (already filed?) ──────────────────
         article = (
             await db.execute(
                 select(NewsArticle).where(NewsArticle.id == article_id)
@@ -149,6 +194,24 @@ async def _auto_submit_async(article_id: str):
 
         if not article or not article.detected_agency:
             return {"error": "Article not found or no agency detected"}
+
+        existing_foia = (
+            await db.execute(
+                select(FoiaRequest).where(
+                    FoiaRequest.news_article_id == article.id
+                )
+            )
+        ).scalar_one_or_none()
+
+        if existing_foia:
+            logger.info(
+                f"FOIA already filed for article {article.id} (case {existing_foia.case_number})"
+            )
+            return {
+                "skipped": True,
+                "reason": "FOIA already filed",
+                "case_number": existing_foia.case_number,
+            }
 
         agency = (
             await db.execute(
@@ -173,33 +236,87 @@ async def _auto_submit_async(article_id: str):
         response_days = agency.avg_response_days or 30
         now = datetime.now(timezone.utc)
 
+        # Create FOIA request (initially as "ready", upgrade to "submitted" after success)
         foia = FoiaRequest(
             case_number=case_number,
             agency_id=agency.id,
             news_article_id=article.id,
-            status=FoiaStatus.submitted,
+            status=FoiaStatus.ready,
             request_text=request_text,
-            submitted_at=now,
-            due_date=now + timedelta(days=response_days),
             is_auto_submitted=True,
         )
         db.add(foia)
+        await db.flush()  # Get ID for audit trail
 
-        # Generate and send
-        pdf_bytes = generate_pdf(request_text, case_number)
-        subject = f"Public Records Request - {case_number}"
-        await send_foia_email(
-            to_email=agency.foia_email,
-            subject=subject,
-            body_text=request_text,
-            pdf_bytes=pdf_bytes,
-            pdf_filename=f"{case_number}.pdf",
-        )
+        try:
+            # Generate and send
+            pdf_bytes = generate_pdf(request_text, case_number)
+            subject = f"Public Records Request - {case_number}"
 
-        article.auto_foia_filed = True
-        await db.commit()
+            # Send email
+            email_result = await send_foia_email(
+                to_email=agency.foia_email,
+                subject=subject,
+                body_text=request_text,
+                pdf_bytes=pdf_bytes,
+                pdf_filename=f"{case_number}.pdf",
+            )
 
-        return {"case_number": case_number, "agency": agency.name}
+            if not email_result.get("success"):
+                raise Exception(f"Email failed: {email_result.get('message')}")
+
+            # Upload PDF to S3 (with retry logic)
+            storage_key = f"foia/{case_number}.pdf"
+            upload_file(pdf_bytes, storage_key, content_type="application/pdf")
+
+            # Record status change audit trail
+            audit_entry = FoiaStatusChange(
+                foia_request_id=foia.id,
+                from_status=FoiaStatus.ready.value,
+                to_status=FoiaStatus.submitted.value,
+                changed_by="auto_submit_system",
+                reason=f"Auto-submitted from article: {article.headline}",
+                metadata={
+                    "article_id": str(article.id),
+                    "agency_email": agency.foia_email,
+                    "storage_key": storage_key,
+                },
+            )
+            db.add(audit_entry)
+
+            # Update FOIA status
+            foia.status = FoiaStatus.submitted
+            foia.submitted_at = now
+            foia.due_date = now + timedelta(days=response_days)
+            foia.pdf_storage_key = storage_key
+
+            article.auto_foia_filed = True
+            await db.commit()
+
+            logger.info(
+                f"Auto-submitted FOIA {case_number} for article {article.id}"
+            )
+            return {"case_number": case_number, "agency": agency.name}
+
+        except Exception as e:
+            logger.error(f"Auto-submit failed for article {article.id}: {e}")
+
+            # Create error notification for manual review
+            notification = Notification(
+                type=NotificationType.error,
+                title="Auto-Submit Failed",
+                message=f"Failed to auto-submit FOIA for article: {article.headline}. Error: {str(e)}",
+                metadata={
+                    "article_id": str(article.id),
+                    "case_number": case_number,
+                    "agency": agency.name,
+                    "error": str(e),
+                },
+            )
+            db.add(notification)
+            await db.commit()
+
+            return {"error": str(e), "case_number": case_number}
 
 
 @celery_app.task(name="app.tasks.foia_tasks.check_foia_inbox", bind=True, max_retries=3)

@@ -5,7 +5,7 @@ import { ViewsChart } from '@/components/analytics/ViewsChart';
 import { TopVideosTable } from '@/components/analytics/TopVideosTable';
 import { FunnelChart } from '@/components/analytics/FunnelChart';
 import { StatCard } from '@/components/ui/StatCard';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
 import { DollarSign, Eye, Users, TrendingUp } from 'lucide-react';
 import * as analyticsApi from '@/api/analytics';
 
@@ -59,7 +59,7 @@ export function AnalyticsPage() {
       {/* Stat Cards */}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+          {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
         </div>
       ) : overview ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

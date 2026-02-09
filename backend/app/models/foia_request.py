@@ -24,6 +24,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.agency import Agency
+    from app.models.foia_status_change import FoiaStatusChange
     from app.models.news_article import NewsArticle
     from app.models.video import Video
 
@@ -120,6 +121,12 @@ class FoiaRequest(Base):
         "Video",
         back_populates="foia_request",
         lazy="selectin",
+    )
+    status_changes: Mapped[list[FoiaStatusChange]] = relationship(
+        "FoiaStatusChange",
+        back_populates="foia_request",
+        lazy="selectin",
+        order_by="FoiaStatusChange.created_at",
     )
 
     def __repr__(self) -> str:

@@ -3,6 +3,8 @@ import logging
 from typing import Optional
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from app.config import settings
 
@@ -27,8 +29,18 @@ def _get_s3_client():
     return boto3.client(**kwargs)
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type(ClientError),
+    reraise=True,
+)
 def upload_file(file_bytes: bytes, key: str, content_type: str = "application/octet-stream") -> str:
-    """Upload file to S3/R2 and return the key."""
+    """Upload file to S3/R2 with retry logic (3 attempts, exponential backoff 2-10s).
+
+    Raises:
+        ClientError: If S3 upload fails after 3 attempts.
+    """
     client = _get_s3_client()
     client.put_object(
         Bucket=settings.S3_BUCKET_NAME,

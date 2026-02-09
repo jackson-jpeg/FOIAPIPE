@@ -184,9 +184,10 @@ Sincerely,`
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Request title..."
             className={cn(
-              'w-full bg-transparent text-2xl font-semibold text-text-primary placeholder:text-text-quaternary',
+              'w-full bg-transparent text-display-sm font-semibold text-text-primary placeholder:text-text-quaternary',
               'border-none outline-none focus:ring-0',
-              'mb-8'
+              'mb-8',
+              'opacity-90 focus:opacity-100 transition-opacity duration-150'
             )}
           />
 
@@ -198,11 +199,9 @@ Sincerely,`
             className={cn(
               'w-full min-h-[500px] bg-transparent text-base text-text-primary placeholder:text-text-quaternary',
               'border-none outline-none focus:ring-0 resize-none',
-              'leading-[1.8]'
+              'leading-[1.8]',
+              'opacity-90 focus:opacity-100 transition-opacity duration-150'
             )}
-            style={{
-              lineHeight: '1.8',
-            }}
           />
 
           {/* Character and Word Count */}
