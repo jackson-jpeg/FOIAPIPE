@@ -1,5 +1,6 @@
 [build]
-# Railway auto-detects Dockerfiles per service
+dockerfilePath = "backend/Dockerfile"
+watchPatterns = ["backend/**"]
 
 [deploy]
 healthcheckPath = "/api/health"
