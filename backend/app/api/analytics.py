@@ -408,3 +408,137 @@ def _calc_trend(current: float, previous: float) -> dict:
         return {"value": 0, "is_positive": True}
     change = ((current - previous) / previous) * 100
     return {"value": round(abs(change), 1), "is_positive": change >= 0}
+
+
+@router.get("/foia/performance")
+async def foia_performance_by_agency(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Agency performance metrics: response rate, avg time, cost, denial rate."""
+    from app.models.agency import Agency
+    from app.models.foia_request import FoiaStatus
+
+    result = await db.execute(
+        select(
+            Agency.name,
+            func.count(FoiaRequest.id).label("total_requests"),
+            func.count(case((FoiaRequest.status == FoiaStatus.fulfilled, 1))).label("fulfilled"),
+            func.count(case((FoiaRequest.status == FoiaStatus.denied, 1))).label("denied"),
+            func.avg(
+                func.extract("epoch", FoiaRequest.fulfilled_at - FoiaRequest.submitted_at) / 86400
+            ).label("avg_days"),
+            func.coalesce(func.avg(FoiaRequest.actual_cost), 0).label("avg_cost"),
+        )
+        .join(FoiaRequest, FoiaRequest.agency_id == Agency.id, isouter=True)
+        .where(FoiaRequest.id.isnot(None))
+        .group_by(Agency.name)
+        .order_by(func.count(FoiaRequest.id).desc())
+    )
+
+    return [
+        {
+            "agency_name": row.name,
+            "total_requests": row.total_requests,
+            "fulfilled": row.fulfilled,
+            "denied": row.denied,
+            "response_rate": round((row.fulfilled / max(row.total_requests, 1)) * 100, 1),
+            "denial_rate": round((row.denied / max(row.total_requests, 1)) * 100, 1),
+            "avg_days_to_fulfill": round(float(row.avg_days or 0), 1),
+            "avg_cost": round(float(row.avg_cost), 2),
+        }
+        for row in result.all()
+    ]
+
+
+@router.get("/videos/profitability")
+async def video_profitability_ranking(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Rank videos by net profit (revenue - FOIA cost)."""
+    result = await db.execute(
+        select(
+            Video.id,
+            Video.title,
+            Video.published_at,
+            FoiaRequest.actual_cost,
+            func.coalesce(func.sum(VideoAnalytics.estimated_revenue), 0).label("revenue"),
+        )
+        .join(FoiaRequest, Video.foia_request_id == FoiaRequest.id, isouter=True)
+        .join(VideoAnalytics, VideoAnalytics.video_id == Video.id, isouter=True)
+        .where(Video.status == VideoStatus.published)
+        .group_by(Video.id, Video.title, Video.published_at, FoiaRequest.actual_cost)
+        .order_by((func.coalesce(func.sum(VideoAnalytics.estimated_revenue), 0) - func.coalesce(FoiaRequest.actual_cost, 0)).desc())
+        .limit(50)
+    )
+
+    return [
+        {
+            "video_id": str(row.id),
+            "title": row.title,
+            "published_at": str(row.published_at) if row.published_at else None,
+            "foia_cost": round(float(row.actual_cost or 0), 2),
+            "revenue": round(float(row.revenue), 2),
+            "net_profit": round(float(row.revenue) - float(row.actual_cost or 0), 2),
+            "roi_percent": round(
+                ((float(row.revenue) - float(row.actual_cost or 0)) / max(float(row.actual_cost or 1), 0.01)) * 100,
+                1
+            ) if row.actual_cost else None,
+        }
+        for row in result.all()
+    ]
+
+
+@router.get("/revenue/break-even")
+async def break_even_analysis(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Calculate break-even metrics and runway."""
+    # Get total revenue from video analytics
+    total_revenue_result = await db.execute(
+        select(func.coalesce(func.sum(VideoAnalytics.estimated_revenue), 0))
+    )
+    total_revenue = float(total_revenue_result.scalar() or 0)
+
+    # Get total expenses from revenue transactions
+    expenses_result = await db.execute(
+        select(func.coalesce(func.sum(RevenueTransaction.amount), 0))
+        .where(RevenueTransaction.is_income == False)
+    )
+    total_expenses = float(expenses_result.scalar() or 0)
+
+    # Get FOIA costs specifically
+    foia_costs_result = await db.execute(
+        select(func.coalesce(func.sum(FoiaRequest.actual_cost), 0))
+    )
+    foia_costs = float(foia_costs_result.scalar() or 0)
+
+    # Count profitable vs unprofitable videos
+    profitable_videos = await db.execute(
+        select(func.count(Video.id.distinct()))
+        .join(VideoAnalytics, VideoAnalytics.video_id == Video.id)
+        .join(FoiaRequest, Video.foia_request_id == FoiaRequest.id, isouter=True)
+        .where(
+            func.coalesce(VideoAnalytics.estimated_revenue, 0) > func.coalesce(FoiaRequest.actual_cost, 0)
+        )
+    )
+    profitable_count = profitable_videos.scalar() or 0
+
+    total_videos = (await db.execute(
+        select(func.count(Video.id)).where(Video.status == VideoStatus.published)
+    )).scalar() or 0
+
+    return {
+        "total_revenue": round(total_revenue, 2),
+        "total_expenses": round(total_expenses, 2),
+        "foia_costs": round(foia_costs, 2),
+        "net_profit": round(total_revenue - total_expenses, 2),
+        "profitable_videos": profitable_count,
+        "total_videos": total_videos,
+        "profitability_rate": round((profitable_count / max(total_videos, 1)) * 100, 1),
+        "avg_cost_per_video": round(foia_costs / max(total_videos, 1), 2),
+        "avg_revenue_per_video": round(total_revenue / max(total_videos, 1), 2),
+        "break_even_at": "N/A" if total_revenue >= total_expenses else f"Need ${round(total_expenses - total_revenue, 2)} more revenue",
+    }
