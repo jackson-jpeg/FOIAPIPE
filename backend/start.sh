@@ -1,4 +1,5 @@
 #!/bin/bash
+# Force rebuild to pick up railway.toml changes (no healthcheck for celery services)
 
 echo "=== FOIAPIPE START SCRIPT ==="
 echo "RAILWAY_SERVICE_NAME: $RAILWAY_SERVICE_NAME"
