@@ -3,6 +3,7 @@
 from app.models.agency import Agency
 from app.models.agency_contact import AgencyContact, ContactType
 from app.models.app_setting import AppSetting
+from app.models.audit_log import AuditAction, AuditLog
 from app.models.base import Base
 from app.models.foia_request import FoiaPriority, FoiaRequest, FoiaStatus
 from app.models.foia_status_change import FoiaStatusChange
@@ -20,6 +21,7 @@ __all__ = [
     "Agency",
     "AgencyContact",
     "AppSetting",
+    "AuditLog",
     "Base",
     "FoiaRequest",
     "FoiaStatusChange",
@@ -32,6 +34,7 @@ __all__ = [
     "VideoAnalytics",
     "VideoStatusChange",
     # Enums
+    "AuditAction",
     "ContactType",
     "FoiaPriority",
     "FoiaStatus",
