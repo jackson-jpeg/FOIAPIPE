@@ -29,8 +29,18 @@ export function FoiaTrackerPage() {
 
   const loadData = useCallback(() => {
     fetchRequests({ status: statusFilter || undefined, search: search || undefined, sort_by: sortBy, sort_dir: sortDir, page, page_size: 25 });
-    foiaApi.getStatusSummary().then(setStatusSummary).catch(() => {});
-    foiaApi.getDeadlines().then(setDeadlines).catch(() => {});
+    foiaApi.getStatusSummary()
+      .then(setStatusSummary)
+      .catch((error) => {
+        console.error('Failed to load status summary:', error);
+        setStatusSummary({});
+      });
+    foiaApi.getDeadlines()
+      .then(setDeadlines)
+      .catch((error) => {
+        console.error('Failed to load deadlines:', error);
+        setDeadlines([]);
+      });
   }, [statusFilter, search, sortBy, sortDir, page, fetchRequests]);
 
   useEffect(() => { loadData(); }, [loadData]);

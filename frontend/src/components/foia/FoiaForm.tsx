@@ -3,6 +3,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import * as agenciesApi from '@/api/agencies';
+import type { Agency } from '@/types';
 
 interface FoiaFormProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface FoiaFormProps {
 }
 
 export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
-  const [agencies, setAgencies] = useState<any[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [agencyId, setAgencyId] = useState('');
   const [requestText, setRequestText] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -19,7 +20,12 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
 
   useEffect(() => {
     if (isOpen) {
-      agenciesApi.getAgencies().then((data) => setAgencies(data.items || data || [])).catch(() => {});
+      agenciesApi.getAgencies()
+        .then((data) => setAgencies(data.items || data || []))
+        .catch((error) => {
+          console.error('Failed to load agencies:', error);
+          setAgencies([]);
+        });
     }
   }, [isOpen]);
 

@@ -61,7 +61,16 @@ export function NewsScannerPage() {
   }, [loadArticles]);
 
   useEffect(() => {
-    newsApi.getScanStatus().then(setScanStatus).catch(() => {});
+    newsApi.getScanStatus().then(setScanStatus).catch((error) => {
+      console.warn('Failed to load scan status:', error);
+      // Set default values to prevent UI from being in undefined state
+      setScanStatus({
+        is_scanning: false,
+        last_scan_at: null,
+        next_scan_at: null,
+        articles_found_last_scan: 0,
+      });
+    });
   }, []);
 
   const handleScanNow = async () => {

@@ -68,7 +68,7 @@ export function VideoPipelinePage() {
     }
   };
 
-  const selectedVideo = selectedId ? videos.find((v: any) => v.id === selectedId) : null;
+  const selectedVideo = selectedId ? videos.find((v: any) => v.id === selectedId) || null : null;
 
   return (
     <div className="space-y-6">

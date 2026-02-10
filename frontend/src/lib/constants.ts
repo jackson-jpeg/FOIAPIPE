@@ -32,7 +32,9 @@ export const FOIA_STATUSES: Record<string, { label: string; color: string; varia
   closed: { label: 'Closed', color: '#64748b', variant: 'default' },
 };
 
-export const VIDEO_STATUSES: Record<string, { label: string; color: string; variant: string }> = {
+type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default';
+
+export const VIDEO_STATUSES: Record<string, { label: string; color: string; variant: BadgeVariant }> = {
   raw_received: { label: 'Raw Received', color: '#64748b', variant: 'default' },
   editing: { label: 'Editing', color: '#f59e0b', variant: 'warning' },
   ai_processing: { label: 'AI Processing', color: '#a855f7', variant: 'purple' },

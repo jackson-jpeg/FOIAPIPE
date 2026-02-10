@@ -133,8 +133,8 @@ async def dashboard_stats(
             await r.set(DASHBOARD_STATS_CACHE_KEY, json.dumps(result), ex=DASHBOARD_STATS_TTL)
         finally:
             await r.aclose()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Failed to cache dashboard stats in Redis: {e}")
 
     return result
 

@@ -6,7 +6,7 @@ interface VideoStore {
   videos: Video[];
   loading: boolean;
   error: string | null;
-  fetchVideos: (params?: Record<string, any>) => Promise<void>;
+  fetchVideos: (params?: Record<string, string | number | boolean>) => Promise<void>;
 }
 
 export const useVideoStore = create<VideoStore>((set) => ({
@@ -18,8 +18,9 @@ export const useVideoStore = create<VideoStore>((set) => ({
     try {
       const response = await videosApi.getVideos(params);
       set({ videos: response.items || response, loading: false });
-    } catch (e: any) {
-      set({ error: e.message, loading: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch videos';
+      set({ error: message, loading: false });
     }
   },
 }));

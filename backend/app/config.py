@@ -84,13 +84,24 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = ""  # Optional: Sentry.io DSN for error tracking
 
     # ── CORS ──────────────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    CORS_ORIGINS: list[str] = ["http://localhost:5173"]  # Override in production via env var
 
     model_config = {
         "env_file": ("../.env", ".env"),
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
     }
+
+    def model_post_init(self, __context) -> None:
+        """Validate production configuration."""
+        if not self.DEBUG:
+            # Warn if using localhost CORS in production
+            if any("localhost" in origin for origin in self.CORS_ORIGINS):
+                import logging
+                logging.warning(
+                    "Production mode with localhost CORS origins detected. "
+                    "Set CORS_ORIGINS environment variable with production domains."
+                )
 
 
 settings = Settings()  # type: ignore[call-arg]

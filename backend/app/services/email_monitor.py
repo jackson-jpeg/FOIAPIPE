@@ -137,7 +137,7 @@ def parse_foia_response(msg) -> Optional[dict]:
         try:
             estimated_cost = float(cost_match.group().replace("$", "").replace(",", ""))
         except ValueError:
-            pass
+            logger.debug(f"Could not parse estimated cost from: {cost_match.group()}")
 
     # Check for attachments
     has_attachments = False

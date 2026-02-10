@@ -39,8 +39,9 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
       const merged = { ...get().filters, ...params };
       const response = await newsApi.getArticles(merged);
       set({ articles: response.items ?? [], total: response.total ?? 0, loading: false });
-    } catch (e: any) {
-      set({ error: e.message, loading: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch articles';
+      set({ error: message, loading: false });
     }
   },
 }));

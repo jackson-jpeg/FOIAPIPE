@@ -5,12 +5,13 @@ import { Select } from '@/components/ui/Select';
 import { formatDate, formatDuration } from '@/lib/formatters';
 import { VIDEO_STATUSES } from '@/lib/constants';
 import { X, Upload, Image, Save, ExternalLink } from 'lucide-react';
+import type { Video } from '@/types';
 
 interface VideoDetailProps {
-  video: any;
+  video: Video | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (id: string, data: Record<string, any>) => void;
+  onUpdate: (id: string, data: Partial<Video>) => void;
   onUploadRaw: (id: string, file: File) => void;
   onGenerateThumbnail: (id: string) => void;
 }
@@ -48,7 +49,13 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
           <div>
             <h2 className="text-sm font-medium text-text-primary">{video.title || 'Untitled Video'}</h2>
             <div className="flex items-center gap-2 mt-0.5">
-              <Badge variant={(statusInfo?.variant || 'default') as any} size="sm" dot>{statusInfo?.label || video.status}</Badge>
+              <Badge
+                variant={(statusInfo?.variant as 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default') || 'default'}
+                size="sm"
+                dot
+              >
+                {statusInfo?.label || video.status}
+              </Badge>
               {video.foia_case_number && <span className="text-2xs font-mono text-text-quaternary">{video.foia_case_number}</span>}
             </div>
           </div>
@@ -102,7 +109,7 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
             label="Status"
             options={statusOptions}
             value={video.status}
-            onChange={(value) => onUpdate(video.id, { status: value })}
+            onChange={(value) => onUpdate(video.id, { status: value as Video['status'] })}
           />
 
           {/* Title */}
