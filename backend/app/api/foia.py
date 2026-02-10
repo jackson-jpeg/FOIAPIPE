@@ -33,6 +33,12 @@ from app.services.foia_generator import (
 )
 from app.services.cost_predictor import predict_foia_cost, calculate_roi_projection
 from app.models.news_article import IncidentType
+from app.services.appeal_generator import (
+    DenialReason,
+    generate_appeal_text,
+    generate_appeal_pdf,
+    get_appeal_recommendations,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -515,3 +521,206 @@ async def regenerate_pdf(
             "Content-Disposition": f'attachment; filename="{foia.case_number}.pdf"'
         },
     )
+
+
+# ── Appeal Generation ─────────────────────────────────────────────────────
+
+
+@router.post("/{foia_id}/generate-appeal")
+async def generate_appeal(
+    foia_id: uuid.UUID,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate an appeal letter for a denied FOIA request.
+
+    Body should contain:
+    - denial_reason: Reason for denial (DenialReason enum value)
+    - denial_explanation: Agency's explanation (optional)
+    - incident_description: Description of incident (optional)
+    """
+    foia = await db.get(FoiaRequest, foia_id)
+    if not foia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
+        )
+
+    if foia.status != FoiaStatus.denied:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot generate appeal for request with status '{foia.status.value}'. Must be denied.",
+        )
+
+    # Get agency
+    agency = foia.agency
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Agency not found for this FOIA request",
+        )
+
+    # Parse denial reason
+    denial_reason_str = body.get("denial_reason")
+    if not denial_reason_str:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="denial_reason is required",
+        )
+
+    try:
+        denial_reason = DenialReason(denial_reason_str)
+    except ValueError:
+        valid_reasons = [r.value for r in DenialReason]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid denial_reason. Must be one of: {', '.join(valid_reasons)}",
+        )
+
+    denial_explanation = body.get("denial_explanation")
+    incident_description = body.get("incident_description")
+
+    # Get incident description from article if not provided
+    if not incident_description and foia.news_article:
+        incident_description = foia.news_article.headline
+
+    # Generate appeal text
+    appeal_text = generate_appeal_text(
+        original_request_text=foia.request_text,
+        case_number=foia.case_number,
+        agency_name=agency.name,
+        denial_reason=denial_reason,
+        denial_explanation=denial_explanation,
+        incident_description=incident_description,
+    )
+
+    # Generate appeal number
+    appeal_number = f"{foia.case_number}-APPEAL-01"
+
+    # Generate PDF
+    appeal_pdf = generate_appeal_pdf(appeal_text, foia.case_number, appeal_number)
+
+    # Get recommendations
+    recommendations = get_appeal_recommendations(denial_reason)
+
+    return {
+        "appeal_text": appeal_text,
+        "appeal_number": appeal_number,
+        "denial_reason": denial_reason.value,
+        "recommendations": recommendations,
+        "original_case_number": foia.case_number,
+        "agency_name": agency.name,
+        "pdf_size_bytes": len(appeal_pdf),
+    }
+
+
+@router.post("/{foia_id}/download-appeal-pdf")
+async def download_appeal_pdf(
+    foia_id: uuid.UUID,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> Response:
+    """Generate and download an appeal PDF.
+
+    Body should contain:
+    - denial_reason: Reason for denial (DenialReason enum value)
+    - denial_explanation: Agency's explanation (optional)
+    - incident_description: Description of incident (optional)
+    """
+    foia = await db.get(FoiaRequest, foia_id)
+    if not foia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
+        )
+
+    if foia.status != FoiaStatus.denied:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot generate appeal for request with status '{foia.status.value}'. Must be denied.",
+        )
+
+    # Get agency
+    agency = foia.agency
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Agency not found for this FOIA request",
+        )
+
+    # Parse denial reason
+    denial_reason_str = body.get("denial_reason")
+    if not denial_reason_str:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="denial_reason is required",
+        )
+
+    try:
+        denial_reason = DenialReason(denial_reason_str)
+    except ValueError:
+        valid_reasons = [r.value for r in DenialReason]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid denial_reason. Must be one of: {', '.join(valid_reasons)}",
+        )
+
+    denial_explanation = body.get("denial_explanation")
+    incident_description = body.get("incident_description")
+
+    # Get incident description from article if not provided
+    if not incident_description and foia.news_article:
+        incident_description = foia.news_article.headline
+
+    # Generate appeal text
+    appeal_text = generate_appeal_text(
+        original_request_text=foia.request_text,
+        case_number=foia.case_number,
+        agency_name=agency.name,
+        denial_reason=denial_reason,
+        denial_explanation=denial_explanation,
+        incident_description=incident_description,
+    )
+
+    # Generate appeal number
+    appeal_number = f"{foia.case_number}-APPEAL-01"
+
+    # Generate PDF
+    appeal_pdf = generate_appeal_pdf(appeal_text, foia.case_number, appeal_number)
+
+    return Response(
+        content=appeal_pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{appeal_number}.pdf"'
+        },
+    )
+
+
+@router.get("/appeal-reasons")
+async def list_denial_reasons(
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """List all available denial reasons with descriptions.
+
+    Returns denial reasons that can be used when generating appeals.
+    """
+    return {
+        "reasons": [
+            {
+                "value": reason.value,
+                "label": reason.value.replace("_", " ").title(),
+                "description": {
+                    DenialReason.active_investigation: "Request denied due to active criminal investigation",
+                    DenialReason.public_safety: "Request denied citing public safety concerns",
+                    DenialReason.privacy: "Request denied to protect privacy interests",
+                    DenialReason.excessive_cost: "Request denied due to excessive duplication costs",
+                    DenialReason.vague_request: "Request denied as too vague or broad",
+                    DenialReason.no_records: "Agency claims no responsive records exist",
+                    DenialReason.other: "Other reason or unspecified denial",
+                }[reason],
+                "recommendations": get_appeal_recommendations(reason),
+            }
+            for reason in DenialReason
+        ]
+    }
