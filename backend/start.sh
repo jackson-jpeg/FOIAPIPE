@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "=== FOIAPIPE START SCRIPT ==="
 echo "RAILWAY_SERVICE_NAME: $RAILWAY_SERVICE_NAME"
