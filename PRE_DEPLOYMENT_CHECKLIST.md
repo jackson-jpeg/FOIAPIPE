@@ -21,6 +21,12 @@
 - [x] Revenue tracking
 - [x] Analytics dashboard
 - [x] Video thumbnail generation
+- [x] Cost prediction for FOIA requests
+- [x] ROI projection and break-even analysis
+- [x] Smart YouTube publishing scheduler
+- [x] Agency-specific FOIA templates
+- [x] Automated appeal generator for denials
+- [x] Database backup & restore scripts
 
 ### Database
 - [x] All migrations created
@@ -34,11 +40,18 @@
 - [x] Authentication (`/api/auth/login`)
 - [x] News scanner (`/api/news/*`)
 - [x] FOIA management (`/api/foia/*`)
+  - [x] Cost prediction (`/api/foia/cost-prediction`)
+  - [x] ROI projection (`/api/foia/roi-projection`)
+  - [x] Appeal generation (`/api/foia/{id}/generate-appeal`)
 - [x] Analytics (`/api/analytics/*`)
+  - [x] FOIA performance by agency
+  - [x] Video profitability ranking
+  - [x] Revenue break-even analysis
 - [x] Health checks (`/api/health/detailed`)
 - [x] Circuit breakers (`/api/circuit-breakers/*`)
 - [x] Videos (`/api/videos/*`)
 - [x] Agencies (`/api/agencies/*`)
+  - [x] Template management (`/api/agencies/{id}/template`)
 
 ### Background Tasks (Celery)
 - [x] News RSS scanning (every 30 min)
