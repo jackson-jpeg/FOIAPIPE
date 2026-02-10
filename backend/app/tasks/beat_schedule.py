@@ -13,6 +13,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 7200.0,  # Every 2 hours
         "options": {"queue": "default"},
     },
+    "scan-news-web-sources": {
+        "task": "app.tasks.news_tasks.scan_news_web_sources",
+        "schedule": 3600.0,  # Every 1 hour
+        "options": {"queue": "default"},
+    },
     "check-foia-inbox": {
         "task": "app.tasks.foia_tasks.check_foia_inbox",
         "schedule": 900.0,  # Every 15 minutes

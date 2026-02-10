@@ -132,3 +132,45 @@ def scan_news_scrape(self):
     except Exception as exc:
         logger.error("Scrape failed: %s", exc)
         raise self.retry(exc=exc, countdown=120)
+
+
+async def _scan_web_sources_async():
+    from sqlalchemy import select
+    from app.database import async_session_factory
+    from app.models.news_article import NewsArticle
+    from app.services.article_classifier import classify_and_score_article
+    from app.services.news_scanner import scan_all_web_sources
+
+    async with async_session_factory() as db:
+        result = await scan_all_web_sources(db)
+
+        # Classify new unscored articles from web sources
+        stmt = (
+            select(NewsArticle)
+            .where(NewsArticle.severity_score.is_(None))
+            .order_by(NewsArticle.created_at.desc())
+            .limit(50)
+        )
+        articles = (await db.execute(stmt)).scalars().all()
+
+        for article in articles:
+            try:
+                await classify_and_score_article(article, db)
+            except Exception as e:
+                logger.error("Classification error for article %s: %s", article.id, e)
+
+        await db.commit()
+        return result
+
+
+@celery_app.task(name="app.tasks.news_tasks.scan_news_web_sources", bind=True, max_retries=3)
+def scan_news_web_sources(self):
+    """Scrape web sources (Tampa Bay Times, Spectrum News) for new articles."""
+    logger.info("Starting web source scan")
+    try:
+        result = _run_async(_scan_web_sources_async())
+        logger.info("Web source scan complete: %s", result)
+        return result
+    except Exception as exc:
+        logger.error("Web source scan failed: %s", exc)
+        raise self.retry(exc=exc, countdown=120)

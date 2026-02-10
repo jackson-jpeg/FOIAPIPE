@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.agency import Agency
+from app.models.app_setting import AppSetting
 from app.models.foia_request import FoiaRequest, FoiaPriority, FoiaStatus
 from app.models.news_article import IncidentType, NewsArticle
 from app.models.scan_log import ScanLog, ScanStatus, ScanType
@@ -23,49 +24,15 @@ from app.schemas.news import (
     NewsArticleResponse,
     NewsArticleUpdate,
     NewsScanStatus,
+    ScanLogList,
+    ScanLogResponse,
     ScanNowResponse,
 )
 from app.services.article_classifier import classify_and_score_article
+from app.services.foia_generator import assign_case_number, generate_request_text
 from app.services.news_scanner import scan_all_rss
 
 router = APIRouter(prefix="/api/news", tags=["news"])
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────
-
-
-def _generate_case_number() -> str:
-    """Generate a unique FOIA case number like FP-20260207-XXXX."""
-    now = datetime.now(timezone.utc)
-    date_part = now.strftime("%Y%m%d")
-    random_part = uuid.uuid4().hex[:4].upper()
-    return f"FP-{date_part}-{random_part}"
-
-
-def _generate_foia_request_text(article: NewsArticle, agency_name: str) -> str:
-    """Auto-generate a FOIA request letter from an article."""
-    return (
-        f"Dear Records Custodian at {agency_name},\n\n"
-        f"Pursuant to the Florida Public Records Act, Chapter 119, Florida Statutes, "
-        f"I am requesting copies of the following records:\n\n"
-        f"All records related to the incident described in the following news report:\n\n"
-        f"Headline: {article.headline}\n"
-        f"Source: {article.source}\n"
-        f"URL: {article.url}\n"
-        f"Published: {article.published_at.strftime('%B %d, %Y') if article.published_at else 'N/A'}\n\n"
-        f"Specifically, I request:\n"
-        f"1. All incident reports, supplemental reports, and arrest affidavits\n"
-        f"2. All body-worn camera footage from involved officers\n"
-        f"3. All dash camera footage from involved vehicles\n"
-        f"4. All communications (radio traffic, CAD logs) related to this incident\n"
-        f"5. Any use-of-force reports, if applicable\n"
-        f"6. Any internal affairs complaints or investigations, if applicable\n\n"
-        f"If any portion of this request is denied, please cite the specific statutory "
-        f"exemption and provide the non-exempt portions.\n\n"
-        f"Thank you for your prompt attention to this request.\n\n"
-        f"Sincerely,\n"
-        f"FOIAPipe Automated Records Request System"
-    )
 
 
 # ── GET /api/news — paginated article list ───────────────────────────────
@@ -178,10 +145,17 @@ async def scan_status(
     last_scan_at = last_scan.completed_at if last_scan else None
     articles_found = last_scan.articles_found if last_scan else 0
 
-    # Estimate next scan: last scan + 1 hour
+    # Read scan interval from settings (default 30 minutes to match beat schedule)
+    interval_setting = (
+        await db.execute(
+            select(AppSetting).where(AppSetting.key == "scan_interval_minutes")
+        )
+    ).scalar_one_or_none()
+    scan_interval = int(interval_setting.value) if interval_setting and interval_setting.value else 30
+
     next_scan_at = None
     if last_scan_at:
-        next_scan_at = last_scan_at + timedelta(hours=1)
+        next_scan_at = last_scan_at + timedelta(minutes=scan_interval)
 
     return NewsScanStatus(
         last_scan_at=last_scan_at,
@@ -220,6 +194,7 @@ async def scan_now(
         found=stats["found"],
         new=stats["new"],
         duplicate=stats["duplicate"],
+        filtered=stats.get("filtered", 0),
         errors=stats["errors"],
         classified=classified_count,
     )
@@ -278,8 +253,16 @@ async def bulk_action(
                 continue
 
             # Create FOIA request
-            case_number = _generate_case_number()
-            request_text = _generate_foia_request_text(article, agency.name)
+            case_number = await assign_case_number(db)
+            request_text = generate_request_text(
+                incident_description=article.headline or "incident",
+                incident_date=(
+                    article.published_at.strftime("%B %d, %Y")
+                    if article.published_at else None
+                ),
+                agency_name=agency.name,
+                custom_template=agency.foia_template,
+            )
 
             foia = FoiaRequest(
                 case_number=case_number,
@@ -300,6 +283,43 @@ async def bulk_action(
         affected=affected,
         action=body.action,
         details=f"Successfully applied '{body.action}' to {affected} article(s)",
+    )
+
+
+# ── GET /api/news/scan-logs ─────────────────────────────────────────────
+
+
+@router.get("/scan-logs", response_model=ScanLogList)
+async def list_scan_logs(
+    scan_type: str | None = Query(None, description="Filter by scan type: rss, scrape, imap"),
+    status_filter: str | None = Query(None, alias="status", description="Filter by status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> ScanLogList:
+    """Return paginated scan history logs."""
+    stmt = select(ScanLog)
+    count_stmt = select(func.count(ScanLog.id))
+
+    if scan_type:
+        stmt = stmt.where(ScanLog.scan_type == scan_type)
+        count_stmt = count_stmt.where(ScanLog.scan_type == scan_type)
+    if status_filter:
+        stmt = stmt.where(ScanLog.status == status_filter)
+        count_stmt = count_stmt.where(ScanLog.status == status_filter)
+
+    total = (await db.execute(count_stmt)).scalar_one()
+    offset = (page - 1) * page_size
+    stmt = stmt.order_by(ScanLog.started_at.desc()).offset(offset).limit(page_size)
+
+    logs = (await db.execute(stmt)).scalars().all()
+
+    return ScanLogList(
+        items=[ScanLogResponse.model_validate(log) for log in logs],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -386,8 +406,16 @@ async def file_foia_from_article(
         )
 
     # Generate case number and request text
-    case_number = _generate_case_number()
-    request_text = _generate_foia_request_text(article, agency.name)
+    case_number = await assign_case_number(db)
+    request_text = generate_request_text(
+        incident_description=article.headline or "incident",
+        incident_date=(
+            article.published_at.strftime("%B %d, %Y")
+            if article.published_at else None
+        ),
+        agency_name=agency.name,
+        custom_template=agency.foia_template,
+    )
 
     foia = FoiaRequest(
         case_number=case_number,

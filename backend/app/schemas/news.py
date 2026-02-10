@@ -96,3 +96,26 @@ class BulkActionResponse(BaseModel):
     affected: int
     action: str
     details: str | None = None
+
+
+class ScanLogResponse(BaseModel):
+    id: uuid.UUID
+    scan_type: str
+    status: str
+    source: str | None = None
+    articles_found: int = 0
+    articles_new: int = 0
+    articles_duplicate: int = 0
+    error_message: str | None = None
+    started_at: datetime
+    completed_at: datetime | None = None
+    duration_seconds: float | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class ScanLogList(BaseModel):
+    items: list[ScanLogResponse]
+    total: int
+    page: int
+    page_size: int

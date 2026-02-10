@@ -50,6 +50,7 @@ async def check_inbox() -> list[dict]:
         ...         print(f"Response for {email['case_number']}: {email['response_type']}")
     """
     if not all([settings.IMAP_HOST, settings.IMAP_USER, settings.IMAP_PASSWORD]):
+        logger.warning("IMAP not configured (missing IMAP_HOST, IMAP_USER, or IMAP_PASSWORD)")
         return []
 
     try:
@@ -70,6 +71,8 @@ async def check_inbox() -> list[dict]:
             parsed = parse_foia_response(msg)
             if parsed:
                 results.append(parsed)
+                # Mark email as read so it won't be reprocessed
+                mail.store(num, '+FLAGS', '\\Seen')
 
         mail.close()
         mail.logout()
@@ -116,19 +119,19 @@ def parse_foia_response(msg) -> Optional[dict]:
     case_match = re.search(r"FOIA-\d{4}-\d{4}", subject + " " + body)
     case_number = case_match.group() if case_match else None
 
-    # Detect response type
+    # Detect response type (ordered by legal priority — most specific first)
     combined = f"{subject} {body}".lower()
     response_type = "unknown"
-    if any(w in combined for w in ["acknowledge", "received", "receipt", "confirm"]):
-        response_type = "acknowledged"
-    elif any(w in combined for w in ["denied", "denial", "exempt", "withheld"]):
+    if any(w in combined for w in ["denied", "denial", "exempt", "withheld", "not a public record"]):
         response_type = "denied"
-    elif any(w in combined for w in ["attached", "enclosed", "records", "responsive", "fulfilled"]):
-        response_type = "fulfilled"
     elif any(w in combined for w in ["cost", "fee", "payment", "estimate", "$"]):
         response_type = "cost_estimate"
-    elif any(w in combined for w in ["extension", "additional time", "delay"]):
+    elif any(w in combined for w in ["attached", "enclosed", "responsive documents", "fulfilled", "records enclosed"]):
+        response_type = "fulfilled"
+    elif any(w in combined for w in ["extension", "additional time", "delay", "processing"]):
         response_type = "processing"
+    elif any(w in combined for w in ["acknowledge", "received", "receipt", "confirm"]):
+        response_type = "acknowledged"
 
     # Extract cost if mentioned
     cost_match = re.search(r"\$[\d,]+\.?\d{0,2}", body)

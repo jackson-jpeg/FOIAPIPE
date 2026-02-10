@@ -14,6 +14,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from urllib.parse import urljoin
 
 import feedparser
 import httpx
@@ -43,6 +44,8 @@ RSS_FEEDS = [
         ),
         "source": "Google News",
     },
+    {"url": "https://www.wtsp.com/feeds/syndication/rss/news/local", "source": "10 Tampa Bay / WTSP"},
+    {"url": "https://patch.com/florida/tampa/rss", "source": "Patch Tampa"},
 ]
 
 DEDUP_SIMILARITY_THRESHOLD = 85
@@ -278,6 +281,139 @@ async def scrape_article(url: str) -> dict:
         body = soup.get_text(separator="\n", strip=True)[:5000]
 
     return {"body": body, "raw_html": response.text}
+
+
+WEB_SOURCES = [
+    {
+        "url": "https://www.tampabay.com/news/crime/",
+        "source": "Tampa Bay Times",
+        "selectors": ["h2.StoryCard_headline a", "h3.PromoCard_headline a"],
+    },
+    {
+        "url": "https://spectrumlocalnews.com/fl/tampa",
+        "source": "Spectrum News / Bay News 9",
+        "selectors": ["a.heading", "h3 a", "a[data-testid='story-card-link']"],
+    },
+]
+
+
+async def scrape_web_source(source: dict, db: AsyncSession) -> dict:
+    """Scrape a web page for article links and headlines.
+
+    Args:
+        source: Dict with url, source name, and CSS selectors
+        db: Async database session
+
+    Returns:
+        Stats dict with found, new, duplicate, filtered, errors counts.
+    """
+    from app.services.article_classifier import is_article_relevant
+    from app.services.circuit_breaker import should_skip_source, record_success, record_failure
+
+    stats: dict = {"found": 0, "new": 0, "duplicate": 0, "filtered": 0, "errors": 0, "skipped": False}
+
+    should_skip, skip_reason = await should_skip_source(db, source["source"])
+    if should_skip:
+        stats["skipped"] = True
+        stats["skip_reason"] = skip_reason
+        return stats
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            response = await client.get(
+                source["url"],
+                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAPipe/1.0)"},
+            )
+            response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        links = []
+        for selector in source["selectors"]:
+            for el in soup.select(selector):
+                href = el.get("href", "")
+                text = el.get_text(strip=True)
+                if href and text:
+                    # Resolve relative URLs
+                    if href.startswith("/"):
+                        href = urljoin(source["url"], href)
+                    links.append({"url": href, "headline": text})
+
+        for link in links:
+            stats["found"] += 1
+            url = link["url"]
+            headline = link["headline"]
+
+            is_relevant, reason = is_article_relevant(headline)
+            if not is_relevant:
+                stats["filtered"] += 1
+                continue
+
+            is_dup = await _is_duplicate(url, headline, db)
+            if is_dup:
+                stats["duplicate"] += 1
+                continue
+
+            article = NewsArticle(
+                url=url,
+                headline=headline,
+                source=source["source"],
+            )
+            db.add(article)
+            stats["new"] += 1
+
+        await db.flush()
+        await record_success(db, source["source"], source["url"])
+
+    except Exception as e:
+        stats["errors"] += 1
+        stats["error_message"] = str(e)
+        logger.error(f"Error scraping {source['source']}: {e}")
+        await record_failure(db, source["source"], source["url"], str(e))
+
+    return stats
+
+
+async def scan_all_web_sources(db: AsyncSession) -> dict:
+    """Scrape all configured web sources and aggregate results."""
+    log = ScanLog(
+        scan_type=ScanType.scrape,
+        status=ScanStatus.running,
+        started_at=datetime.now(timezone.utc),
+        source="all_web",
+    )
+    db.add(log)
+    await db.flush()
+
+    total: dict = {"found": 0, "new": 0, "duplicate": 0, "filtered": 0, "errors": 0}
+
+    try:
+        for source in WEB_SOURCES:
+            stats = await scrape_web_source(source, db)
+            total["found"] += stats["found"]
+            total["new"] += stats["new"]
+            total["duplicate"] += stats["duplicate"]
+            total["filtered"] += stats.get("filtered", 0)
+            total["errors"] += stats["errors"]
+
+        log.status = ScanStatus.completed
+        logger.info(
+            f"Web scrape complete: {total['found']} found, {total['new']} new, "
+            f"{total['duplicate']} duplicate, {total['filtered']} filtered"
+        )
+    except Exception as exc:
+        log.status = ScanStatus.failed
+        log.error_message = str(exc)
+
+    log.completed_at = datetime.now(timezone.utc)
+    log.articles_found = total["found"]
+    log.articles_new = total["new"]
+    log.articles_duplicate = total["duplicate"]
+    if log.started_at:
+        log.duration_seconds = (log.completed_at - log.started_at).total_seconds()
+
+    await db.commit()
+    return total
 
 
 async def _is_duplicate(url: str, headline: str, db: AsyncSession) -> bool:

@@ -24,7 +24,7 @@ async def _check_inbox_async():
     from app.database import async_session_factory
     from app.models.foia_request import FoiaRequest, FoiaStatus
     from app.models.foia_status_change import FoiaStatusChange
-    from app.models.notification import Notification, NotificationType
+    from app.models.notification import Notification, NotificationChannel, NotificationType
     from app.services.email_monitor import check_inbox
 
     responses = await check_inbox()
@@ -87,24 +87,26 @@ async def _check_inbox_async():
                     foia.fulfilled_at = datetime.now(timezone.utc)
 
                 # Create user notification
+                notification_type_map = {
+                    "acknowledged": NotificationType.foia_acknowledged,
+                    "fulfilled": NotificationType.foia_fulfilled,
+                    "denied": NotificationType.foia_denied,
+                    "processing": NotificationType.foia_submitted,
+                    "cost_estimate": NotificationType.foia_submitted,
+                }
                 notification_title = {
                     "acknowledged": "FOIA Acknowledged",
                     "fulfilled": "FOIA Fulfilled",
                     "denied": "FOIA Denied",
                     "processing": "FOIA Processing",
+                    "cost_estimate": "FOIA Cost Estimate",
                 }
                 notification = Notification(
-                    type=NotificationType.info
-                    if response_type != "denied"
-                    else NotificationType.warning,
+                    type=notification_type_map.get(response_type, NotificationType.foia_acknowledged),
+                    channel=NotificationChannel.in_app,
                     title=notification_title.get(response_type, "FOIA Update"),
                     message=f"Case {case_number}: {resp.get('subject', 'Agency response received')}",
-                    extra_metadata={
-                        "foia_id": str(foia.id),
-                        "case_number": case_number,
-                        "response_type": response_type,
-                        "from": resp.get("from"),
-                    },
+                    link=f"/foia?detail={foia.id}",
                 )
                 db.add(notification)
 
@@ -115,10 +117,16 @@ async def _check_inbox_async():
             if resp.get("estimated_cost") is not None:
                 foia.estimated_cost = resp["estimated_cost"]
 
-            # Store response email
+            # Store response email (with dedup check)
             if not foia.response_emails:
                 foia.response_emails = []
-            foia.response_emails = foia.response_emails + [resp]
+            dedup_key = f"{resp.get('subject', '')}|{resp.get('date', '')}"
+            existing_keys = {
+                f"{e.get('subject', '')}|{e.get('date', '')}"
+                for e in foia.response_emails
+            }
+            if dedup_key not in existing_keys:
+                foia.response_emails = foia.response_emails + [resp]
 
             processed += 1
 
@@ -187,7 +195,7 @@ async def _auto_submit_async(article_id: str):
     from app.models.foia_request import FoiaRequest, FoiaStatus
     from app.models.foia_status_change import FoiaStatusChange
     from app.models.news_article import NewsArticle
-    from app.models.notification import Notification, NotificationType
+    from app.models.notification import Notification, NotificationChannel, NotificationType
     from app.services.email_sender import send_foia_email
     from app.services.foia_generator import (
         assign_case_number,
@@ -283,6 +291,7 @@ async def _auto_submit_async(article_id: str):
                 else None
             ),
             agency_name=agency.name,
+            custom_template=agency.foia_template,
         )
 
         response_days = agency.avg_response_days or 30
@@ -340,9 +349,11 @@ async def _auto_submit_async(article_id: str):
             if not email_result.get("success"):
                 raise Exception(f"Email failed: {email_result.get('message')}")
 
-            # Upload PDF to S3 (with retry logic)
-            storage_key = f"foia/{case_number}.pdf"
-            upload_file(pdf_bytes, storage_key, content_type="application/pdf")
+            # Email sent successfully — mark as submitted immediately
+            foia.status = FoiaStatus.submitted
+            foia.submitted_at = now
+            foia.due_date = now + timedelta(days=response_days)
+            article.auto_foia_filed = True
 
             # Record status change audit trail
             audit_entry = FoiaStatusChange(
@@ -354,18 +365,26 @@ async def _auto_submit_async(article_id: str):
                 extra_metadata={
                     "article_id": str(article.id),
                     "agency_email": agency.foia_email,
-                    "storage_key": storage_key,
                 },
             )
             db.add(audit_entry)
 
-            # Update FOIA status
-            foia.status = FoiaStatus.submitted
-            foia.submitted_at = now
-            foia.due_date = now + timedelta(days=response_days)
-            foia.pdf_storage_key = storage_key
+            # Upload PDF to S3 (non-fatal — email already sent)
+            storage_key = f"foia/{case_number}.pdf"
+            try:
+                upload_file(pdf_bytes, storage_key, content_type="application/pdf")
+                foia.pdf_storage_key = storage_key
+            except Exception as s3_err:
+                logger.error(f"S3 upload failed for {case_number} (email already sent): {s3_err}")
+                notification = Notification(
+                    type=NotificationType.system_error,
+                    channel=NotificationChannel.in_app,
+                    title="PDF Upload Failed",
+                    message=f"FOIA {case_number} was submitted but PDF upload failed: {str(s3_err)[:200]}",
+                    link=f"/foia?detail={foia.id}",
+                )
+                db.add(notification)
 
-            article.auto_foia_filed = True
             await db.commit()
 
             logger.info(
@@ -378,15 +397,11 @@ async def _auto_submit_async(article_id: str):
 
             # Create error notification for manual review
             notification = Notification(
-                type=NotificationType.error,
+                type=NotificationType.system_error,
+                channel=NotificationChannel.in_app,
                 title="Auto-Submit Failed",
-                message=f"Failed to auto-submit FOIA for article: {article.headline}. Error: {str(e)}",
-                extra_metadata={
-                    "article_id": str(article.id),
-                    "case_number": case_number,
-                    "agency": agency.name,
-                    "error": str(e),
-                },
+                message=f"Failed to auto-submit FOIA {case_number} for: {article.headline}. Error: {str(e)[:200]}",
+                link=f"/news?article={article.id}",
             )
             db.add(notification)
             await db.commit()

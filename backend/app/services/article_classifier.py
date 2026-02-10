@@ -454,7 +454,7 @@ def assess_auto_foia_eligibility(
     severity_score: int,
     agency_has_email: bool,
     agency_is_active: bool,
-    threshold: int = 6,
+    threshold: int = 7,
 ) -> bool:
     """Determine if an article qualifies for automatic FOIA filing."""
     return severity_score >= threshold and agency_has_email and agency_is_active
@@ -503,10 +503,20 @@ async def classify_and_score_article(
         )
         agency = result.scalar_one_or_none()
         if agency:
+            # Read threshold from settings
+            from app.models.app_setting import AppSetting
+            threshold_setting = (
+                await db.execute(
+                    select(AppSetting).where(AppSetting.key == "auto_submit_threshold")
+                )
+            ).scalar_one_or_none()
+            threshold = int(threshold_setting.value) if threshold_setting and threshold_setting.value else 7
+
             article.auto_foia_eligible = assess_auto_foia_eligibility(
                 article.severity_score,
                 bool(agency.foia_email),
                 agency.is_active,
+                threshold=threshold,
             )
 
     return article

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui/Badge';
@@ -8,6 +9,7 @@ import { formatRelativeTime } from '@/lib/formatters';
 import {
   getNotifications,
   markAllRead,
+  markRead,
   type Notification,
 } from '@/api/notifications';
 
@@ -19,15 +21,20 @@ interface TopBarProps {
 }
 
 const notificationTypeBadge: Record<string, { variant: 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default'; label: string }> = {
-  foia_filed: { variant: 'info', label: 'FOIA' },
-  foia_response: { variant: 'success', label: 'Response' },
+  foia_submitted: { variant: 'info', label: 'FOIA' },
+  foia_acknowledged: { variant: 'info', label: 'Acknowledged' },
+  foia_fulfilled: { variant: 'success', label: 'Fulfilled' },
+  foia_denied: { variant: 'danger', label: 'Denied' },
+  foia_overdue: { variant: 'warning', label: 'Overdue' },
   scan_complete: { variant: 'purple', label: 'Scan' },
-  error: { variant: 'danger', label: 'Error' },
-  warning: { variant: 'warning', label: 'Warning' },
-  info: { variant: 'info', label: 'Info' },
+  video_uploaded: { variant: 'info', label: 'Video' },
+  video_published: { variant: 'success', label: 'Published' },
+  system_error: { variant: 'danger', label: 'Error' },
+  revenue_milestone: { variant: 'success', label: 'Revenue' },
 };
 
 export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopBarProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -81,6 +88,24 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
       setUnreadCount(0);
     } catch {
       // silently fail
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.is_read) {
+      try {
+        await markRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((n) => n.id === notification.id ? { ...n, is_read: true } : n)
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch {
+        // silently fail
+      }
+    }
+    if (notification.link) {
+      setOpen(false);
+      navigate(notification.link);
     }
   };
 
@@ -162,21 +187,28 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
                       return (
                         <div
                           key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
                           className={cn(
                             'flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-hover',
-                            !notification.is_read && 'bg-accent-primary-subtle'
+                            !notification.is_read && 'bg-accent-primary-subtle',
+                            notification.link && 'cursor-pointer'
                           )}
                         >
                           <Badge variant={typeBadge.variant} size="sm">
                             {typeBadge.label}
                           </Badge>
                           <div className="min-w-0 flex-1">
+                            {notification.title && (
+                              <p className="text-2xs font-semibold text-text-primary leading-snug">
+                                {notification.title}
+                              </p>
+                            )}
                             <p
                               className={cn(
                                 'text-2xs leading-relaxed',
                                 notification.is_read
                                   ? 'text-text-secondary'
-                                  : 'font-medium text-text-primary'
+                                  : 'text-text-primary'
                               )}
                             >
                               {notification.message}

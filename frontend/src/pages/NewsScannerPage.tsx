@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ScannerStatus } from '@/components/news/ScannerStatus';
+import { ScanLogTable } from '@/components/news/ScanLogTable';
+import { FeedHealthIndicators } from '@/components/news/FeedHealthIndicators';
 import { ArticleTable } from '@/components/news/ArticleTable';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -210,6 +212,16 @@ export function NewsScannerPage() {
         nextScanAt={scanStatus.next_scan_at}
         articlesFoundLastScan={scanStatus.articles_found_last_scan}
       />
+
+      {/* Feed Health & Scan Logs */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <FeedHealthIndicators />
+        </div>
+        <div className="lg:col-span-2">
+          <ScanLogTable />
+        </div>
+      </div>
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-1 border-b border-surface-border/50">

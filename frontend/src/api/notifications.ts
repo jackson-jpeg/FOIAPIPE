@@ -3,7 +3,9 @@ import client from './client';
 export interface Notification {
   id: string;
   type: string;
+  title: string | null;
   message: string;
+  link: string | null;
   is_read: boolean;
   created_at: string;
 }
