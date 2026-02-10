@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as newsApi from '@/api/news';
+import type { NewsArticle } from '@/types';
 
 interface NewsFilters {
   source?: string;
@@ -16,7 +17,7 @@ interface NewsFilters {
 }
 
 interface NewsStore {
-  articles: any[];
+  articles: NewsArticle[];
   loading: boolean;
   error: string | null;
   total: number;

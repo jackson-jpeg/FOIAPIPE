@@ -4,6 +4,7 @@ import { Save, Send, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
+import { getFoiaRequest, createFoiaRequest, updateFoiaRequest, submitFoiaRequest } from '@/api/foia';
 
 export function FoiaEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,8 @@ export function FoiaEditorPage() {
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [foiaId, setFoiaId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   const isNewRequest = id === 'new';
@@ -22,35 +25,43 @@ export function FoiaEditorPage() {
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
 
   useEffect(() => {
-    // If editing existing request, fetch it
-    if (!isNewRequest) {
-      // TODO: Fetch existing FOIA request by ID
-      // For now, using placeholder
-      setTitle('Freedom of Information Act Request - Body Cam Footage');
-      setContent(
-        `Dear Records Custodian,
+    const loadFoiaRequest = async () => {
+      if (!isNewRequest && id) {
+        setIsLoading(true);
+        try {
+          const foiaRequest = await getFoiaRequest(id);
+          setFoiaId(foiaRequest.id);
+          setTitle(foiaRequest.case_number || 'FOIA Request');
+          setContent(foiaRequest.request_text || '');
 
-Pursuant to the Florida Public Records Act, Chapter 119, Florida Statutes, I hereby request access to and copies of the following records:
+          // Mock AI suggestions (could be enhanced with actual AI analysis later)
+          setAiSuggestions([
+            'Consider specifying the exact date range for the requested records',
+            'Add your contact information at the end of the request',
+            'Mention willingness to pay reasonable copy fees',
+          ]);
+        } catch (error) {
+          addToast({
+            type: 'error',
+            title: 'Load Failed',
+            message: 'Unable to load FOIA request. Redirecting...',
+          });
+          setTimeout(() => navigate('/foia'), 2000);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // New request - show AI suggestions
+        setAiSuggestions([
+          'Start with proper statutory reference (Chapter 119, Florida Statutes)',
+          'Be specific about dates, locations, and incident details',
+          'Request electronic format to reduce costs',
+        ]);
+      }
+    };
 
-[Request details go here]
-
-I request that these records be provided in electronic format if available. If any portion of this request is denied, please provide a written explanation citing the specific statutory exemption and a brief explanation of how the exemption applies.
-
-If you have any questions regarding this request, please contact me at the information provided below.
-
-Thank you for your prompt attention to this matter.
-
-Sincerely,`
-      );
-    }
-
-    // Mock AI suggestions
-    setAiSuggestions([
-      'Consider specifying the exact date range for the requested records',
-      'Add your contact information at the end of the request',
-      'Mention willingness to pay reasonable copy fees',
-    ]);
-  }, [id, isNewRequest]);
+    loadFoiaRequest();
+  }, [id, isNewRequest, navigate, addToast]);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
@@ -64,8 +75,23 @@ Sincerely,`
 
     setIsSaving(true);
     try {
-      // TODO: Save draft to API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const payload = {
+        case_number: title,
+        request_text: content,
+        status: 'draft',
+      };
+
+      if (isNewRequest || !foiaId) {
+        // Create new draft
+        const newFoia = await createFoiaRequest(payload);
+        setFoiaId(newFoia.id);
+
+        // Update URL to reflect the new ID without page reload
+        window.history.replaceState(null, '', `/foia/editor/${newFoia.id}`);
+      } else {
+        // Update existing draft
+        await updateFoiaRequest(foiaId, payload);
+      }
 
       addToast({
         type: 'success',
@@ -93,10 +119,21 @@ Sincerely,`
       return;
     }
 
+    // Ensure the request is saved first
+    if (!foiaId) {
+      addToast({
+        type: 'warning',
+        title: 'Save Required',
+        message: 'Please save your draft before submitting.',
+      });
+      await handleSave();
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // TODO: Submit FOIA request to API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Submit the FOIA request
+      await submitFoiaRequest(foiaId);
 
       addToast({
         type: 'success',

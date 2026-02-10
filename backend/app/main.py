@@ -19,8 +19,11 @@ import logging
 import sys
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.api.agencies import router as agencies_router
 from app.api.analytics import router as analytics_router
@@ -52,6 +55,14 @@ structlog.configure(
 
 logger = structlog.get_logger()
 
+# ── Rate Limiter ──────────────────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)
+
+# ── FastAPI App ───────────────────────────────────────────────────────────
+# Disable API docs in production for security
+docs_url = "/api/docs" if settings.DEBUG else None
+redoc_url = "/api/redoc" if settings.DEBUG else None
+
 app = FastAPI(
     title="FOIAPIPE",
     description=(
@@ -60,9 +71,13 @@ app = FastAPI(
         "and YouTube publishing."
     ),
     version="1.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    docs_url=docs_url,
+    redoc_url=redoc_url,
 )
+
+# Add rate limiting state and exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS ──────────────────────────────────────────────────────────────────
 app.add_middleware(

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.foia_request import FoiaRequest, FoiaStatus
-from app.models.news_article import NewsArticle, Severity
+from app.models.news_article import NewsArticle
 from app.models.video import Video, VideoStatus
 from app.services.data_export import (
     export_analytics_summary_to_csv,
@@ -71,7 +71,7 @@ async def export_foias(
 
 @router.get("/articles")
 async def export_articles(
-    severity: Severity | None = Query(None, description="Filter by severity"),
+    min_severity: int | None = Query(None, description="Filter by minimum severity score (1-10)", ge=1, le=10),
     date_from: datetime | None = Query(None, description="Published after this date"),
     date_to: datetime | None = Query(None, description="Published before this date"),
     db: AsyncSession = Depends(get_db),
@@ -86,8 +86,8 @@ async def export_articles(
 
     # Apply filters
     filters = []
-    if severity:
-        filters.append(NewsArticle.severity == severity)
+    if min_severity:
+        filters.append(NewsArticle.severity_score >= min_severity)
     if date_from:
         filters.append(NewsArticle.published_at >= date_from)
     if date_to:

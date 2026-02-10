@@ -1,21 +1,50 @@
 import client from './client';
 
-export async function getOverview(range: string = '30d') {
+interface AnalyticsOverview {
+  total_views: number;
+  total_revenue: number;
+  total_videos: number;
+  avg_rpm: number;
+  total_watch_time_hours: number;
+}
+
+interface RevenueData {
+  date: string;
+  revenue: number;
+  views: number;
+}
+
+interface ViewsData {
+  date: string;
+  views: number;
+  watch_time_hours: number;
+}
+
+interface TopVideo {
+  id: string;
+  title: string;
+  views: number;
+  revenue: number;
+  watch_time_hours: number;
+  rpm: number;
+}
+
+export async function getOverview(range: string = '30d'): Promise<AnalyticsOverview> {
   const { data } = await client.get('/analytics/overview', { params: { range } });
   return data;
 }
 
-export async function getRevenue(range: string = '30d') {
+export async function getRevenue(range: string = '30d'): Promise<RevenueData[]> {
   const { data } = await client.get('/analytics/revenue', { params: { range } });
   return data;
 }
 
-export async function getViews(range: string = '30d') {
+export async function getViews(range: string = '30d'): Promise<ViewsData[]> {
   const { data } = await client.get('/analytics/views', { params: { range } });
   return data;
 }
 
-export async function getTopVideos(range: string = '30d', sort: string = 'views') {
+export async function getTopVideos(range: string = '30d', sort: string = 'views'): Promise<TopVideo[]> {
   const { data } = await client.get('/analytics/top-videos', { params: { range, sort } });
   return data;
 }

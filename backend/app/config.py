@@ -31,6 +31,9 @@ class Settings(BaseSettings):
         - If external services are not configured, related features will be disabled
     """
 
+    # ── Application ───────────────────────────────────────────────────────
+    DEBUG: bool = False  # Set to True for development (enables API docs, verbose logging)
+
     # ── Database ──────────────────────────────────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/foiapipe"
 
@@ -41,7 +44,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ADMIN_PASSWORD: str
     JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRE_MINUTES: int = 1440  # 24 hours
+    JWT_EXPIRE_MINUTES: int = 120  # 2 hours (reduced from 24 for security)
 
     # ── SMTP (outbound email) ─────────────────────────────────────────────
     SMTP_HOST: str = ""

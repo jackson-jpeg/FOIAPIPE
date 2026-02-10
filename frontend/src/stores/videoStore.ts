@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import * as videosApi from '@/api/videos';
+import type { Video } from '@/types';
 
 interface VideoStore {
-  videos: any[];
+  videos: Video[];
   loading: boolean;
   error: string | null;
   fetchVideos: (params?: Record<string, any>) => Promise<void>;

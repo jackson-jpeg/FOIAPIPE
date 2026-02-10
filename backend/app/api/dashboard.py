@@ -25,7 +25,6 @@ from app.models import (
     VideoStatus,
 )
 from app.models.agency import Agency
-from app.models.news_article import Severity
 from app.models.news_source_health import NewsSourceHealth
 from sqlalchemy import and_
 
@@ -168,7 +167,7 @@ async def dashboard_summary(
             select(func.count(NewsArticle.id)).where(
                 and_(
                     NewsArticle.created_at >= today_start,
-                    NewsArticle.severity == Severity.high,
+                    NewsArticle.severity_score >= 7,
                 )
             )
         )
