@@ -37,7 +37,7 @@ export function StatusOrb({
     <div className={cn('inline-flex items-center gap-2', className)}>
       <div
         className={cn(
-          'rounded-full',
+          'rounded-full transition-colors duration-300',
           sizeStyles[size],
           colorStyles[color],
           pulse && 'animate-orb-pulse'

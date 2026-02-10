@@ -43,7 +43,7 @@ export function Button({
       className={cn(
         'inline-flex items-center justify-center font-medium transition-all duration-150 ease-spring',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary',
-        'hover:scale-105 active:scale-95', // Tactile scale feedback
+        'hover:scale-[1.01] active:scale-[0.99]', // Subtle tactile feedback
         variantStyles[variant],
         sizeStyles[size],
         (disabled || loading) && 'pointer-events-none',

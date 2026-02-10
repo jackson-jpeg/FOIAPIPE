@@ -26,7 +26,7 @@ export function LoginPage() {
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-pulse-subtle rounded-full bg-accent-primary opacity-75" />
+              <span className="absolute inset-0 rounded-full bg-accent-primary/20 blur-sm" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-accent-primary" />
             </span>
             <h1 className="text-2xl font-bold text-text-primary tracking-wider">

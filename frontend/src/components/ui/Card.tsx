@@ -37,7 +37,7 @@ export function Card({
     >
       {title && (
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border/30">
-          <h3 className="text-base font-semibold text-text-primary tracking-tight">{title}</h3>
+          <h3 className="text-sm font-medium text-text-primary tracking-tight">{title}</h3>
           {action}
         </div>
       )}

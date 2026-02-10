@@ -22,7 +22,7 @@ export function Sidebar({
   const sidebarContent = (
     <div
       className={cn(
-        'flex h-full flex-col bg-white shadow-sm transition-[width] duration-200 ease-out-expo',
+        'flex h-full flex-col bg-white shadow-sm transition-[width] duration-150 ease-out-expo',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -66,13 +66,13 @@ export function Sidebar({
                 'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150',
                 collapsed && 'justify-center px-2',
                 isActive
-                  ? 'bg-accent-primary-subtle text-accent-primary font-medium'
+                  ? 'bg-accent-primary/10 text-accent-primary font-semibold'
                   : 'text-text-tertiary hover:bg-surface-hover hover:text-text-primary'
               )
             }
           >
             <>
-              <item.icon className="shrink-0" size={18} strokeWidth={1.75} />
+              <item.icon className="shrink-0 transition-transform group-hover:rotate-3" size={18} strokeWidth={1.75} />
               {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
             </>
           </NavLink>

@@ -70,12 +70,12 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 p-8 shadow-sm">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-          FOIA Pipeline
+      {/* Page Title */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-text-primary tracking-tight">
+          Dashboard
         </h1>
-        <p className="mt-2 text-lg text-gray-600">
+        <p className="mt-1 text-sm text-text-tertiary">
           Monitor your accountability journalism workflow
         </p>
       </div>
@@ -96,36 +96,46 @@ export function DashboardPage() {
               label="Total Articles"
               value={stats ? formatCompactNumber(stats.total_articles) : '0'}
               trend={stats ? { value: stats.articles_trend, isPositive: stats.articles_trend >= 0 } : undefined}
-              icon={<Newspaper size={20} />}
+              icon={<Newspaper size={22} />}
               gradient="amber"
+              className="animate-fade-in"
+              style={{ animationDelay: '0ms' } as React.CSSProperties}
             />
             <StatCard
               label="Active FOIAs"
               value={stats ? formatCompactNumber(stats.active_foias) : '0'}
               trend={stats ? { value: stats.foias_trend, isPositive: stats.foias_trend >= 0 } : undefined}
-              icon={<FileText size={20} />}
+              icon={<FileText size={22} />}
               gradient="blue"
+              className="animate-fade-in"
+              style={{ animationDelay: '50ms' } as React.CSSProperties}
             />
             <StatCard
               label="Videos in Pipeline"
               value={stats ? formatCompactNumber(stats.videos_in_pipeline) : '0'}
               trend={stats ? { value: stats.videos_trend, isPositive: stats.videos_trend >= 0 } : undefined}
-              icon={<Video size={20} />}
+              icon={<Video size={22} />}
               gradient="purple"
+              className="animate-fade-in"
+              style={{ animationDelay: '100ms' } as React.CSSProperties}
             />
             <StatCard
               label="Total Views"
               value={stats ? formatCompactNumber(stats.total_views) : '0'}
               trend={stats ? { value: stats.views_trend, isPositive: stats.views_trend >= 0 } : undefined}
-              icon={<Eye size={20} />}
+              icon={<Eye size={22} />}
               gradient="emerald"
+              className="animate-fade-in"
+              style={{ animationDelay: '150ms' } as React.CSSProperties}
             />
             <StatCard
               label="Revenue MTD"
               value={stats ? formatCurrency(stats.revenue_mtd) : '$0.00'}
               trend={stats ? { value: stats.revenue_trend, isPositive: stats.revenue_trend >= 0 } : undefined}
-              icon={<DollarSign size={20} />}
+              icon={<DollarSign size={22} />}
               gradient="rose"
+              className="animate-fade-in"
+              style={{ animationDelay: '200ms' } as React.CSSProperties}
             />
           </>
         )}
@@ -148,7 +158,7 @@ export function DashboardPage() {
               ))}
             </div>
           ) : articles.length === 0 ? (
-            <p className="text-xs text-text-quaternary py-4 text-center">No recent articles</p>
+            <p className="text-sm text-text-tertiary py-4 text-center">No recent articles</p>
           ) : (
             <div className="space-y-1">
               {articles.map((article) => (
@@ -196,7 +206,7 @@ export function DashboardPage() {
               ))}
             </div>
           ) : videos.length === 0 ? (
-            <p className="text-xs text-text-quaternary py-4 text-center">No videos yet</p>
+            <p className="text-sm text-text-tertiary py-4 text-center">No videos yet</p>
           ) : (
             <div className="space-y-1">
               {videos.map((video) => (
@@ -244,7 +254,7 @@ export function DashboardPage() {
             ))}
           </div>
         ) : activities.length === 0 ? (
-          <p className="text-xs text-text-quaternary py-4 text-center">No recent activity</p>
+          <p className="text-sm text-text-tertiary py-4 text-center">No recent activity</p>
         ) : (
           <div className="space-y-1">
             {activities.map((activity) => (
