@@ -450,3 +450,204 @@ async def dashboard_summary(
             "foias": recent_foias,
         },
     }
+
+
+@router.get("/system-metrics")
+async def system_metrics(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Get system performance metrics and health indicators.
+
+    Returns:
+        - Database query performance
+        - Redis cache statistics
+        - Background task metrics
+        - API usage statistics
+        - Error rates
+    """
+    import psutil
+    import os
+
+    now = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
+    day_ago = now - timedelta(days=1)
+
+    # Database metrics
+    db_metrics = {}
+
+    # Count total records in key tables
+    articles_count = (await db.execute(select(func.count(NewsArticle.id)))).scalar() or 0
+    foias_count = (await db.execute(select(func.count(FoiaRequest.id)))).scalar() or 0
+    videos_count = (await db.execute(select(func.count(Video.id)))).scalar() or 0
+
+    db_metrics["table_counts"] = {
+        "articles": articles_count,
+        "foias": foias_count,
+        "videos": videos_count,
+    }
+
+    # Recent activity (past hour)
+    articles_past_hour = (
+        await db.execute(
+            select(func.count(NewsArticle.id)).where(
+                NewsArticle.created_at >= hour_ago
+            )
+        )
+    ).scalar() or 0
+
+    foias_past_hour = (
+        await db.execute(
+            select(func.count(FoiaRequest.id)).where(
+                FoiaRequest.created_at >= hour_ago
+            )
+        )
+    ).scalar() or 0
+
+    db_metrics["recent_activity_hourly"] = {
+        "articles": articles_past_hour,
+        "foias": foias_past_hour,
+    }
+
+    # Redis cache metrics
+    redis_metrics = {}
+    try:
+        r = aioredis.from_url(settings.REDIS_URL)
+        try:
+            info = await r.info("stats")
+            redis_metrics = {
+                "total_connections_received": info.get("total_connections_received", 0),
+                "total_commands_processed": info.get("total_commands_processed", 0),
+                "keyspace_hits": info.get("keyspace_hits", 0),
+                "keyspace_misses": info.get("keyspace_misses", 0),
+                "hit_rate": (
+                    round(
+                        info.get("keyspace_hits", 0)
+                        / max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1)
+                        * 100,
+                        2,
+                    )
+                ),
+            }
+        finally:
+            await r.aclose()
+    except Exception as e:
+        redis_metrics = {"error": str(e)}
+
+    # Background task metrics (from scan_log)
+    task_metrics = {}
+
+    # Successful scans in past 24 hours
+    successful_scans = (
+        await db.execute(
+            select(func.count(ScanLog.id)).where(
+                and_(
+                    ScanLog.created_at >= day_ago,
+                    ScanLog.status == "success",
+                )
+            )
+        )
+    ).scalar() or 0
+
+    # Failed scans in past 24 hours
+    failed_scans = (
+        await db.execute(
+            select(func.count(ScanLog.id)).where(
+                and_(
+                    ScanLog.created_at >= day_ago,
+                    ScanLog.status == "failed",
+                )
+            )
+        )
+    ).scalar() or 0
+
+    task_metrics["past_24h"] = {
+        "successful_scans": successful_scans,
+        "failed_scans": failed_scans,
+        "success_rate": (
+            round(
+                successful_scans / max(successful_scans + failed_scans, 1) * 100,
+                2,
+            )
+        ),
+    }
+
+    # System resources
+    system_metrics = {}
+    try:
+        process = psutil.Process(os.getpid())
+        memory_info = process.memory_info()
+
+        system_metrics = {
+            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "memory_used_mb": round(memory_info.rss / 1024 / 1024, 2),
+            "memory_percent": process.memory_percent(),
+            "threads": process.num_threads(),
+            "open_files": len(process.open_files()),
+        }
+    except Exception as e:
+        system_metrics = {"error": str(e)}
+
+    # Circuit breaker health
+    circuit_metrics = {}
+    circuits_result = await db.execute(
+        select(
+            func.count(NewsSourceHealth.id).label("total"),
+            func.count(
+                func.nullif(NewsSourceHealth.is_circuit_open, False)
+            ).label("open"),
+        )
+    )
+    circuit_row = circuits_result.first()
+
+    circuit_metrics = {
+        "total_sources": circuit_row.total if circuit_row else 0,
+        "circuits_open": circuit_row.open if circuit_row else 0,
+        "health_score": (
+            round(
+                (1 - (circuit_row.open / max(circuit_row.total, 1))) * 100,
+                1,
+            )
+            if circuit_row and circuit_row.total > 0
+            else 100
+        ),
+    }
+
+    # Overall system health score (0-100)
+    health_factors = []
+
+    # Database health (based on recent activity)
+    if articles_past_hour > 0 or foias_past_hour > 0:
+        health_factors.append(100)  # Active
+    else:
+        health_factors.append(70)  # Idle
+
+    # Redis health
+    if "error" not in redis_metrics:
+        health_factors.append(100)
+    else:
+        health_factors.append(0)
+
+    # Task success rate
+    if task_metrics["past_24h"]["success_rate"] >= 90:
+        health_factors.append(100)
+    elif task_metrics["past_24h"]["success_rate"] >= 70:
+        health_factors.append(70)
+    else:
+        health_factors.append(30)
+
+    # Circuit breaker health
+    health_factors.append(circuit_metrics["health_score"])
+
+    overall_health = round(sum(health_factors) / len(health_factors), 1)
+
+    return {
+        "timestamp": now.isoformat(),
+        "overall_health_score": overall_health,
+        "database": db_metrics,
+        "redis": redis_metrics,
+        "background_tasks": task_metrics,
+        "system_resources": system_metrics,
+        "circuit_breakers": circuit_metrics,
+    }
+
