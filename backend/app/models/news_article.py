@@ -43,6 +43,7 @@ class NewsArticle(Base):
         Enum(IncidentType, name="incident_type_enum"), nullable=True
     )
     severity_score: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    virality_score: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     detected_agency: Mapped[str | None] = mapped_column(String(255), nullable=True)
     detected_officers: Mapped[Any | None] = mapped_column(JSON, nullable=True)
     detected_location: Mapped[str | None] = mapped_column(String(500), nullable=True)

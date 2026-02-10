@@ -40,7 +40,26 @@ DEDUP_LOOKBACK_DAYS = 7
 
 async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> dict:
     """Parse a single RSS feed and return stats."""
-    stats: dict = {"found": 0, "new": 0, "duplicate": 0, "errors": 0}
+    from app.services.circuit_breaker import should_skip_source, record_success, record_failure
+
+    stats: dict = {
+        "found": 0,
+        "new": 0,
+        "duplicate": 0,
+        "filtered": 0,
+        "errors": 0,
+        "skipped": False,
+        "skip_reason": None,
+    }
+
+    # Check circuit breaker
+    should_skip, skip_reason = await should_skip_source(db, source_name)
+    if should_skip:
+        stats["skipped"] = True
+        stats["skip_reason"] = skip_reason
+        logger.info(f"Skipping {source_name}: {skip_reason}")
+        return stats
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
@@ -57,6 +76,15 @@ async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> di
             url = entry.get("link", "")
             headline = entry.get("title", "")
             summary = entry.get("summary", "")
+
+            # Pre-filter: check relevance before saving
+            from app.services.article_classifier import is_article_relevant
+
+            is_relevant, reason = is_article_relevant(headline, summary)
+            if not is_relevant:
+                stats["filtered"] += 1
+                logger.debug(f"Filtered article: {headline[:50]}... (reason: {reason})")
+                continue
 
             published: datetime | None = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
@@ -78,9 +106,17 @@ async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> di
             stats["new"] += 1
 
         await db.flush()
+
+        # Record success in circuit breaker
+        await record_success(db, source_name, feed_url)
+
     except Exception as e:
         stats["errors"] += 1
         stats["error_message"] = str(e)
+        logger.error(f"Error scanning {source_name}: {e}")
+
+        # Record failure in circuit breaker
+        await record_failure(db, source_name, feed_url, str(e))
 
     return stats
 
@@ -96,8 +132,16 @@ async def scan_all_rss(db: AsyncSession) -> dict:
     db.add(log)
     await db.flush()
 
-    total: dict = {"found": 0, "new": 0, "duplicate": 0, "errors": 0}
+    total: dict = {
+        "found": 0,
+        "new": 0,
+        "duplicate": 0,
+        "filtered": 0,
+        "skipped": 0,
+        "errors": 0,
+    }
     error_messages: list[str] = []
+    skipped_sources: list[str] = []
 
     try:
         for feed in RSS_FEEDS:
@@ -105,11 +149,24 @@ async def scan_all_rss(db: AsyncSession) -> dict:
             total["found"] += stats["found"]
             total["new"] += stats["new"]
             total["duplicate"] += stats["duplicate"]
+            total["filtered"] += stats.get("filtered", 0)
             total["errors"] += stats["errors"]
+
+            if stats.get("skipped"):
+                total["skipped"] += 1
+                skipped_sources.append(f"{feed['source']} ({stats['skip_reason']})")
+
             if "error_message" in stats:
                 error_messages.append(f"{feed['source']}: {stats['error_message']}")
 
         log.status = ScanStatus.completed
+        logger.info(
+            f"RSS scan complete: {total['found']} found, {total['new']} new, "
+            f"{total['duplicate']} duplicate, {total['filtered']} filtered, "
+            f"{total['skipped']} skipped"
+        )
+        if skipped_sources:
+            logger.info(f"Skipped sources: {', '.join(skipped_sources)}")
     except Exception as exc:
         log.status = ScanStatus.failed
         error_messages.append(f"Fatal: {exc}")

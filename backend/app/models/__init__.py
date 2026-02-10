@@ -6,6 +6,7 @@ from app.models.base import Base
 from app.models.foia_request import FoiaPriority, FoiaRequest, FoiaStatus
 from app.models.foia_status_change import FoiaStatusChange
 from app.models.news_article import IncidentType, NewsArticle
+from app.models.news_source_health import NewsSourceHealth
 from app.models.notification import Notification, NotificationChannel, NotificationType
 from app.models.revenue_transaction import RevenueTransaction, TransactionType
 from app.models.scan_log import ScanLog, ScanStatus, ScanType
@@ -21,6 +22,7 @@ __all__ = [
     "FoiaRequest",
     "FoiaStatusChange",
     "NewsArticle",
+    "NewsSourceHealth",
     "Notification",
     "RevenueTransaction",
     "ScanLog",

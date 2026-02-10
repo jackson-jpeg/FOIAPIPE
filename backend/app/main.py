@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.agencies import router as agencies_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
+from app.api.circuit_breakers import router as circuit_breakers_router
 from app.api.dashboard import router as dashboard_router
 from app.api.foia import router as foia_router
 from app.api.health import router as health_router
@@ -55,6 +56,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(analytics_router)
 app.include_router(auth_router)
+app.include_router(circuit_breakers_router)
 app.include_router(dashboard_router)
 app.include_router(agencies_router)
 app.include_router(foia_router)

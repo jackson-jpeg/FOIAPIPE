@@ -24,6 +24,7 @@ class NewsArticleResponse(BaseModel):
     published_at: datetime | None = None
     incident_type: IncidentType | None = None
     severity_score: int | None = None
+    virality_score: int | None = None
     detected_agency: str | None = None
     detected_officers: list[str] | None = None
     detected_location: str | None = None
@@ -77,6 +78,7 @@ class ScanNowResponse(BaseModel):
     found: int
     new: int
     duplicate: int
+    filtered: int
     errors: int
     classified: int
 

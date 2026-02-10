@@ -179,6 +179,7 @@ async def _check_deadlines_async():
 
 async def _auto_submit_async(article_id: str):
     from sqlalchemy import func, select
+    from sqlalchemy.exc import IntegrityError
 
     from app.database import async_session_factory
     from app.models.agency import Agency
@@ -297,7 +298,30 @@ async def _auto_submit_async(article_id: str):
             is_auto_submitted=True,
         )
         db.add(foia)
-        await db.flush()  # Get ID for audit trail
+
+        try:
+            await db.flush()  # Get ID for audit trail
+        except IntegrityError as e:
+            # Race condition caught: another process created a FOIA for this article-agency pair
+            await db.rollback()
+            logger.info(
+                f"Duplicate FOIA prevented by database constraint for article {article.id} "
+                f"(article-agency pair already exists)"
+            )
+            # Find the existing FOIA to return its case number
+            existing = (
+                await db.execute(
+                    select(FoiaRequest).where(
+                        FoiaRequest.news_article_id == article.id,
+                        FoiaRequest.agency_id == agency.id,
+                    )
+                )
+            ).scalar_one_or_none()
+            return {
+                "skipped": True,
+                "reason": "Duplicate prevented by database constraint",
+                "case_number": existing.case_number if existing else "unknown",
+            }
 
         try:
             # Generate and send

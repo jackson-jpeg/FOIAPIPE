@@ -134,6 +134,44 @@ INCIDENT_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
+# Keywords that indicate police involvement (required for relevance)
+POLICE_INDICATORS = [
+    "police", "officer", "deputy", "sheriff", "trooper", "cop", "law enforcement",
+    "arrest", "detained", "custody", "investigation", "suspect", "department",
+    "tpd", "hcso", "sppd", "pcso", "fhp", "charged", "charge", "booking",
+    "jail", "inmate", "authorities",
+]
+
+# High-severity crime keywords that bypass strict police indicator requirement
+VIOLENT_CRIME_KEYWORDS = [
+    "shooting", "shot", "gunfire", "fired weapon", "fatal shooting", "gunned", "gunned down",
+    "killed", "murder", "homicide", "deadly", "death", "slain", "fatal",
+    "stabbing", "stabbed", "assault", "attacked", "beating",
+]
+
+# Keywords that indicate irrelevant content (auto-reject)
+JUNK_KEYWORDS = [
+    "weather", "forecast", "rain", "storm watch", "temperature",
+    "sports", "game", "score", "playoff", "championship", "nfl", "nba", "mlb",
+    "concert", "festival", "event calendar", "opening soon",
+    "recipe", "restaurant review", "dining",
+    "real estate", "for sale", "new development",
+    "school board", "zoning", "city council meeting",
+    "obituary", "died peacefully", "memorial service",
+    "traffic alert", "road closure", "construction project",
+    "lottery", "winning numbers",
+    "horoscope", "astrology",
+]
+
+# Keywords that indicate low-value incidents (unlikely to have bodycam)
+LOW_VALUE_KEYWORDS = [
+    "community meeting", "press conference", "statement released",
+    "statistics show", "annual report", "data reveals",
+    "tips for", "how to", "safety reminder",
+    "hiring", "recruiting", "job opening",
+    "fundraiser", "charity event", "donation drive",
+]
+
 SEVERITY_BASE_SCORES: dict[str, int] = {
     "ois": 9,
     "use_of_force": 7,
@@ -144,6 +182,51 @@ SEVERITY_BASE_SCORES: dict[str, int] = {
     "dui": 3,
     "other": 2,
 }
+
+
+def is_article_relevant(headline: str, summary: str = "") -> tuple[bool, str]:
+    """Quick pre-filter to determine if an article is worth saving.
+
+    Returns:
+        (is_relevant, reason) - True if article should be saved, False otherwise
+    """
+    combined = f"{headline} {summary}".lower()
+
+    # Auto-reject: junk content
+    for keyword in JUNK_KEYWORDS:
+        if keyword in combined:
+            return False, f"junk_keyword:{keyword}"
+
+    # Auto-reject: low-value content
+    for keyword in LOW_VALUE_KEYWORDS:
+        if keyword in combined:
+            return False, f"low_value:{keyword}"
+
+    # Check for violent crime (allows bypassing strict police indicator requirement)
+    has_violent_crime = any(keyword in combined for keyword in VIOLENT_CRIME_KEYWORDS)
+
+    # Require: police involvement indicator (or violent crime)
+    has_police_indicator = any(indicator in combined for indicator in POLICE_INDICATORS)
+    if not has_police_indicator and not has_violent_crime:
+        return False, "no_police_indicator"
+
+    # Require: at least one incident keyword OR agency mention
+    has_incident = False
+    for keywords in INCIDENT_KEYWORDS.values():
+        if any(kw in combined for kw in keywords):
+            has_incident = True
+            break
+
+    has_agency = any(
+        any(pattern in combined for pattern in patterns)
+        for patterns in AGENCY_PATTERNS.values()
+    )
+
+    # Violent crimes pass even without explicit incident classification
+    if not (has_incident or has_agency or has_violent_crime):
+        return False, "no_incident_or_agency"
+
+    return True, "passed_relevance_filter"
 
 
 def detect_agency(text: str, agency_names: Optional[list[str]] = None) -> Optional[str]:
@@ -263,7 +346,7 @@ async def classify_article_with_ai(
         # Truncate body to 1000 chars for cost optimization
         truncated_body = body[:1000] if len(body) > 1000 else body
 
-        prompt = f"""Analyze this law enforcement news article and extract structured information.
+        prompt = f"""Analyze this law enforcement news article for bodycam footage potential.
 
 HEADLINE: {headline}
 
@@ -274,28 +357,44 @@ KNOWN AGENCIES (choose the best match or "unknown"):
 
 INCIDENT TYPES (choose one):
 - ois (officer-involved shooting)
-- use_of_force (physical force, baton, restraint)
+- use_of_force (physical force, baton, restraint, excessive force allegations)
 - pursuit (vehicle/foot chase)
 - taser (conducted energy weapon)
 - k9 (police dog deployment)
-- dui (impaired driving by officer or suspect)
-- arrest (routine arrest)
-- other
+- dui (impaired driving arrest)
+- arrest (routine arrest with notable circumstances)
+- other (explain in reasoning if chosen)
+
+Your task: Determine if this incident likely has bodycam footage worth requesting via FOIA and publishing on YouTube.
 
 Provide ONLY valid JSON in this exact format:
 {{
   "detected_agency": "<agency name from list or 'unknown'>",
   "incident_type": "<one of the incident types above>",
-  "severity": <integer 1-10, where 1=routine, 5=notable, 10=critical>,
+  "severity": <integer 1-10, content newsworthiness>,
+  "virality_score": <integer 1-10, YouTube viral potential>,
   "confidence": "<high|medium|low>",
-  "reasoning": "<1 sentence explaining your classification>"
+  "reasoning": "<1-2 sentences explaining classification and footage potential>"
 }}
 
-Severity scoring guidance:
-- 1-3: Routine incident (standard arrest, minor complaint)
-- 4-6: Notable incident (use of force, pursuit, injuries)
-- 7-8: Serious incident (OIS, significant injuries, multiple officers)
-- 9-10: Critical incident (fatality, major controversy, identified officer)"""
+Severity scoring (1-10, how newsworthy is this incident):
+- 1-3: Routine (standard arrest, minor incident, no injuries, no controversy)
+- 4-6: Notable (use of force, pursuit with crash, injuries, property damage)
+- 7-8: Serious (OIS, significant injuries, multiple officers, civil rights concerns)
+- 9-10: Critical (fatality, major controversy, officer named, viral potential)
+
+Virality score (1-10, YouTube engagement potential):
+- 1-3: Low (routine arrest, no drama, no visual interest)
+- 4-6: Medium (some action, pursuit, taser use, moderate controversy)
+- 7-8: High (dramatic footage, OIS, K-9 deployment, significant use of force)
+- 9-10: Viral (death/serious injury, major controversy, officer misconduct, dramatic chase)
+
+REJECT (score 1-2) if article is:
+- Press release, statistics, or policy announcement
+- Traffic accident without police pursuit
+- Community event or police recruiting
+- Crime alert or wanted person notice
+- Historical retrospective or anniversary story"""
 
         response = await client.messages.create(
             model="claude-haiku-4-5-20251001",
@@ -367,9 +466,10 @@ async def classify_and_score_article(
 
     article.incident_type = classification.get("incident_type", "other")
     article.severity_score = classification.get("severity", 5)
+    article.virality_score = classification.get("virality_score", article.severity_score)
 
-    # Store AI reasoning in summary field if available
-    if classification.get("reasoning"):
+    # Store AI reasoning in summary field if available (only if summary is empty)
+    if classification.get("reasoning") and not article.summary:
         article.summary = classification.get("reasoning")
 
     logger.info(
