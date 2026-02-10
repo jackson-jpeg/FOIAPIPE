@@ -25,6 +25,13 @@ from app.services.video_processor import (
     extract_metadata,
     generate_thumbnail as ffmpeg_generate_thumbnail,
 )
+from app.services.subtitle_generator import (
+    STTProvider,
+    SubtitleFormat,
+    generate_subtitles,
+    validate_subtitle_file,
+)
+from app.models.video_subtitle import VideoSubtitle
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])
 
@@ -330,3 +337,183 @@ async def generate_video_thumbnail(
             os.unlink(thumb_path)
 
     return _to_response(video)
+
+
+# ── Subtitle Generation ──────────────────────────────────────────────────
+
+
+@router.post("/{video_id}/generate-subtitles")
+async def generate_video_subtitles(
+    video_id: uuid.UUID,
+    language: str = Query("en", description="Language code (ISO 639-1)"),
+    subtitle_format: SubtitleFormat = Query(SubtitleFormat.srt, description="Subtitle format"),
+    provider: STTProvider = Query(STTProvider.mock, description="Speech-to-text provider"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate subtitles for a video using speech-to-text.
+
+    Supports multiple STT providers and subtitle formats.
+
+    NOTE: Whisper provider requires OPENAI_API_KEY environment variable.
+    Use 'mock' provider for testing without API key.
+    """
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Video not found",
+        )
+
+    if not video.storage_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Video file not uploaded yet",
+        )
+
+    try:
+        # Download video from S3 to temp file
+        from app.services.storage import download_file
+
+        video_bytes = download_file(video.storage_key)
+
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=".mp4"
+        ) as tmp_video:
+            tmp_video.write(video_bytes)
+            tmp_video_path = tmp_video.name
+
+        # Generate subtitles
+        subtitle_path = await generate_subtitles(
+            video_file_path=tmp_video_path,
+            subtitle_format=subtitle_format,
+            provider=provider,
+            language=language,
+        )
+
+        # Validate subtitle file
+        validation = validate_subtitle_file(subtitle_path)
+
+        if not validation.get("valid"):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Subtitle validation failed: {validation.get('error')}",
+            )
+
+        # Upload to S3
+        with open(subtitle_path, "rb") as f:
+            subtitle_bytes = f.read()
+
+        subtitle_key = f"videos/subtitles/{video_id}_{language}.{subtitle_format.value}"
+        upload_file(subtitle_bytes, subtitle_key, "text/plain; charset=utf-8")
+
+        # Save subtitle record
+        subtitle_record = VideoSubtitle(
+            video_id=video_id,
+            language=language,
+            format=subtitle_format.value,
+            storage_key=subtitle_key,
+            provider=provider.value,
+            segment_count=validation.get("segment_count"),
+            file_size_bytes=validation.get("file_size_bytes"),
+        )
+        db.add(subtitle_record)
+        await db.flush()
+        await db.refresh(subtitle_record)
+
+        # Cleanup temp files
+        os.unlink(tmp_video_path)
+        os.unlink(subtitle_path)
+
+        return {
+            "success": True,
+            "subtitle_id": str(subtitle_record.id),
+            "language": language,
+            "format": subtitle_format.value,
+            "storage_key": subtitle_key,
+            "segment_count": validation.get("segment_count"),
+            "file_size_bytes": validation.get("file_size_bytes"),
+            "provider": provider.value,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Subtitle generation failed: {str(e)}",
+        )
+
+
+@router.get("/{video_id}/subtitles")
+async def list_video_subtitles(
+    video_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """List all subtitles for a video."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Video not found",
+        )
+
+    # Get subtitles
+    result = await db.execute(
+        select(VideoSubtitle)
+        .where(VideoSubtitle.video_id == video_id)
+        .order_by(VideoSubtitle.language)
+    )
+    subtitles = result.scalars().all()
+
+    return {
+        "video_id": str(video_id),
+        "subtitle_count": len(subtitles),
+        "subtitles": [
+            {
+                "id": str(sub.id),
+                "language": sub.language,
+                "format": sub.format,
+                "storage_key": sub.storage_key,
+                "provider": sub.provider,
+                "segment_count": sub.segment_count,
+                "file_size_bytes": sub.file_size_bytes,
+                "created_at": sub.created_at.isoformat() if sub.created_at else None,
+            }
+            for sub in subtitles
+        ],
+    }
+
+
+@router.delete("/{video_id}/subtitles/{subtitle_id}")
+async def delete_video_subtitle(
+    video_id: uuid.UUID,
+    subtitle_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Delete a subtitle track from a video."""
+    subtitle = await db.get(VideoSubtitle, subtitle_id)
+    if not subtitle or subtitle.video_id != str(video_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subtitle not found",
+        )
+
+    # Delete from S3 if exists
+    if subtitle.storage_key:
+        try:
+            from app.services.storage import delete_file
+
+            delete_file(subtitle.storage_key)
+        except Exception:
+            pass  # Continue even if S3 deletion fails
+
+    # Delete from database
+    await db.delete(subtitle)
+    await db.flush()
+
+    return {
+        "success": True,
+        "message": f"Subtitle {subtitle.language}/{subtitle.format} deleted",
+    }

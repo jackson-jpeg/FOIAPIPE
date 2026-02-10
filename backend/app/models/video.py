@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from app.models.foia_request import FoiaRequest
     from app.models.video_analytics import VideoAnalytics
     from app.models.video_status_change import VideoStatusChange
+    from app.models.video_subtitle import VideoSubtitle
 
 
 class VideoStatus(str, enum.Enum):
@@ -94,6 +95,12 @@ class Video(Base):
         back_populates="video",
         lazy="selectin",
         order_by="VideoStatusChange.created_at",
+    )
+    subtitles: Mapped[list[VideoSubtitle]] = relationship(
+        "VideoSubtitle",
+        back_populates="video",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:

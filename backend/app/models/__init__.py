@@ -15,6 +15,7 @@ from app.models.scan_log import ScanLog, ScanStatus, ScanType
 from app.models.video import Video, VideoStatus
 from app.models.video_analytics import VideoAnalytics
 from app.models.video_status_change import VideoStatusChange
+from app.models.video_subtitle import VideoSubtitle
 
 __all__ = [
     # Models
@@ -33,6 +34,7 @@ __all__ = [
     "Video",
     "VideoAnalytics",
     "VideoStatusChange",
+    "VideoSubtitle",
     # Enums
     "AuditAction",
     "ContactType",
