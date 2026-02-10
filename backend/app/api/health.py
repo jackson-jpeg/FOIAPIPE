@@ -146,7 +146,7 @@ async def health_detailed(
     try:
         from sqlalchemy import inspect
         tables = await db.run_sync(
-            lambda conn: inspect(conn).get_table_names()
+            lambda sync_session: inspect(sync_session.get_bind()).get_table_names()
         )
         expected_tables = [
             "news_articles",
