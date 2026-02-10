@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 import sys
 
+import sentry_sdk
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,6 +55,17 @@ structlog.configure(
 )
 
 logger = structlog.get_logger()
+
+# ── Sentry Error Tracking ─────────────────────────────────────────────────
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment="production" if not settings.DEBUG else "development",
+        traces_sample_rate=1.0 if settings.DEBUG else 0.1,  # 100% in dev, 10% in prod
+        profiles_sample_rate=1.0 if settings.DEBUG else 0.1,
+        enable_tracing=True,
+    )
+    logger.info("Sentry error tracking initialized", environment="production" if not settings.DEBUG else "development")
 
 # ── Rate Limiter ──────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address)

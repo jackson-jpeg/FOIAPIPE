@@ -80,6 +80,9 @@ class Settings(BaseSettings):
     TWILIO_FROM_NUMBER: str = ""
     NOTIFICATION_PHONE: str = ""
 
+    # ── Sentry (Error Tracking) ───────────────────────────────────────────
+    SENTRY_DSN: str = ""  # Optional: Sentry.io DSN for error tracking
+
     # ── CORS ──────────────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 

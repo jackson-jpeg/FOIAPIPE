@@ -350,7 +350,7 @@ async def update_agency_contact(
     return AgencyContactResponse.model_validate(contact)
 
 
-@router.delete("/{agency_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{agency_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_agency_contact(
     agency_id: uuid.UUID,
     contact_id: uuid.UUID,
