@@ -99,3 +99,62 @@ async def export_youtube_optimized(file_path: str, output_path: str) -> str:
     if code != 0:
         raise RuntimeError(f"YouTube export failed: {stderr}")
     return output_path
+
+
+async def generate_youtube_thumbnail(
+    file_path: str,
+    output_path: str,
+    title_text: str,
+    agency_text: str,
+    timestamp: int = 30,
+) -> str:
+    """Generate YouTube-style thumbnail with text overlay.
+
+    Args:
+        file_path: Source video file
+        output_path: Output JPEG path
+        title_text: Main title text (e.g., "BODYCAM: Officer-Involved Shooting")
+        agency_text: Agency/date text (e.g., "Tampa Police - Feb 9, 2026")
+        timestamp: Second to extract frame from
+
+    Returns:
+        Path to generated thumbnail
+    """
+    # Escape single quotes in text for ffmpeg
+    title_text = title_text.replace("'", "'\\''")
+    agency_text = agency_text.replace("'", "'\\''")
+
+    # Create YouTube-style thumbnail with text overlays
+    # - Extract frame at timestamp
+    # - Add dark gradient overlay for text readability
+    # - Add title text (large, bold, top)
+    # - Add agency text (smaller, bottom)
+    cmd = [
+        "ffmpeg", "-y",
+        "-ss", str(timestamp),
+        "-i", file_path,
+        "-vf",
+        # Extract one frame, add gradient overlay, add text
+        (
+            f"scale=1280:720:force_original_aspect_ratio=increase,"
+            f"crop=1280:720,"
+            # Add dark gradient overlay for text readability
+            f"drawbox=y=0:color=black@0.6:width=iw:height=150:t=fill,"
+            f"drawbox=y=ih-100:color=black@0.6:width=iw:height=100:t=fill,"
+            # Add title text (large, white, top)
+            f"drawtext=text='{title_text}':fontcolor=white:fontsize=56:fontfile=/System/Library/Fonts/Supplemental/Arial Bold.ttf:x=(w-text_w)/2:y=40,"
+            # Add agency/date text (smaller, yellow, bottom)
+            f"drawtext=text='{agency_text}':fontcolor=yellow:fontsize=36:fontfile=/System/Library/Fonts/Supplemental/Arial.ttf:x=(w-text_w)/2:y=h-70"
+        ),
+        "-vframes", "1",
+        "-q:v", "2",  # High quality JPEG
+        output_path,
+    ]
+
+    _, stderr, code = await _run_cmd(cmd)
+    if code != 0:
+        # Fallback to basic thumbnail if text overlay fails
+        logger.warning(f"YouTube thumbnail generation failed: {stderr}, falling back to basic")
+        return await generate_thumbnail(file_path, output_path, timestamp)
+
+    return output_path
