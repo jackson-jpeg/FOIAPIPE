@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
+from decimal import Decimal
+
 from pydantic import BaseModel
 
 
@@ -21,6 +23,8 @@ class AgencyCreate(BaseModel):
     state: str = "FL"
     jurisdiction: str | None = None
     notes: str | None = None
+    foia_template: str | None = None
+    typical_cost_per_hour: Decimal | None = None
 
 
 class AgencyUpdate(BaseModel):
@@ -35,6 +39,8 @@ class AgencyUpdate(BaseModel):
     is_active: bool | None = None
     avg_response_days: int | None = None
     notes: str | None = None
+    foia_template: str | None = None
+    typical_cost_per_hour: Decimal | None = None
 
 
 # ── Responses ─────────────────────────────────────────────────────────────
@@ -53,6 +59,8 @@ class AgencyResponse(BaseModel):
     is_active: bool
     avg_response_days: int | None = None
     notes: str | None = None
+    foia_template: str | None = None
+    typical_cost_per_hour: Decimal | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

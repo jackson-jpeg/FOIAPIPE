@@ -36,8 +36,30 @@ def generate_request_text(
     agency_name: str = "",
     officer_names: Optional[list[str]] = None,
     case_numbers: Optional[list[str]] = None,
+    custom_template: Optional[str] = None,
 ) -> str:
-    """Populate the FOIA request template with incident details."""
+    """Populate the FOIA request template with incident details.
+
+    Args:
+        incident_description: Description of the incident
+        incident_date: Date of incident (formatted string)
+        incident_location: Location of incident
+        agency_name: Name of agency
+        officer_names: List of officer names involved
+        case_numbers: List of case numbers
+        custom_template: Agency-specific template (optional)
+
+    Returns:
+        Formatted FOIA request text
+
+    Template Placeholders:
+        {incident_description} - Description of the incident
+        {incident_date} - Date of incident
+        {incident_location} - Location of incident
+        {agency_name} - Agency name
+        {officer_names} - Comma-separated officer names (or empty)
+        {case_numbers} - Comma-separated case numbers (or empty)
+    """
     officer_section = ""
     if officer_names:
         names = ", ".join(officer_names)
@@ -51,6 +73,18 @@ def generate_request_text(
     date_str = incident_date or "the referenced date"
     location_str = incident_location or "the referenced location"
 
+    # Use custom template if provided
+    if custom_template:
+        return custom_template.format(
+            incident_description=incident_description,
+            incident_date=date_str,
+            incident_location=location_str,
+            agency_name=agency_name,
+            officer_names=", ".join(officer_names) if officer_names else "",
+            case_numbers=", ".join(case_numbers) if case_numbers else "",
+        )
+
+    # Default template
     return f"""Dear Records Custodian,
 
 Pursuant to Florida's Public Records Act, Chapter 119, Florida Statutes, I am requesting copies of the following records:

@@ -97,6 +97,123 @@ async def update_agency(
     return AgencyResponse.model_validate(agency)
 
 
+@router.get("/{agency_id}/template")
+async def get_agency_template(
+    agency_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Get the FOIA request template for an agency.
+
+    Returns the custom template if set, otherwise returns the default template.
+    """
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    # Default template
+    default_template = """Dear Records Custodian,
+
+Pursuant to Florida's Public Records Act, Chapter 119, Florida Statutes, I am requesting copies of the following records:
+
+All body-worn camera footage, dashboard camera footage, and any other audio/video recordings related to {incident_description} on {incident_date} at {incident_location} involving {agency_name}.
+
+I am willing to pay reasonable duplication costs. Please notify me if costs will exceed $25.00 before proceeding.
+
+Please provide responsive records in electronic format where available.
+
+Thank you for your prompt attention to this request.
+
+Sincerely,
+FOIAPIPE Automated Request System"""
+
+    return {
+        "agency_id": str(agency.id),
+        "agency_name": agency.name,
+        "template": agency.foia_template or default_template,
+        "is_custom": agency.foia_template is not None,
+        "placeholders": [
+            "{incident_description}",
+            "{incident_date}",
+            "{incident_location}",
+            "{agency_name}",
+            "{officer_names}",
+            "{case_numbers}",
+        ],
+    }
+
+
+@router.put("/{agency_id}/template")
+async def update_agency_template(
+    agency_id: uuid.UUID,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Update the FOIA request template for an agency.
+
+    Body should contain:
+    - template: The template string with placeholders
+    """
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    template = body.get("template")
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Template is required",
+        )
+
+    # Validate template has required placeholders
+    required_placeholders = ["{incident_description}", "{agency_name}"]
+    missing = [p for p in required_placeholders if p not in template]
+
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Template is missing required placeholders: {', '.join(missing)}",
+        )
+
+    agency.foia_template = template
+    await db.flush()
+    await db.refresh(agency)
+
+    return {
+        "success": True,
+        "message": f"Template updated for {agency.name}",
+        "agency_id": str(agency.id),
+    }
+
+
+@router.delete("/{agency_id}/template")
+async def delete_agency_template(
+    agency_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Delete the custom FOIA template for an agency (revert to default)."""
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    agency.foia_template = None
+    await db.flush()
+
+    return {
+        "success": True,
+        "message": f"Template reset to default for {agency.name}",
+        "agency_id": str(agency.id),
+    }
+
+
 @router.delete("/{agency_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_agency(
     agency_id: uuid.UUID,

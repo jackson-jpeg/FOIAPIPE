@@ -331,11 +331,13 @@ async def create_foia_request(
                 incident_location=incident_location,
                 agency_name=agency.name,
                 officer_names=officer_names,
+                custom_template=agency.foia_template,
             )
         else:
             request_text = generate_request_text(
                 incident_description="the referenced incident",
                 agency_name=agency.name,
+                custom_template=agency.foia_template,
             )
 
     foia = FoiaRequest(

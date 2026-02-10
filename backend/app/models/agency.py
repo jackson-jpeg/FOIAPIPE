@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Integer, String, Text
+from decimal import Decimal
+
+from sqlalchemy import Boolean, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -27,6 +29,12 @@ class Agency(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     avg_response_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # FOIA customization
+    foia_template: Mapped[str | None] = mapped_column(Text, nullable=True)
+    typical_cost_per_hour: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=True
+    )
 
     # ── Relationships ─────────────────────────────────────────────────────
     foia_requests: Mapped[list[FoiaRequest]] = relationship(
