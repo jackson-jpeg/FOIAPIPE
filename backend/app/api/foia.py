@@ -724,3 +724,313 @@ async def list_denial_reasons(
             for reason in DenialReason
         ]
     }
+
+
+# ── Batch Submission ──────────────────────────────────────────────────────
+
+
+@router.post("/batch-submit")
+async def batch_submit_foia(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Submit the same FOIA request to multiple agencies at once.
+
+    Body should contain:
+    - agency_ids: List of agency UUIDs
+    - news_article_id: Optional news article ID
+    - request_text: Optional custom request text (same for all agencies)
+    - priority: Optional priority level
+    - auto_submit: Whether to immediately submit (default: False)
+
+    Returns:
+    - created: List of created FOIA requests
+    - submitted: List of successfully submitted requests (if auto_submit=True)
+    - errors: List of any errors encountered
+    """
+    agency_ids = body.get("agency_ids", [])
+    if not agency_ids or len(agency_ids) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must provide at least 2 agency IDs for batch submission",
+        )
+
+    news_article_id = body.get("news_article_id")
+    custom_request_text = body.get("request_text")
+    priority = body.get("priority", FoiaPriority.medium.value)
+    auto_submit = body.get("auto_submit", False)
+
+    try:
+        priority_enum = FoiaPriority(priority)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid priority. Must be one of: {[p.value for p in FoiaPriority]}",
+        )
+
+    # Get news article if provided
+    article = None
+    if news_article_id:
+        article = await db.get(NewsArticle, news_article_id)
+        if not article:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="News article not found",
+            )
+
+    created_requests = []
+    submitted_requests = []
+    errors = []
+
+    # Create FOIA request for each agency
+    for agency_id_str in agency_ids:
+        try:
+            agency_id = uuid.UUID(agency_id_str)
+
+            # Check if agency exists
+            agency = await db.get(Agency, agency_id)
+            if not agency:
+                errors.append({
+                    "agency_id": agency_id_str,
+                    "error": "Agency not found",
+                })
+                continue
+
+            # Check for duplicate (same agency + same article)
+            if news_article_id:
+                existing = (
+                    await db.execute(
+                        select(FoiaRequest).where(
+                            and_(
+                                FoiaRequest.agency_id == agency_id,
+                                FoiaRequest.news_article_id == news_article_id,
+                            )
+                        )
+                    )
+                ).scalar_one_or_none()
+
+                if existing:
+                    errors.append({
+                        "agency_id": agency_id_str,
+                        "error": f"FOIA already exists for this agency and article (case {existing.case_number})",
+                    })
+                    continue
+
+            # Generate case number
+            case_number = await assign_case_number(db)
+
+            # Determine request text
+            if custom_request_text:
+                request_text = custom_request_text
+            elif article:
+                # Generate from article
+                incident_description = article.headline
+                incident_date = (
+                    article.published_at.strftime("%B %d, %Y")
+                    if article.published_at
+                    else None
+                )
+                incident_location = article.detected_location
+                officer_names = (
+                    article.detected_officers
+                    if isinstance(article.detected_officers, list)
+                    else None
+                )
+                request_text = generate_request_text(
+                    incident_description=incident_description,
+                    incident_date=incident_date,
+                    incident_location=incident_location,
+                    agency_name=agency.name,
+                    officer_names=officer_names,
+                    custom_template=agency.foia_template,
+                )
+            else:
+                # Generic request
+                request_text = generate_request_text(
+                    incident_description="the referenced incident",
+                    agency_name=agency.name,
+                    custom_template=agency.foia_template,
+                )
+
+            # Create FOIA request
+            foia = FoiaRequest(
+                case_number=case_number,
+                agency_id=agency_id,
+                news_article_id=news_article_id,
+                status=FoiaStatus.draft if not auto_submit else FoiaStatus.draft,
+                priority=priority_enum,
+                request_text=request_text,
+            )
+            db.add(foia)
+            await db.flush()
+            await db.refresh(foia)
+
+            created_requests.append({
+                "id": str(foia.id),
+                "case_number": foia.case_number,
+                "agency_id": str(agency_id),
+                "agency_name": agency.name,
+                "status": foia.status.value,
+            })
+
+            # Auto-submit if requested
+            if auto_submit and agency.foia_email:
+                try:
+                    # Generate PDF
+                    pdf_bytes = generate_pdf(foia.request_text, foia.case_number)
+
+                    # Build email body
+                    template_path = TEMPLATES_DIR / "foia_email_body.txt"
+                    if template_path.exists():
+                        email_body = template_path.read_text().format(
+                            case_number=foia.case_number,
+                            request_text=foia.request_text,
+                        )
+                    else:
+                        email_body = f"Case Reference: {foia.case_number}\n\n{foia.request_text}"
+
+                    # Send email
+                    result = await send_foia_email(
+                        to_email=agency.foia_email,
+                        subject=f"Public Records Request – {foia.case_number}",
+                        body_text=email_body,
+                        pdf_bytes=pdf_bytes,
+                        pdf_filename=f"{foia.case_number}.pdf",
+                    )
+
+                    if result["success"]:
+                        # Upload PDF to S3
+                        storage_key = f"foia/{foia.case_number}.pdf"
+                        try:
+                            from app.services.storage import upload_file
+
+                            upload_file(
+                                pdf_bytes,
+                                storage_key,
+                                content_type="application/pdf",
+                            )
+                        except Exception as e:
+                            logger.error(f"S3 upload failed for {storage_key}: {e}")
+
+                        # Update status
+                        response_days = agency.avg_response_days or 30
+                        now = datetime.now(timezone.utc)
+
+                        foia.status = FoiaStatus.submitted
+                        foia.submitted_at = now
+                        foia.due_date = now + timedelta(days=response_days)
+                        foia.pdf_storage_key = storage_key
+                        await db.flush()
+
+                        submitted_requests.append({
+                            "id": str(foia.id),
+                            "case_number": foia.case_number,
+                            "agency_name": agency.name,
+                        })
+                    else:
+                        errors.append({
+                            "agency_id": agency_id_str,
+                            "case_number": foia.case_number,
+                            "error": f"Email failed: {result['message']}",
+                        })
+
+                except Exception as e:
+                    errors.append({
+                        "agency_id": agency_id_str,
+                        "case_number": foia.case_number,
+                        "error": f"Submission failed: {str(e)}",
+                    })
+
+        except Exception as e:
+            errors.append({
+                "agency_id": agency_id_str,
+                "error": str(e),
+            })
+
+    await db.commit()
+
+    return {
+        "success": len(created_requests) > 0,
+        "created_count": len(created_requests),
+        "submitted_count": len(submitted_requests),
+        "error_count": len(errors),
+        "created": created_requests,
+        "submitted": submitted_requests,
+        "errors": errors,
+    }
+
+
+@router.get("/batch-status")
+async def batch_status(
+    case_numbers: str = Query(..., description="Comma-separated case numbers"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Get status of multiple FOIA requests by case numbers.
+
+    Useful for tracking batch submissions.
+
+    Args:
+        case_numbers: Comma-separated list of case numbers
+
+    Returns:
+        Status information for each request
+    """
+    case_number_list = [cn.strip() for cn in case_numbers.split(",") if cn.strip()]
+
+    if not case_number_list:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must provide at least one case number",
+        )
+
+    # Get all matching requests
+    result = await db.execute(
+        select(FoiaRequest).where(FoiaRequest.case_number.in_(case_number_list))
+    )
+    requests = result.scalars().all()
+
+    # Build status map
+    status_map = {}
+    for foia in requests:
+        agency_name = foia.agency.name if foia.agency else "Unknown"
+        status_map[foia.case_number] = {
+            "id": str(foia.id),
+            "case_number": foia.case_number,
+            "agency_id": str(foia.agency_id),
+            "agency_name": agency_name,
+            "status": foia.status.value,
+            "priority": foia.priority.value,
+            "submitted_at": (
+                foia.submitted_at.isoformat() if foia.submitted_at else None
+            ),
+            "due_date": foia.due_date.isoformat() if foia.due_date else None,
+            "fulfilled_at": (
+                foia.fulfilled_at.isoformat() if foia.fulfilled_at else None
+            ),
+            "actual_cost": float(foia.actual_cost) if foia.actual_cost else None,
+        }
+
+    # Find missing case numbers
+    found_case_numbers = {foia.case_number for foia in requests}
+    missing = [cn for cn in case_number_list if cn not in found_case_numbers]
+
+    # Calculate summary stats
+    status_counts = {}
+    for foia in requests:
+        status_value = foia.status.value
+        status_counts[status_value] = status_counts.get(status_value, 0) + 1
+
+    total_cost = sum(
+        float(foia.actual_cost) for foia in requests if foia.actual_cost
+    )
+
+    return {
+        "total_requests": len(case_number_list),
+        "found": len(requests),
+        "missing": missing,
+        "status_counts": status_counts,
+        "total_cost": round(total_cost, 2),
+        "requests": status_map,
+    }
