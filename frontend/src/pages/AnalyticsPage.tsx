@@ -30,8 +30,8 @@ export function AnalyticsPage() {
           analyticsApi.getFunnel(),
         ]);
         setOverview(ov);
-        setRevenueData(rev.data || []);
-        setViewsData(views.data || []);
+        setRevenueData((rev as any)?.data || rev || []);
+        setViewsData((views as any)?.data || views || []);
         setTopVideos(top || []);
         setFunnel(fun);
       } catch {

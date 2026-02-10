@@ -23,10 +23,10 @@ export function NewsScannerPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [scanStatus, setScanStatus] = useState({
-    isScanning: false,
-    lastScanAt: null as string | null,
-    nextScanAt: null as string | null,
-    articlesFoundLastScan: 0,
+    is_scanning: false,
+    last_scan_at: null as string | null,
+    next_scan_at: null as string | null,
+    articles_found_last_scan: 0,
   });
   const [scanning, setScanning] = useState(false);
   const [sortBy, setSortBy] = useState('published_at');
@@ -66,7 +66,7 @@ export function NewsScannerPage() {
 
   const handleScanNow = async () => {
     setScanning(true);
-    setScanStatus(s => ({ ...s, isScanning: true }));
+    setScanStatus(s => ({ ...s, is_scanning: true }));
     try {
       await newsApi.triggerScan();
       addToast({ type: 'success', title: 'Scan completed successfully' });
@@ -77,7 +77,7 @@ export function NewsScannerPage() {
       addToast({ type: 'error', title: 'Scan failed' });
     } finally {
       setScanning(false);
-      setScanStatus(s => ({ ...s, isScanning: false }));
+      setScanStatus(s => ({ ...s, is_scanning: false }));
     }
   };
 
@@ -129,7 +129,7 @@ export function NewsScannerPage() {
     }
   };
 
-  const handleBulkAction = async (action: string) => {
+  const handleBulkAction = async (action: 'dismiss' | 'file_foia' | 'mark_reviewed') => {
     try {
       await newsApi.bulkAction({ article_ids: Array.from(selectedIds), action });
       addToast({ type: 'success', title: `Bulk ${action} completed` });
@@ -195,7 +195,12 @@ export function NewsScannerPage() {
         </Button>
       </div>
 
-      <ScannerStatus {...scanStatus} />
+      <ScannerStatus
+        isScanning={scanStatus.is_scanning}
+        lastScanAt={scanStatus.last_scan_at}
+        nextScanAt={scanStatus.next_scan_at}
+        articlesFoundLastScan={scanStatus.articles_found_last_scan}
+      />
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-1 border-b border-surface-border/50">

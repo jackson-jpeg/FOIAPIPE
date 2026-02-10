@@ -8,7 +8,7 @@ interface Video {
   title: string | null;
   thumbnail_storage_key: string | null;
   duration_seconds: number | null;
-  foia_case_number?: string;
+  foia_case_number: string | null;
   priority: number;
   status: string;
 }

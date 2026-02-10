@@ -14,7 +14,6 @@ export function FoiaEditorPage() {
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [foiaId, setFoiaId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
@@ -27,7 +26,6 @@ export function FoiaEditorPage() {
   useEffect(() => {
     const loadFoiaRequest = async () => {
       if (!isNewRequest && id) {
-        setIsLoading(true);
         try {
           const foiaRequest = await getFoiaRequest(id);
           setFoiaId(foiaRequest.id);
@@ -47,8 +45,6 @@ export function FoiaEditorPage() {
             message: 'Unable to load FOIA request. Redirecting...',
           });
           setTimeout(() => navigate('/foia'), 2000);
-        } finally {
-          setIsLoading(false);
         }
       } else {
         // New request - show AI suggestions

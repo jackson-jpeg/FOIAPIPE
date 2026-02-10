@@ -7,6 +7,7 @@ import { useVideoStore } from '@/stores/videoStore';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Plus } from 'lucide-react';
 import * as videosApi from '@/api/videos';
+import type { VideoStatus } from '@/types';
 
 export function VideoPipelinePage() {
   const { videos, loading, fetchVideos } = useVideoStore();
@@ -17,7 +18,7 @@ export function VideoPipelinePage() {
 
   const handleStatusChange = async (videoId: string, newStatus: string) => {
     try {
-      await videosApi.updateVideo(videoId, { status: newStatus });
+      await videosApi.updateVideo(videoId, { status: newStatus as VideoStatus });
       fetchVideos();
     } catch {
       addToast({ type: 'error', title: 'Failed to update status' });
