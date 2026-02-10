@@ -145,8 +145,9 @@ async def health_detailed(
     # 5. Database migration status
     try:
         from sqlalchemy import inspect
-        inspector = inspect(db.get_bind())
-        tables = await db.run_sync(lambda conn: inspector.get_table_names())
+        tables = await db.run_sync(
+            lambda conn: inspect(conn).get_table_names()
+        )
         expected_tables = [
             "news_articles",
             "foia_requests",
