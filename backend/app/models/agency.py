@@ -13,6 +13,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.foia_request import FoiaRequest
+    from app.models.agency_contact import AgencyContact
 
 
 class Agency(Base):
@@ -40,6 +41,13 @@ class Agency(Base):
     foia_requests: Mapped[list[FoiaRequest]] = relationship(
         "FoiaRequest",
         back_populates="agency",
+        lazy="selectin",
+    )
+
+    contacts: Mapped[list[AgencyContact]] = relationship(
+        "AgencyContact",
+        back_populates="agency",
+        cascade="all, delete-orphan",
         lazy="selectin",
     )
 

@@ -1,6 +1,7 @@
 """Re-export all ORM models and enums for convenient imports."""
 
 from app.models.agency import Agency
+from app.models.agency_contact import AgencyContact, ContactType
 from app.models.app_setting import AppSetting
 from app.models.base import Base
 from app.models.foia_request import FoiaPriority, FoiaRequest, FoiaStatus
@@ -17,6 +18,7 @@ from app.models.video_status_change import VideoStatusChange
 __all__ = [
     # Models
     "Agency",
+    "AgencyContact",
     "AppSetting",
     "Base",
     "FoiaRequest",
@@ -30,6 +32,7 @@ __all__ = [
     "VideoAnalytics",
     "VideoStatusChange",
     # Enums
+    "ContactType",
     "FoiaPriority",
     "FoiaStatus",
     "IncidentType",

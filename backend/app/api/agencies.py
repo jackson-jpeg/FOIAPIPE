@@ -10,7 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.agency import Agency
+from app.models.agency_contact import AgencyContact
 from app.schemas.agency import AgencyCreate, AgencyList, AgencyResponse, AgencyUpdate
+from app.schemas.agency_contact import (
+    AgencyContactCreate,
+    AgencyContactList,
+    AgencyContactResponse,
+    AgencyContactUpdate,
+)
 
 router = APIRouter(prefix="/api/agencies", tags=["agencies"])
 
@@ -212,6 +219,156 @@ async def delete_agency_template(
         "message": f"Template reset to default for {agency.name}",
         "agency_id": str(agency.id),
     }
+
+
+# ── Agency Contacts ──────────────────────────────────────────────────────
+
+
+@router.get("/{agency_id}/contacts", response_model=AgencyContactList)
+async def list_agency_contacts(
+    agency_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> AgencyContactList:
+    """List all contacts for an agency."""
+    # Verify agency exists
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    # Get contacts
+    result = await db.execute(
+        select(AgencyContact)
+        .where(AgencyContact.agency_id == agency_id)
+        .order_by(AgencyContact.is_primary.desc(), AgencyContact.name)
+    )
+    contacts = result.scalars().all()
+
+    return AgencyContactList(
+        items=[AgencyContactResponse.model_validate(c) for c in contacts],
+        total=len(contacts),
+    )
+
+
+@router.post("/{agency_id}/contacts", response_model=AgencyContactResponse, status_code=status.HTTP_201_CREATED)
+async def create_agency_contact(
+    agency_id: uuid.UUID,
+    body: AgencyContactCreate,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> AgencyContactResponse:
+    """Create a new contact for an agency."""
+    # Verify agency exists
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    # If setting as primary, unset other primary contacts
+    if body.is_primary:
+        await db.execute(
+            select(AgencyContact)
+            .where(AgencyContact.agency_id == agency_id)
+            .where(AgencyContact.is_primary == True)
+        )
+        primary_contacts = (await db.execute(
+            select(AgencyContact)
+            .where(AgencyContact.agency_id == agency_id)
+            .where(AgencyContact.is_primary == True)
+        )).scalars().all()
+
+        for contact in primary_contacts:
+            contact.is_primary = False
+
+    # Create contact
+    contact = AgencyContact(
+        agency_id=agency_id,
+        **body.model_dump(),
+    )
+    db.add(contact)
+    await db.flush()
+    await db.refresh(contact)
+
+    return AgencyContactResponse.model_validate(contact)
+
+
+@router.get("/{agency_id}/contacts/{contact_id}", response_model=AgencyContactResponse)
+async def get_agency_contact(
+    agency_id: uuid.UUID,
+    contact_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> AgencyContactResponse:
+    """Get a specific contact for an agency."""
+    contact = await db.get(AgencyContact, contact_id)
+    if not contact or contact.agency_id != str(agency_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
+
+    return AgencyContactResponse.model_validate(contact)
+
+
+@router.put("/{agency_id}/contacts/{contact_id}", response_model=AgencyContactResponse)
+async def update_agency_contact(
+    agency_id: uuid.UUID,
+    contact_id: uuid.UUID,
+    body: AgencyContactUpdate,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> AgencyContactResponse:
+    """Update a contact for an agency."""
+    contact = await db.get(AgencyContact, contact_id)
+    if not contact or contact.agency_id != str(agency_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
+
+    # If setting as primary, unset other primary contacts
+    if body.is_primary:
+        primary_contacts = (await db.execute(
+            select(AgencyContact)
+            .where(AgencyContact.agency_id == agency_id)
+            .where(AgencyContact.is_primary == True)
+            .where(AgencyContact.id != contact_id)
+        )).scalars().all()
+
+        for other_contact in primary_contacts:
+            other_contact.is_primary = False
+
+    # Update contact
+    update_data = body.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(contact, field, value)
+
+    await db.flush()
+    await db.refresh(contact)
+
+    return AgencyContactResponse.model_validate(contact)
+
+
+@router.delete("/{agency_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_agency_contact(
+    agency_id: uuid.UUID,
+    contact_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> None:
+    """Delete a contact from an agency."""
+    contact = await db.get(AgencyContact, contact_id)
+    if not contact or contact.agency_id != str(agency_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
+
+    await db.delete(contact)
+    await db.flush()
+
+
+# ── Agency Deletion ───────────────────────────────────────────────────────
 
 
 @router.delete("/{agency_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
