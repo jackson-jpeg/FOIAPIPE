@@ -410,6 +410,30 @@ def _calc_trend(current: float, previous: float) -> dict:
     return {"value": round(abs(change), 1), "is_positive": change >= 0}
 
 
+@router.get("/publishing/optimal-times")
+async def get_optimal_publish_times(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Get optimal publishing times based on historical performance."""
+    from app.services.publish_scheduler import analyze_best_publish_times
+
+    analysis = await analyze_best_publish_times(db)
+    return analysis
+
+
+@router.get("/publishing/recommendations")
+async def get_publishing_recommendations(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Get publishing recommendations for videos ready to upload."""
+    from app.services.publish_scheduler import get_publish_recommendations
+
+    recommendations = await get_publish_recommendations(db)
+    return recommendations
+
+
 @router.get("/foia/performance")
 async def foia_performance_by_agency(
     db: AsyncSession = Depends(get_db),

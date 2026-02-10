@@ -31,6 +31,8 @@ from app.services.foia_generator import (
     generate_pdf,
     generate_request_text,
 )
+from app.services.cost_predictor import predict_foia_cost, calculate_roi_projection
+from app.models.news_article import IncidentType
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +132,55 @@ async def upcoming_deadlines(
             )
         )
     return deadlines
+
+
+@router.get("/cost-prediction")
+async def predict_cost(
+    agency_id: uuid.UUID,
+    incident_type: IncidentType | None = Query(None, description="Type of incident"),
+    estimated_duration_minutes: int | None = Query(None, ge=1, le=300, description="Estimated footage duration in minutes"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Predict the cost of a FOIA request based on historical data.
+
+    Uses multiple data sources in priority order:
+    1. Agency-specific historical average (highest confidence)
+    2. Incident type historical average
+    3. Agency's typical cost per hour
+    4. Default estimates by incident type
+
+    Returns prediction with confidence level and cost range.
+    """
+    prediction = await predict_foia_cost(
+        db=db,
+        agency_id=str(agency_id),
+        incident_type=incident_type,
+        estimated_duration_minutes=estimated_duration_minutes,
+    )
+    return prediction
+
+
+@router.get("/roi-projection")
+async def roi_projection(
+    predicted_cost: float = Query(..., ge=0, description="Predicted FOIA cost in dollars"),
+    incident_type: IncidentType | None = Query(None, description="Type of incident"),
+    virality_score: int | None = Query(None, ge=1, le=10, description="Predicted virality score (1-10)"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Project potential ROI for a FOIA request.
+
+    Uses historical performance data to estimate revenue and calculate ROI.
+    Provides recommendation (STRONG YES, YES, MAYBE, CAUTION) based on profitability.
+    """
+    projection = await calculate_roi_projection(
+        db=db,
+        predicted_cost=predicted_cost,
+        incident_type=incident_type,
+        virality_score=virality_score,
+    )
+    return projection
 
 
 # ── List & Detail ────────────────────────────────────────────────────────
@@ -405,7 +456,7 @@ async def submit_foia_request(
         foia_request_id=foia.id,
         from_status=foia.status.value,
         to_status=FoiaStatus.submitted.value,
-        changed_by=current_user,
+        changed_by=_user,
         reason="Submitted via email",
         extra_metadata={
             "agency_email": agency.foia_email,
