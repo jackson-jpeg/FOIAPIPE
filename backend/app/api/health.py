@@ -23,6 +23,9 @@ The detailed health check validates:
 from __future__ import annotations
 
 import logging
+import platform
+import sys
+from datetime import datetime, timezone
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -38,20 +41,25 @@ router = APIRouter(prefix="/api/health", tags=["health"])
 
 
 @router.get("")
-async def health_basic() -> dict[str, str]:
+async def health_basic() -> dict[str, Any]:
     """Basic health check endpoint.
 
     Returns a simple OK status with minimal overhead.
     Useful for load balancer health checks and uptime monitoring.
 
     Returns:
-        {"status": "ok"}
+        status, timestamp, version, python_version
 
     Note:
         This endpoint does not check dependencies - it only confirms
         the application is running and can respond to HTTP requests.
     """
-    return {"status": "ok"}
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": "1.0.0",
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+    }
 
 
 @router.get("/detailed")
@@ -176,8 +184,19 @@ async def health_detailed(
     )
     overall = "ok" if critical_ok else "degraded"
 
+    # System information
+    system_info = {
+        "platform": platform.system(),
+        "platform_version": platform.release(),
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "debug_mode": settings.DEBUG,
+    }
+
     return {
         "status": overall,
-        "timestamp": text("NOW()"),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": "1.0.0",
+        "environment": "development" if settings.DEBUG else "production",
+        "system": system_info,
         "checks": checks,
     }
