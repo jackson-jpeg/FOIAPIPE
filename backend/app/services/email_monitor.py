@@ -1,16 +1,54 @@
-"""Monitor IMAP inbox for FOIA response emails."""
+"""Monitor IMAP inbox for FOIA response emails.
+
+This module checks an IMAP inbox for responses from law enforcement agencies
+to FOIA requests. It parses emails to extract:
+- Case numbers
+- Response type (acknowledged, denied, fulfilled, etc.)
+- Cost estimates
+- Attachments
+
+Used to automatically track FOIA request status by monitoring agency replies.
+"""
 
 from __future__ import annotations
 
 import email
+import logging
 import re
 from typing import Optional
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 async def check_inbox() -> list[dict]:
-    """Check IMAP inbox for FOIA-related responses. Returns list of parsed emails."""
+    """Check IMAP inbox for FOIA-related responses.
+
+    Connects to IMAP server and searches for unread emails. Each email is
+    parsed to extract FOIA-related information.
+
+    Returns:
+        List of dictionaries, one per email, containing parsed data:
+            - case_number: Extracted FOIA case number (if found)
+            - from: Sender email address
+            - subject: Email subject
+            - date: Email date
+            - body: Email body text (truncated to 2000 chars)
+            - response_type: Detected type (acknowledged, denied, fulfilled, etc.)
+            - estimated_cost: Extracted cost amount (if mentioned)
+            - has_attachments: Boolean indicating if email has attachments
+
+    Note:
+        Returns empty list if IMAP is not configured.
+        Returns list with error dict if connection fails.
+
+    Example:
+        >>> emails = await check_inbox()
+        >>> for email in emails:
+        ...     if email.get('case_number'):
+        ...         print(f"Response for {email['case_number']}: {email['response_type']}")
+    """
     if not all([settings.IMAP_HOST, settings.IMAP_USER, settings.IMAP_PASSWORD]):
         return []
 
@@ -41,7 +79,25 @@ async def check_inbox() -> list[dict]:
 
 
 def parse_foia_response(msg) -> Optional[dict]:
-    """Parse an email message for FOIA response indicators."""
+    """Parse an email message for FOIA response indicators.
+
+    Extracts structured data from email messages to identify and classify
+    FOIA responses from agencies.
+
+    Args:
+        msg: Email message object from imaplib
+
+    Returns:
+        Dictionary containing parsed email data (see check_inbox for structure),
+        or None if email cannot be parsed
+
+    Note:
+        Detection logic:
+        - Case numbers: Regex pattern FOIA-YYYY-NNNN
+        - Response types: Keyword matching in subject/body
+        - Costs: Dollar amount extraction with regex
+        - Attachments: Checks for MIME attachments
+    """
     subject = msg.get("Subject", "")
     from_addr = msg.get("From", "")
     date = msg.get("Date", "")

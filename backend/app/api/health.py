@@ -1,7 +1,28 @@
-"""Health check endpoints – no authentication required."""
+"""Health check endpoints for system monitoring.
+
+These endpoints provide health status information for all system dependencies
+and are specifically designed for monitoring and alerting systems.
+
+Authentication is NOT required for these endpoints to allow external health
+checks and monitoring services to access them.
+
+Endpoints:
+- GET /api/health - Basic health check (fast, minimal overhead)
+- GET /api/health/detailed - Comprehensive system health check
+
+The detailed health check validates:
+- Database connectivity and query execution
+- Redis connectivity
+- S3/R2 storage configuration
+- Circuit breaker status
+- Database migration status
+- Email (SMTP) configuration
+- Claude API configuration
+"""
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -12,11 +33,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/health", tags=["health"])
 
 
 @router.get("")
 async def health_basic() -> dict[str, str]:
+    """Basic health check endpoint.
+
+    Returns a simple OK status with minimal overhead.
+    Useful for load balancer health checks and uptime monitoring.
+
+    Returns:
+        {"status": "ok"}
+
+    Note:
+        This endpoint does not check dependencies - it only confirms
+        the application is running and can respond to HTTP requests.
+    """
     return {"status": "ok"}
 
 
@@ -24,7 +58,40 @@ async def health_basic() -> dict[str, str]:
 async def health_detailed(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    """Comprehensive health check for all system dependencies."""
+    """Comprehensive health check for all system dependencies.
+
+    Checks connectivity and configuration for all critical and optional
+    system dependencies. Each check is independent - failure of one check
+    does not prevent others from running.
+
+    Returns:
+        Dictionary containing:
+            - status: Overall status ("ok" or "degraded")
+            - timestamp: Current timestamp
+            - checks: Dictionary of individual component checks, each with:
+                - status: Component status ("ok", "error", "not_configured", "degraded")
+                - Additional component-specific fields
+                - error: Error message if check failed
+
+    Component Checks:
+        - database: PostgreSQL connectivity and query execution
+        - redis: Redis connectivity
+        - storage: S3/R2 storage availability
+        - circuit_breakers: News source health summary
+        - migrations: Database schema validation
+        - email_smtp: SMTP configuration check
+        - claude_api: Claude API key configuration
+
+    Status Levels:
+        - "ok": All critical services operational
+        - "degraded": One or more critical services down (database or redis)
+        - "not_configured": Service not configured (non-critical)
+        - "error": Service configured but failing
+
+    Note:
+        Critical services for overall "ok" status: database, redis
+        All other services are optional and won't cause "degraded" status
+    """
     checks: dict[str, Any] = {}
 
     # 1. Database connectivity and query

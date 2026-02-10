@@ -1,4 +1,16 @@
-"""Send notifications via email, SMS, and in-app."""
+"""Send notifications via email, SMS, and in-app.
+
+This module provides multi-channel notification delivery for system events:
+- In-app notifications (stored in database)
+- Email notifications (via SMTP)
+- SMS notifications (via Twilio)
+
+Notifications are triggered by FOIA request status changes, scan completions,
+video uploads, and other important system events.
+
+All notification channels fail gracefully - errors in one channel don't
+prevent delivery via other channels.
+"""
 
 import logging
 from datetime import datetime, timezone
@@ -10,7 +22,36 @@ logger = logging.getLogger(__name__)
 
 
 async def send_notification(event_type: str, data: dict) -> dict:
-    """Dispatch a notification based on event type and user preferences."""
+    """Dispatch a notification across all configured channels.
+
+    Sends notifications via in-app, email, and SMS channels based on
+    configuration. Each channel fails independently without affecting others.
+
+    Args:
+        event_type: Type of event triggering notification (e.g., "foia_submitted")
+        data: Notification data dictionary with keys:
+            - title: Notification title/subject
+            - message: Notification body/text
+            - link: Optional link for in-app notifications
+
+    Returns:
+        Dictionary with boolean flags for each channel:
+            - in_app: True if saved to database successfully
+            - email: True if sent via SMTP successfully
+            - sms: True if sent via Twilio successfully
+
+    Supported event types:
+        - foia_submitted: FOIA request was submitted
+        - foia_acknowledged: Agency acknowledged receipt
+        - foia_fulfilled: Agency provided records
+        - foia_denied: Agency denied request
+        - foia_overdue: Request passed due date
+        - scan_complete: News scan completed
+        - video_uploaded: Video uploaded to YouTube
+        - video_published: Video published on YouTube
+        - daily_summary: Daily activity summary
+        - revenue_milestone: Revenue milestone reached
+    """
     title = data.get("title", event_type)
     message = data.get("message", "")
     link = data.get("link")
@@ -45,8 +86,18 @@ async def send_notification(event_type: str, data: dict) -> dict:
 
 async def _save_in_app_notification(
     event_type: str, title: str, message: str, link: Optional[str] = None
-):
-    """Store notification in database for in-app display."""
+) -> None:
+    """Store notification in database for in-app display.
+
+    Args:
+        event_type: Event type key (mapped to NotificationType enum)
+        title: Notification title
+        message: Notification message
+        link: Optional link to related resource
+
+    Raises:
+        No exceptions raised - errors are logged
+    """
     from app.database import async_session_factory
     from app.models.notification import (
         Notification,
@@ -81,8 +132,16 @@ async def _save_in_app_notification(
         await db.commit()
 
 
-async def _send_email_notification(subject: str, body: str):
-    """Send email notification."""
+async def _send_email_notification(subject: str, body: str) -> None:
+    """Send email notification via SMTP.
+
+    Args:
+        subject: Email subject (will be prefixed with "[FOIAPIPE]")
+        body: Email body text
+
+    Note:
+        Requires SMTP_HOST to be configured. Silently returns if not configured.
+    """
     import aiosmtplib
     from email.mime.text import MIMEText
 
@@ -105,8 +164,16 @@ async def _send_email_notification(subject: str, body: str):
     )
 
 
-async def _send_sms_notification(message: str):
-    """Send SMS via Twilio."""
+async def _send_sms_notification(message: str) -> None:
+    """Send SMS notification via Twilio.
+
+    Args:
+        message: SMS message text (will be prefixed with "[FOIAPIPE]" and truncated to 140 chars)
+
+    Note:
+        Requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER,
+        and NOTIFICATION_PHONE to be configured. Silently returns if not configured.
+    """
     if not settings.TWILIO_ACCOUNT_SID:
         return
 

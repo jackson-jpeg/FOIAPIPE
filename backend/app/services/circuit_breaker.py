@@ -1,4 +1,24 @@
-"""Circuit breaker service for news source reliability tracking."""
+"""Circuit breaker service for news source reliability tracking.
+
+This module implements the circuit breaker pattern to handle unreliable news sources.
+When a source fails repeatedly, the circuit "opens" and requests to that source are
+skipped for a cooling-off period, preventing wasted resources on failing sources.
+
+Circuit States:
+- CLOSED (normal): Source is healthy, requests proceed normally
+- OPEN: Source has failed too many times, requests are blocked
+- HALF-OPEN: Retry period elapsed, attempting recovery
+
+Configuration:
+- FAILURE_THRESHOLD: Number of consecutive failures before opening circuit (3)
+- CIRCUIT_RETRY_DELAY_HOURS: Hours to wait before retry attempt (6)
+
+The circuit breaker tracks per-source statistics including:
+- Total successes and failures
+- Consecutive failure count
+- Last success/failure timestamps
+- Circuit state and retry times
+"""
 
 from __future__ import annotations
 
@@ -20,7 +40,24 @@ CIRCUIT_RETRY_DELAY_HOURS = 6  # Retry after 6 hours when circuit is open
 async def get_or_create_source_health(
     db: AsyncSession, source_name: str, source_url: str
 ) -> NewsSourceHealth:
-    """Get or create a NewsSourceHealth record for a source."""
+    """Get or create a NewsSourceHealth record for a source.
+
+    Args:
+        db: Async database session
+        source_name: Display name of the news source
+        source_url: URL of the RSS feed or source
+
+    Returns:
+        NewsSourceHealth instance (existing or newly created)
+
+    Note:
+        New health records are created with default values:
+        - is_enabled: True
+        - is_circuit_open: False
+        - consecutive_failures: 0
+        - total_failures: 0
+        - total_successes: 0
+    """
     result = await db.execute(
         select(NewsSourceHealth).where(NewsSourceHealth.source_name == source_name).limit(1)
     )
@@ -79,7 +116,18 @@ async def should_skip_source(db: AsyncSession, source_name: str) -> tuple[bool, 
 
 
 async def record_success(db: AsyncSession, source_name: str, source_url: str) -> None:
-    """Record a successful fetch from a news source."""
+    """Record a successful fetch from a news source.
+
+    Resets consecutive failure count and closes circuit if it was open.
+
+    Args:
+        db: Async database session
+        source_name: Display name of the news source
+        source_url: URL of the RSS feed
+
+    Note:
+        Automatically closes the circuit if it was open, logging the recovery.
+    """
     health = await get_or_create_source_health(db, source_name, source_url)
 
     health.consecutive_failures = 0
@@ -99,7 +147,21 @@ async def record_success(db: AsyncSession, source_name: str, source_url: str) ->
 async def record_failure(
     db: AsyncSession, source_name: str, source_url: str, error_message: str
 ) -> None:
-    """Record a failed fetch from a news source. Opens circuit if threshold exceeded."""
+    """Record a failed fetch from a news source.
+
+    Increments failure counters and opens circuit if threshold is exceeded.
+
+    Args:
+        db: Async database session
+        source_name: Display name of the news source
+        source_url: URL of the RSS feed
+        error_message: Error message from the failure (truncated to 500 chars)
+
+    Note:
+        Opens circuit after FAILURE_THRESHOLD consecutive failures.
+        When circuit opens, sets retry time to CIRCUIT_RETRY_DELAY_HOURS in the future.
+        Logs warnings and errors at appropriate severity levels.
+    """
     health = await get_or_create_source_health(db, source_name, source_url)
 
     health.consecutive_failures += 1
@@ -131,8 +193,19 @@ async def record_failure(
 async def reset_circuit(db: AsyncSession, source_name: str) -> bool:
     """Manually reset a circuit breaker (admin action).
 
+    Clears all failure state and closes the circuit, allowing immediate retry.
+    Used by administrators to force recovery of a failing source.
+
+    Args:
+        db: Async database session
+        source_name: Display name of the news source to reset
+
     Returns:
-        True if circuit was reset, False if source not found
+        True if circuit was reset successfully, False if source not found
+
+    Note:
+        This is an admin override that bypasses normal circuit breaker logic.
+        Use with caution - the source may still be failing.
     """
     result = await db.execute(
         select(NewsSourceHealth).where(NewsSourceHealth.source_name == source_name).limit(1)
@@ -154,13 +227,33 @@ async def reset_circuit(db: AsyncSession, source_name: str) -> bool:
 
 
 async def get_all_source_health(db: AsyncSession) -> list[NewsSourceHealth]:
-    """Get health status for all tracked news sources."""
+    """Get health status for all tracked news sources.
+
+    Args:
+        db: Async database session
+
+    Returns:
+        List of NewsSourceHealth records, ordered by source name
+    """
     result = await db.execute(select(NewsSourceHealth).order_by(NewsSourceHealth.source_name))
     return list(result.scalars().all())
 
 
 async def get_source_health_summary(db: AsyncSession) -> dict:
-    """Get summary statistics for all news sources."""
+    """Get summary statistics for all news sources.
+
+    Args:
+        db: Async database session
+
+    Returns:
+        Dictionary containing:
+            - total_sources: Total number of tracked sources
+            - enabled_sources: Number of enabled sources
+            - circuits_open: Number of sources with open circuits
+            - healthy_sources: Number of enabled sources with closed circuits
+            - total_failures_all_time: Cumulative failure count
+            - total_successes_all_time: Cumulative success count
+    """
     all_health = await get_all_source_health(db)
 
     return {

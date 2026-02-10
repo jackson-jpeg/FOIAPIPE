@@ -1,16 +1,34 @@
-"""Video processing using ffmpeg/ffprobe subprocess calls."""
+"""Video processing using ffmpeg/ffprobe subprocess calls.
+
+This module provides async wrappers around ffmpeg and ffprobe for:
+- Extracting video metadata (duration, resolution, codec, etc.)
+- Generating thumbnails from video frames
+- Trimming and cutting video segments
+- Adding intro cards with text overlays
+- Optimizing videos for YouTube upload (H.264 1080p)
+- Creating YouTube-style thumbnails with text
+
+All functions run ffmpeg/ffprobe commands asynchronously to avoid blocking.
+Requires ffmpeg and ffprobe to be installed and available in PATH.
+"""
+
 import asyncio
 import json
 import logging
-import os
-import tempfile
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 async def _run_cmd(cmd: list[str]) -> tuple[str, str, int]:
-    """Run a subprocess command asynchronously."""
+    """Run a subprocess command asynchronously.
+
+    Args:
+        cmd: Command and arguments as a list (e.g., ["ffmpeg", "-i", "input.mp4"])
+
+    Returns:
+        Tuple of (stdout, stderr, returncode)
+    """
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -21,7 +39,23 @@ async def _run_cmd(cmd: list[str]) -> tuple[str, str, int]:
 
 
 async def extract_metadata(file_path: str) -> dict:
-    """Extract video metadata using ffprobe."""
+    """Extract video metadata using ffprobe.
+
+    Args:
+        file_path: Path to video file
+
+    Returns:
+        Dictionary containing:
+            - duration_seconds: Video duration in seconds (int)
+            - resolution: Resolution string (e.g., "1920x1080")
+            - codec: Video codec name (e.g., "h264")
+            - file_size_bytes: File size in bytes
+            - bitrate: Bitrate in bits per second
+
+    Raises:
+        RuntimeError: If ffprobe command fails
+        FileNotFoundError: If ffprobe is not installed
+    """
     cmd = [
         "ffprobe", "-v", "quiet", "-print_format", "json",
         "-show_format", "-show_streams", file_path,
@@ -44,7 +78,20 @@ async def extract_metadata(file_path: str) -> dict:
 
 
 async def generate_thumbnail(file_path: str, output_path: str, timestamp: int = 30) -> str:
-    """Extract a frame as JPEG thumbnail."""
+    """Extract a frame as JPEG thumbnail.
+
+    Args:
+        file_path: Path to source video file
+        output_path: Path where thumbnail should be saved (should end in .jpg)
+        timestamp: Second in video to extract frame from (default: 30)
+
+    Returns:
+        Path to generated thumbnail file
+
+    Raises:
+        RuntimeError: If ffmpeg command fails
+        FileNotFoundError: If ffmpeg is not installed
+    """
     cmd = [
         "ffmpeg", "-y", "-ss", str(timestamp), "-i", file_path,
         "-vframes", "1", "-q:v", "2", output_path,
@@ -56,7 +103,21 @@ async def generate_thumbnail(file_path: str, output_path: str, timestamp: int = 
 
 
 async def trim_video(file_path: str, output_path: str, start: float, end: float) -> str:
-    """Trim video to a segment."""
+    """Trim video to a segment using stream copy (fast, no re-encoding).
+
+    Args:
+        file_path: Path to source video file
+        output_path: Path where trimmed video should be saved
+        start: Start time in seconds
+        end: End time in seconds
+
+    Returns:
+        Path to trimmed video file
+
+    Raises:
+        RuntimeError: If ffmpeg command fails
+        FileNotFoundError: If ffmpeg is not installed
+    """
     cmd = [
         "ffmpeg", "-y", "-i", file_path,
         "-ss", str(start), "-to", str(end),
@@ -69,7 +130,26 @@ async def trim_video(file_path: str, output_path: str, start: float, end: float)
 
 
 async def add_intro_card(file_path: str, output_path: str, text: str, duration: int = 5) -> str:
-    """Prepend a text card intro to the video."""
+    """Prepend a text card intro to the video.
+
+    Creates a black screen with white text and concatenates it with the source video.
+
+    Args:
+        file_path: Path to source video file
+        output_path: Path where output video should be saved
+        text: Text to display on intro card
+        duration: Duration of intro card in seconds (default: 5)
+
+    Returns:
+        Path to output video file
+
+    Raises:
+        RuntimeError: If ffmpeg command fails
+        FileNotFoundError: If ffmpeg is not installed
+
+    Note:
+        This re-encodes the video which may be slow for large files.
+    """
     # Create intro with text overlay
     cmd = [
         "ffmpeg", "-y",
@@ -86,7 +166,29 @@ async def add_intro_card(file_path: str, output_path: str, text: str, duration: 
 
 
 async def export_youtube_optimized(file_path: str, output_path: str) -> str:
-    """Re-encode to H.264 1080p for YouTube upload."""
+    """Re-encode video to H.264 1080p optimized for YouTube upload.
+
+    Applies YouTube's recommended encoding settings:
+    - H.264 video codec with CRF 20 (high quality)
+    - Scales to 1920x1080 with letterboxing if needed
+    - AAC audio at 192kbps
+    - Faststart flag for streaming
+
+    Args:
+        file_path: Path to source video file
+        output_path: Path where optimized video should be saved
+
+    Returns:
+        Path to optimized video file
+
+    Raises:
+        RuntimeError: If ffmpeg command fails
+        FileNotFoundError: If ffmpeg is not installed
+
+    Note:
+        This re-encodes the entire video which can be slow.
+        Use a faster preset if needed (currently using "medium").
+    """
     cmd = [
         "ffmpeg", "-y", "-i", file_path,
         "-c:v", "libx264", "-preset", "medium", "-crf", "20",

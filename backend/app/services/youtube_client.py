@@ -1,7 +1,19 @@
-"""YouTube Data API v3 and Analytics API wrapper."""
+"""YouTube Data API v3 and Analytics API wrapper.
+
+This module provides Python wrappers for YouTube's APIs:
+- Upload videos with metadata
+- Update video metadata and thumbnails
+- Check video processing status
+- Fetch video statistics (views, likes, comments)
+- Pull analytics data for revenue tracking
+
+All functions use OAuth2 credentials configured via environment variables.
+Requires google-api-python-client package.
+"""
+
 import logging
-from typing import Optional
 from datetime import date
+from typing import Optional
 
 from app.config import settings
 
@@ -9,7 +21,20 @@ logger = logging.getLogger(__name__)
 
 
 def _get_youtube_service():
-    """Build authenticated YouTube Data API v3 service."""
+    """Build authenticated YouTube Data API v3 service.
+
+    Returns:
+        YouTube API service object
+
+    Raises:
+        RuntimeError: If YouTube API credentials are not configured
+
+    Note:
+        Requires environment variables:
+        - YOUTUBE_CLIENT_ID
+        - YOUTUBE_CLIENT_SECRET
+        - YOUTUBE_REFRESH_TOKEN
+    """
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
 
@@ -27,7 +52,14 @@ def _get_youtube_service():
 
 
 def _get_analytics_service():
-    """Build authenticated YouTube Analytics API service."""
+    """Build authenticated YouTube Analytics API service.
+
+    Returns:
+        YouTube Analytics API service object
+
+    Note:
+        Uses same credentials as YouTube Data API.
+    """
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
 
@@ -49,7 +81,32 @@ def upload_video(
     category_id: str = "25",
     privacy: str = "unlisted",
 ) -> dict:
-    """Upload a video to YouTube via resumable upload."""
+    """Upload a video to YouTube via resumable upload.
+
+    Uses resumable upload with 10MB chunks to handle large files
+    and network interruptions.
+
+    Args:
+        file_path: Path to video file on disk
+        title: Video title (max 100 characters)
+        description: Video description (max 5000 characters)
+        tags: List of tags (max 500 characters total)
+        category_id: YouTube category ID (default: "25" = News & Politics)
+        privacy: Privacy status ("public", "unlisted", or "private")
+
+    Returns:
+        Dictionary containing:
+            - video_id: YouTube video ID
+            - url: Full YouTube URL
+            - status: Upload status
+
+    Raises:
+        google.auth.exceptions.RefreshError: If credentials are invalid
+        googleapiclient.errors.HttpError: If upload fails
+
+    Note:
+        Logs upload progress to logger at INFO level.
+    """
     from googleapiclient.http import MediaFileUpload
 
     youtube = _get_youtube_service()
@@ -81,7 +138,20 @@ def upload_video(
 
 
 def update_video_metadata(video_id: str, title: str, description: str, tags: list[str]) -> dict:
-    """Update metadata of an existing YouTube video."""
+    """Update metadata of an existing YouTube video.
+
+    Args:
+        video_id: YouTube video ID
+        title: New video title
+        description: New video description
+        tags: New list of tags
+
+    Returns:
+        Dictionary with updated=True and video_id
+
+    Raises:
+        googleapiclient.errors.HttpError: If video not found or update fails
+    """
     youtube = _get_youtube_service()
     body = {
         "id": video_id,
@@ -92,7 +162,24 @@ def update_video_metadata(video_id: str, title: str, description: str, tags: lis
 
 
 def set_thumbnail(video_id: str, thumbnail_path: str) -> dict:
-    """Set a custom thumbnail for a YouTube video."""
+    """Set a custom thumbnail for a YouTube video.
+
+    Args:
+        video_id: YouTube video ID
+        thumbnail_path: Path to JPEG thumbnail file (recommended: 1280x720)
+
+    Returns:
+        Dictionary with set=True and items list
+
+    Raises:
+        googleapiclient.errors.HttpError: If video not found or thumbnail upload fails
+
+    Note:
+        Thumbnail requirements:
+        - Format: JPEG, GIF, BMP, or PNG
+        - Size: Under 2MB
+        - Recommended resolution: 1280x720 (16:9 aspect ratio)
+    """
     from googleapiclient.http import MediaFileUpload
     youtube = _get_youtube_service()
     media = MediaFileUpload(thumbnail_path, mimetype="image/jpeg")
@@ -101,7 +188,23 @@ def set_thumbnail(video_id: str, thumbnail_path: str) -> dict:
 
 
 def get_video_status(video_id: str) -> dict:
-    """Check processing status of a YouTube video."""
+    """Check processing status of a YouTube video.
+
+    Args:
+        video_id: YouTube video ID
+
+    Returns:
+        Dictionary containing:
+            - upload_status: Upload status ("uploaded", "processed", "failed")
+            - privacy_status: Privacy status ("public", "unlisted", "private")
+            - processing: Processing details (if available)
+        Or:
+            - error: "Video not found" if video doesn't exist
+
+    Note:
+        Processing can take several minutes after upload.
+        Check upload_status to see if video is ready.
+    """
     youtube = _get_youtube_service()
     response = youtube.videos().list(part="status,processingDetails", id=video_id).execute()
     items = response.get("items", [])
@@ -116,7 +219,24 @@ def get_video_status(video_id: str) -> dict:
 
 
 def get_video_stats(video_id: str) -> dict:
-    """Get current statistics for a YouTube video (views, likes, comments, etc)."""
+    """Get current statistics for a YouTube video.
+
+    Args:
+        video_id: YouTube video ID
+
+    Returns:
+        Dictionary containing:
+            - video_id: Video ID
+            - views: View count (int)
+            - likes: Like count (int)
+            - comments: Comment count (int)
+            - published_at: Publication timestamp
+        Or:
+            - error: "Video not found" if video doesn't exist
+
+    Note:
+        Statistics update periodically (not real-time).
+    """
     youtube = _get_youtube_service()
     response = youtube.videos().list(
         part="statistics,snippet",
@@ -141,7 +261,34 @@ def get_video_stats(video_id: str) -> dict:
 
 
 def get_analytics(video_id: str, start_date: date, end_date: date) -> dict:
-    """Pull analytics for a specific video from YouTube Analytics API."""
+    """Pull analytics for a specific video from YouTube Analytics API.
+
+    Fetches detailed analytics including revenue estimates.
+
+    Args:
+        video_id: YouTube video ID
+        start_date: Start of date range (inclusive)
+        end_date: End of date range (inclusive)
+
+    Returns:
+        Dictionary containing:
+            - video_id: Video ID
+            - start_date: Start date (ISO format)
+            - end_date: End date (ISO format)
+            - daily_data: List of daily analytics with:
+                - date: Date string
+                - views: View count
+                - watch_time_minutes: Total watch time
+                - estimated_revenue: Estimated revenue (requires YPP)
+                - impressions: Impression count
+                - ctr: Click-through rate
+                - subscribers_gained: New subscribers
+                - subscribers_lost: Lost subscribers
+                - likes, dislikes, comments, shares: Engagement metrics
+
+    Note:
+        Revenue data requires YouTube Partner Program membership.
+    """
     analytics = _get_analytics_service()
     response = analytics.reports().query(
         ids="channel==MINE",

@@ -1,6 +1,22 @@
-"""S3/R2 object storage abstraction."""
+"""S3/R2 object storage abstraction.
+
+This module provides a unified interface for S3-compatible storage services,
+including Amazon S3 and Cloudflare R2. All functions use retry logic to handle
+transient failures.
+
+Supports:
+- File upload with automatic retries
+- File download
+- Presigned URL generation for direct access
+- File deletion
+- Connection health checks
+
+Configuration is read from environment variables via settings.
+"""
+
 import logging
 from typing import Optional
+
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
@@ -12,7 +28,18 @@ logger = logging.getLogger(__name__)
 
 
 def _get_s3_client():
-    """Create S3 client configured for R2 or standard S3."""
+    """Create S3 client configured for R2 or standard S3.
+
+    Returns:
+        Configured boto3 S3 client
+
+    Note:
+        Configuration is read from settings:
+        - S3_ENDPOINT: Custom endpoint URL (for R2 or S3-compatible services)
+        - S3_ACCESS_KEY: AWS access key ID
+        - S3_SECRET_KEY: AWS secret access key
+        - S3_REGION: AWS region (optional)
+    """
     config = Config(signature_version="s3v4")
     kwargs = {
         "service_name": "s3",
@@ -53,14 +80,36 @@ def upload_file(file_bytes: bytes, key: str, content_type: str = "application/oc
 
 
 def download_file(key: str) -> bytes:
-    """Download file from S3/R2."""
+    """Download file from S3/R2.
+
+    Args:
+        key: Object key (path) in the bucket
+
+    Returns:
+        File contents as bytes
+
+    Raises:
+        ClientError: If file doesn't exist or download fails
+    """
     client = _get_s3_client()
     response = client.get_object(Bucket=settings.S3_BUCKET_NAME, Key=key)
     return response["Body"].read()
 
 
 def generate_presigned_url(key: str, expiry: int = 3600) -> str:
-    """Generate a presigned URL for direct access."""
+    """Generate a presigned URL for temporary direct access to a file.
+
+    Args:
+        key: Object key (path) in the bucket
+        expiry: URL expiration time in seconds (default: 3600 = 1 hour)
+
+    Returns:
+        Presigned URL string that allows temporary access to the file
+
+    Note:
+        The URL is valid for the specified expiry duration.
+        After expiry, the URL will no longer work.
+    """
     client = _get_s3_client()
     return client.generate_presigned_url(
         "get_object",
@@ -69,8 +118,15 @@ def generate_presigned_url(key: str, expiry: int = 3600) -> str:
     )
 
 
-def delete_file(key: str):
-    """Delete a file from S3/R2."""
+def delete_file(key: str) -> None:
+    """Delete a file from S3/R2.
+
+    Args:
+        key: Object key (path) in the bucket
+
+    Note:
+        Does not raise an error if the file doesn't exist.
+    """
     client = _get_s3_client()
     client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=key)
     logger.info(f"Deleted {key}")

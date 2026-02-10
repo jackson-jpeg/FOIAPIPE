@@ -1,7 +1,16 @@
-"""Videos router – CRUD, file upload, thumbnail generation, and pipeline counts."""
+"""Videos router – CRUD, file upload, thumbnail generation, subtitle generation, and pipeline counts.
+
+Provides comprehensive video management including:
+- CRUD operations for video metadata
+- Raw video file upload with automatic metadata extraction
+- Thumbnail generation using FFmpeg
+- Subtitle generation using multiple STT providers
+- Pipeline status tracking and counts
+"""
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 import uuid
@@ -34,6 +43,7 @@ from app.services.subtitle_generator import (
 from app.models.video_subtitle import VideoSubtitle
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
@@ -78,7 +88,18 @@ async def pipeline_counts(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> VideoPipelineCounts:
-    """Return counts of videos grouped by status for Kanban headers."""
+    """Get video counts grouped by status for Kanban board headers.
+
+    Returns the count of videos in each status stage to power the frontend
+    Kanban view and pipeline visualization.
+
+    Args:
+        db: Database session
+        _user: Authenticated user
+
+    Returns:
+        Dict mapping each VideoStatus to its count (all statuses present even if 0)
+    """
     rows = (
         await db.execute(
             select(Video.status, func.count(Video.id)).group_by(Video.status)
@@ -233,7 +254,30 @@ async def upload_raw_video(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> VideoResponse:
-    """Upload raw video file, extract metadata with ffprobe, store in S3."""
+    """Upload raw video file to cloud storage with metadata extraction.
+
+    Accepts a video file upload, extracts metadata using FFmpeg/ffprobe,
+    uploads to S3/R2 storage, and updates the video record with file details.
+
+    Args:
+        video_id: UUID of the video record
+        file: Uploaded video file
+        db: Database session
+        _user: Authenticated user
+
+    Returns:
+        Updated video record with storage key and metadata
+
+    Raises:
+        HTTPException: If video not found or file is empty
+
+    Note:
+        - Metadata extraction requires FFmpeg/ffprobe installed
+        - If metadata extraction fails, file is still uploaded
+        - Supports all common video formats (mp4, mov, avi, etc.)
+    """
+    logger.info(f"Uploading raw video for {video_id}: {file.filename}")
+
     video = await db.get(Video, video_id)
     if not video:
         raise HTTPException(
@@ -277,6 +321,13 @@ async def upload_raw_video(
 
     await db.flush()
     await db.refresh(video)
+
+    logger.info(
+        f"Raw video uploaded successfully for {video_id}: "
+        f"{storage_key} ({len(file_bytes)} bytes, "
+        f"{metadata.get('duration_seconds', 'unknown')}s)"
+    )
+
     return _to_response(video)
 
 
@@ -289,7 +340,27 @@ async def generate_video_thumbnail(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> VideoResponse:
-    """Generate a thumbnail from the raw video and store it in S3."""
+    """Generate a thumbnail image from the raw video using FFmpeg.
+
+    Downloads the raw video, extracts a frame at ~10% into the video (min 5s),
+    and uploads the thumbnail to cloud storage.
+
+    Args:
+        video_id: UUID of the video
+        db: Database session
+        _user: Authenticated user
+
+    Returns:
+        Updated video record with thumbnail_storage_key populated
+
+    Raises:
+        HTTPException: If video not found or no raw video uploaded
+
+    Note:
+        Requires FFmpeg installed on the system
+    """
+    logger.info(f"Generating thumbnail for video {video_id}")
+
     video = await db.get(Video, video_id)
     if not video:
         raise HTTPException(
@@ -329,6 +400,8 @@ async def generate_video_thumbnail(
         video.thumbnail_storage_key = thumb_key
         await db.flush()
         await db.refresh(video)
+
+        logger.info(f"Thumbnail generated successfully for video {video_id}: {thumb_key}")
     finally:
         # Cleanup temp files
         if os.path.exists(tmp_video_path):
@@ -353,10 +426,28 @@ async def generate_video_subtitles(
 ) -> dict:
     """Generate subtitles for a video using speech-to-text.
 
-    Supports multiple STT providers and subtitle formats.
+    Supports multiple STT providers and subtitle formats. Downloads video from storage,
+    generates subtitles using the selected provider, validates the output, and stores
+    the subtitle file along with metadata.
 
-    NOTE: Whisper provider requires OPENAI_API_KEY environment variable.
-    Use 'mock' provider for testing without API key.
+    Args:
+        video_id: UUID of the video to generate subtitles for
+        language: Language code (ISO 639-1), default 'en'
+        subtitle_format: Subtitle format (srt, vtt, ass)
+        provider: Speech-to-text provider (whisper, google, azure, mock)
+        db: Database session
+        _user: Authenticated user
+
+    Returns:
+        Dict with subtitle info including storage location and metadata
+
+    Raises:
+        HTTPException: If video not found, no video file uploaded, or generation fails
+
+    Note:
+        - Whisper provider requires OPENAI_API_KEY environment variable
+        - Use 'mock' provider for testing without API keys
+        - Google and Azure providers require respective API credentials
     """
     video = await db.get(Video, video_id)
     if not video:
@@ -365,17 +456,27 @@ async def generate_video_subtitles(
             detail="Video not found",
         )
 
-    if not video.storage_key:
+    # Use processed video if available, otherwise raw
+    storage_key = video.processed_storage_key or video.raw_storage_key
+    if not storage_key:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Video file not uploaded yet",
+            detail="No video file uploaded. Upload a raw or processed video first.",
         )
+
+    tmp_video_path = None
+    subtitle_path = None
 
     try:
         # Download video from S3 to temp file
         from app.services.storage import download_file
 
-        video_bytes = download_file(video.storage_key)
+        logger.info(
+            f"Generating {subtitle_format.value} subtitles for video {video_id} "
+            f"in {language} using {provider.value}"
+        )
+
+        video_bytes = download_file(storage_key)
 
         # Save to temp file
         with tempfile.NamedTemporaryFile(
@@ -422,9 +523,11 @@ async def generate_video_subtitles(
         await db.flush()
         await db.refresh(subtitle_record)
 
-        # Cleanup temp files
-        os.unlink(tmp_video_path)
-        os.unlink(subtitle_path)
+        logger.info(
+            f"Subtitle generation successful: {subtitle_key} "
+            f"({validation.get('segment_count')} segments, "
+            f"{validation.get('file_size_bytes')} bytes)"
+        )
 
         return {
             "success": True,
@@ -437,11 +540,20 @@ async def generate_video_subtitles(
             "provider": provider.value,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Subtitle generation failed for video {video_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Subtitle generation failed: {str(e)}",
         )
+    finally:
+        # Cleanup temp files
+        if tmp_video_path and os.path.exists(tmp_video_path):
+            os.unlink(tmp_video_path)
+        if subtitle_path and os.path.exists(subtitle_path):
+            os.unlink(subtitle_path)
 
 
 @router.get("/{video_id}/subtitles")
@@ -450,7 +562,22 @@ async def list_video_subtitles(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict:
-    """List all subtitles for a video."""
+    """List all subtitle tracks for a video.
+
+    Returns all subtitle files associated with the video, including metadata
+    about language, format, storage location, and generation details.
+
+    Args:
+        video_id: UUID of the video
+        db: Database session
+        _user: Authenticated user
+
+    Returns:
+        Dict containing subtitle_count and list of subtitle records
+
+    Raises:
+        HTTPException: If video not found
+    """
     video = await db.get(Video, video_id)
     if not video:
         raise HTTPException(
@@ -458,7 +585,7 @@ async def list_video_subtitles(
             detail="Video not found",
         )
 
-    # Get subtitles
+    # Get subtitles ordered by language
     result = await db.execute(
         select(VideoSubtitle)
         .where(VideoSubtitle.video_id == video_id)
@@ -492,13 +619,31 @@ async def delete_video_subtitle(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict:
-    """Delete a subtitle track from a video."""
+    """Delete a subtitle track from a video.
+
+    Removes both the subtitle file from storage and the database record.
+    If storage deletion fails, continues to delete the database record.
+
+    Args:
+        video_id: UUID of the video
+        subtitle_id: UUID of the subtitle to delete
+        db: Database session
+        _user: Authenticated user
+
+    Returns:
+        Success message with deleted subtitle info
+
+    Raises:
+        HTTPException: If subtitle not found or doesn't belong to the video
+    """
     subtitle = await db.get(VideoSubtitle, subtitle_id)
-    if not subtitle or subtitle.video_id != str(video_id):
+    if not subtitle or str(subtitle.video_id) != str(video_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Subtitle not found",
+            detail="Subtitle not found for this video",
         )
+
+    subtitle_info = f"{subtitle.language}/{subtitle.format}"
 
     # Delete from S3 if exists
     if subtitle.storage_key:
@@ -506,14 +651,20 @@ async def delete_video_subtitle(
             from app.services.storage import delete_file
 
             delete_file(subtitle.storage_key)
-        except Exception:
-            pass  # Continue even if S3 deletion fails
+            logger.info(f"Deleted subtitle file from storage: {subtitle.storage_key}")
+        except Exception as e:
+            logger.warning(
+                f"Failed to delete subtitle from storage: {subtitle.storage_key}, "
+                f"error: {e}. Continuing with database deletion."
+            )
 
     # Delete from database
     await db.delete(subtitle)
     await db.flush()
 
+    logger.info(f"Deleted subtitle {subtitle_info} for video {video_id}")
+
     return {
         "success": True,
-        "message": f"Subtitle {subtitle.language}/{subtitle.format} deleted",
+        "message": f"Subtitle {subtitle_info} deleted successfully",
     }

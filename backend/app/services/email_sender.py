@@ -1,4 +1,14 @@
-"""Send FOIA request emails via SMTP."""
+"""Send FOIA request emails via SMTP.
+
+This module provides email sending functionality with automatic retries.
+Used to submit FOIA requests to law enforcement agencies via email.
+
+Features:
+- Async SMTP with TLS/SSL support
+- PDF attachment support
+- Retry logic for transient failures (3 attempts with exponential backoff)
+- Detailed error reporting
+"""
 
 from __future__ import annotations
 
@@ -38,7 +48,34 @@ async def send_foia_email(
 ) -> dict:
     """Send a FOIA request email with optional PDF attachment.
 
-    Retries up to 3 times with exponential backoff (2-10s) on SMTP errors.
+    Uses configured SMTP settings from environment variables.
+    Automatically retries up to 3 times with exponential backoff (2-10s)
+    on SMTP errors.
+
+    Args:
+        to_email: Recipient email address (agency FOIA email)
+        subject: Email subject line
+        body_text: Email body (plain text)
+        pdf_bytes: Optional PDF file content as bytes
+        pdf_filename: Filename for PDF attachment (default: "foia_request.pdf")
+
+    Returns:
+        Dictionary with:
+            - success: Boolean indicating if email was sent
+            - message: Success or error message
+
+    Raises:
+        aiosmtplib.SMTPException: After 3 failed retry attempts
+        ConnectionError: If SMTP server is unreachable
+        TimeoutError: If connection times out
+
+    Note:
+        SMTP configuration is read from settings:
+        - FROM_EMAIL: Sender email address
+        - SMTP_HOST: SMTP server hostname
+        - SMTP_PORT: SMTP server port (465 for TLS, 587 for STARTTLS)
+        - SMTP_USER: SMTP username
+        - SMTP_PASSWORD: SMTP password
     """
     msg = MIMEMultipart()
     msg["From"] = settings.FROM_EMAIL

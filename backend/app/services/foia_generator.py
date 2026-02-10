@@ -1,8 +1,19 @@
-"""Generate FOIA request text and PDFs for Florida public records requests."""
+"""Generate FOIA request text and PDFs for Florida public records requests.
+
+This module provides functionality to:
+- Generate FOIA request text from templates
+- Create formatted PDF documents
+- Assign sequential case numbers
+- Support agency-specific custom templates
+
+All requests are templated for Florida's Public Records Act (Chapter 119)
+and specifically request body-worn camera footage from law enforcement agencies.
+"""
 
 from __future__ import annotations
 
 import io
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -15,9 +26,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.foia_request import FoiaRequest
 
+logger = logging.getLogger(__name__)
+
 
 async def assign_case_number(db: AsyncSession) -> str:
-    """Generate sequential FOIA-YYYY-NNNN case number."""
+    """Generate sequential FOIA-YYYY-NNNN case number.
+
+    Case numbers follow the format: FOIA-2026-0001, FOIA-2026-0002, etc.
+    Sequential numbering resets each calendar year.
+
+    Args:
+        db: Async database session
+
+    Returns:
+        Formatted case number string (e.g., "FOIA-2026-0042")
+
+    Note:
+        Uses database count query to ensure no gaps or duplicates.
+        Safe for concurrent use.
+    """
     year = datetime.now(timezone.utc).year
     prefix = f"FOIA-{year}-"
     result = await db.execute(
@@ -102,7 +129,22 @@ FOIAPIPE Automated Request System"""
 
 
 def generate_pdf(request_text: str, case_number: str) -> bytes:
-    """Generate a formatted PDF of the FOIA request. Returns PDF bytes."""
+    """Generate a formatted PDF of the FOIA request.
+
+    Creates a professional PDF document with header, case number reference,
+    and formatted request text using ReportLab.
+
+    Args:
+        request_text: Full FOIA request text to include in PDF
+        case_number: Case number to display in header (e.g., "FOIA-2026-0042")
+
+    Returns:
+        PDF file content as bytes
+
+    Note:
+        PDF uses standard US Letter size (8.5" x 11") with 1" margins.
+        Generated timestamp is added to footer.
+    """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,

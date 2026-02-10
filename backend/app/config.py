@@ -1,4 +1,17 @@
-"""Application configuration loaded from environment variables."""
+"""Application configuration loaded from environment variables.
+
+All settings are loaded using Pydantic Settings from .env files or environment variables.
+Required settings will raise validation errors if missing.
+
+Environment Files:
+    - .env in project root (primary)
+    - .env in backend/ directory (fallback)
+
+Security Note:
+    - Never commit .env files to version control
+    - Use .env.example as a template
+    - Rotate secrets regularly in production
+"""
 
 from __future__ import annotations
 
@@ -6,7 +19,17 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """All application settings, loaded from .env or environment variables."""
+    """All application settings, loaded from .env or environment variables.
+
+    Required Settings (will raise error if missing):
+        - DATABASE_URL: PostgreSQL connection string
+        - SECRET_KEY: JWT signing key (generate with: openssl rand -hex 32)
+        - ADMIN_PASSWORD: Admin user password
+
+    Optional Settings:
+        - All external API keys (SMTP, YouTube, Anthropic, etc.)
+        - If external services are not configured, related features will be disabled
+    """
 
     # ── Database ──────────────────────────────────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/foiapipe"

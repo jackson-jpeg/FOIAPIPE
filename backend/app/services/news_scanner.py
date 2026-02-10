@@ -1,8 +1,17 @@
-"""RSS feed scanning and article scraping for Tampa Bay news sources."""
+"""RSS feed scanning and article scraping for Tampa Bay news sources.
+
+This module provides functionality to:
+- Scan multiple RSS feeds for law enforcement news
+- Parse and extract article metadata
+- Detect duplicate articles using fuzzy matching
+- Track scanning statistics and errors via circuit breakers
+- Filter articles for relevance before storing
+"""
 
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -15,6 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.news_article import NewsArticle
 from app.models.scan_log import ScanLog, ScanStatus, ScanType
+
+logger = logging.getLogger(__name__)
 
 # Tampa Bay area RSS feeds — validated 2026-02-09
 RSS_FEEDS = [
@@ -39,7 +50,27 @@ DEDUP_LOOKBACK_DAYS = 7
 
 
 async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> dict:
-    """Parse a single RSS feed and return stats."""
+    """Parse a single RSS feed and return statistics.
+
+    Args:
+        feed_url: URL of the RSS feed to scan
+        source_name: Display name of the news source
+        db: Async database session
+
+    Returns:
+        Dictionary containing scan statistics:
+            - found: Total articles found in feed
+            - new: New articles saved to database
+            - duplicate: Articles skipped as duplicates
+            - filtered: Articles filtered out as irrelevant
+            - errors: Number of errors encountered
+            - skipped: Whether scan was skipped due to circuit breaker
+            - skip_reason: Reason for skipping (if skipped)
+            - error_message: Error message (if errors occurred)
+
+    Raises:
+        No exceptions raised - all errors are caught and returned in stats
+    """
     from app.services.circuit_breaker import should_skip_source, record_success, record_failure
 
     stats: dict = {
@@ -122,7 +153,24 @@ async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> di
 
 
 async def scan_all_rss(db: AsyncSession) -> dict:
-    """Scan all configured RSS feeds. Returns aggregate stats."""
+    """Scan all configured RSS feeds and aggregate results.
+
+    Creates a scan log entry to track the operation, then scans each
+    configured RSS feed in sequence. Handles errors gracefully and
+    records aggregate statistics.
+
+    Args:
+        db: Async database session
+
+    Returns:
+        Dictionary containing aggregate scan statistics:
+            - found: Total articles found across all feeds
+            - new: Total new articles saved
+            - duplicate: Total duplicates skipped
+            - filtered: Total articles filtered as irrelevant
+            - skipped: Number of sources skipped due to circuit breaker
+            - errors: Total errors encountered
+    """
     log = ScanLog(
         scan_type=ScanType.rss,
         status=ScanStatus.running,
@@ -185,7 +233,24 @@ async def scan_all_rss(db: AsyncSession) -> dict:
 
 
 async def scrape_article(url: str) -> dict:
-    """Scrape full article body from URL."""
+    """Scrape full article body and HTML from a URL.
+
+    Attempts to extract article text using common CSS selectors
+    for article body content. Falls back to full page text if
+    specific selectors don't match.
+
+    Args:
+        url: URL of the article to scrape
+
+    Returns:
+        Dictionary containing:
+            - body: Extracted article text
+            - raw_html: Complete HTML response
+
+    Raises:
+        httpx.HTTPError: If the HTTP request fails
+        httpx.TimeoutException: If request times out (30s)
+    """
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         response = await client.get(
             url,
@@ -216,7 +281,24 @@ async def scrape_article(url: str) -> dict:
 
 
 async def _is_duplicate(url: str, headline: str, db: AsyncSession) -> bool:
-    """Check if article already exists by URL or fuzzy headline match."""
+    """Check if article already exists by URL or fuzzy headline match.
+
+    Performs two checks:
+    1. Exact URL match (fast lookup)
+    2. Fuzzy headline matching within lookback period (prevents near-duplicates)
+
+    Args:
+        url: Article URL to check
+        headline: Article headline for fuzzy matching
+        db: Async database session
+
+    Returns:
+        True if article is a duplicate (should be skipped), False otherwise
+
+    Note:
+        Uses token_sort_ratio similarity threshold of 85% and looks back 7 days.
+        These constants are defined in DEDUP_SIMILARITY_THRESHOLD and DEDUP_LOOKBACK_DAYS.
+    """
     # Exact URL match
     result = await db.execute(
         select(NewsArticle).where(NewsArticle.url == url).limit(1)

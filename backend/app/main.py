@@ -1,4 +1,17 @@
-"""FastAPI application entry point."""
+"""FastAPI application entry point for FOIAPIPE.
+
+FOIAPIPE is a FOIA (Freedom of Information Act) request pipeline and video publishing
+platform focused on Tampa Bay law enforcement accountability. It automates news scanning,
+FOIA request generation, and bodycam video processing for YouTube.
+
+Key Features:
+- Automated news scanning for law enforcement incidents
+- AI-powered FOIA request generation
+- Email-based FOIA submission and monitoring
+- Video processing and publishing to YouTube
+- Revenue tracking and ROI analysis
+- Comprehensive audit logging and analytics
+"""
 
 from __future__ import annotations
 
@@ -41,8 +54,14 @@ logger = structlog.get_logger()
 
 app = FastAPI(
     title="FOIAPIPE",
-    description="FOIA request pipeline and video publishing platform",
+    description=(
+        "FOIA request pipeline and video publishing platform for law enforcement "
+        "accountability. Automates news scanning, FOIA requests, video processing, "
+        "and YouTube publishing."
+    ),
     version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────
@@ -78,4 +97,15 @@ async def on_startup() -> None:
 # ── Root health endpoint ──────────────────────────────────────────────────
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {"app": "FOIAPIPE", "version": "1.0.0"}
+    """Root endpoint - returns API information.
+
+    Returns basic API metadata and links to documentation.
+    For comprehensive health checks, use /api/health endpoint.
+    """
+    return {
+        "app": "FOIAPIPE",
+        "version": "1.0.0",
+        "description": "FOIA request pipeline and video publishing platform",
+        "docs": "/api/docs",
+        "health": "/api/health",
+    }

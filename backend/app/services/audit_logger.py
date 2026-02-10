@@ -1,4 +1,24 @@
-"""Audit logging service for tracking sensitive operations."""
+"""Audit logging service for tracking sensitive operations.
+
+This module provides comprehensive audit logging for security-sensitive operations:
+- Login attempts (successful and failed)
+- FOIA request submissions
+- Status changes
+- Configuration updates
+- Data exports
+
+All audit logs include:
+- Timestamp
+- User identifier
+- Action type
+- Resource affected
+- IP address and user agent (when available)
+- Success/failure status
+- Additional context in JSON format
+
+Audit logs are written to the database and never deleted, providing a permanent
+audit trail for compliance and security investigations.
+"""
 
 from __future__ import annotations
 

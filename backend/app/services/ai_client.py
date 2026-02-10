@@ -1,4 +1,13 @@
-"""Claude API client for article classification and video metadata generation."""
+"""Claude API client for article classification and video metadata generation.
+
+This module provides AI-powered content generation using Anthropic's Claude API:
+- Generate YouTube video metadata (titles, descriptions, tags)
+- Fallback to template-based generation if API unavailable
+
+Uses Claude Haiku model for fast, cost-effective generation with automatic
+retry logic for transient failures.
+"""
+
 import logging
 from typing import Optional
 
@@ -28,9 +37,37 @@ async def generate_video_metadata(
     incident_date: str,
     incident_type: str = "",
 ) -> dict:
-    """Generate YouTube-optimized title, description, and tags using Claude.
+    """Generate YouTube-optimized metadata using Claude AI.
 
-    Retries up to 3 times with exponential backoff (2-10s) on connection errors.
+    Uses Claude Haiku to generate professional, SEO-optimized YouTube metadata
+    based on incident details. Falls back to template-based generation if API
+    is unavailable or fails.
+
+    Args:
+        incident_summary: Brief description of the incident
+        agency: Law enforcement agency name
+        incident_date: Date of incident (formatted string)
+        incident_type: Type of incident (optional, for context)
+
+    Returns:
+        Dictionary containing:
+            - titles: List of 3 alternative titles (each under 100 chars)
+            - description: 2-3 paragraph description with required disclaimer
+            - tags: List of 15-20 relevant tags for SEO
+
+    Note:
+        Retries up to 3 times with exponential backoff (2-10s) on connection errors.
+        All titles start with "BODYCAM:" prefix.
+        Description includes Florida Public Records Act disclaimer.
+
+    Example:
+        >>> metadata = await generate_video_metadata(
+        ...     "Officer-involved shooting",
+        ...     "Tampa Police Department",
+        ...     "February 9, 2026"
+        ... )
+        >>> print(metadata['titles'][0])
+        "BODYCAM: Officer-Involved Shooting — Tampa Police Department Feb 9, 2026"
     """
     if not settings.ANTHROPIC_API_KEY:
         return _fallback_metadata(incident_summary, agency, incident_date)
@@ -86,7 +123,19 @@ Rules:
 
 
 def _fallback_metadata(summary: str, agency: str, date: str) -> dict:
-    """Generate basic metadata without AI."""
+    """Generate basic metadata without AI using templates.
+
+    Provides fallback metadata generation when Claude API is unavailable
+    or API key is not configured.
+
+    Args:
+        summary: Incident summary (will be truncated to 60 chars for titles)
+        agency: Agency name
+        date: Incident date
+
+    Returns:
+        Dictionary with same structure as generate_video_metadata
+    """
     short_summary = summary[:60] if len(summary) > 60 else summary
     return {
         "titles": [
