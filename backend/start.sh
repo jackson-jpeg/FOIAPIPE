@@ -1,10 +1,19 @@
 #!/bin/sh
-set -e
 
+echo "=== FOIAPIPE START SCRIPT ==="
 echo "RAILWAY_SERVICE_NAME: $RAILWAY_SERVICE_NAME"
+echo "PORT: $PORT"
+echo "DATABASE_URL: ${DATABASE_URL:0:50}..."
+echo "REDIS_URL: ${REDIS_URL:0:40}..."
 
 # Run migrations
-alembic -c alembic/alembic.ini upgrade head
+echo "Running database migrations..."
+if alembic -c alembic/alembic.ini upgrade head; then
+    echo "Migrations completed successfully"
+else
+    echo "ERROR: Migrations failed with exit code $?"
+    echo "Continuing anyway to allow debugging..."
+fi
 
 # Detect service type from Railway service name
 case "$RAILWAY_SERVICE_NAME" in
