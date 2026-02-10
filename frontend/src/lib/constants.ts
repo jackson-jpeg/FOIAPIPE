@@ -5,6 +5,8 @@ import {
   Video,
   BarChart3,
   Settings,
+  Building2,
+  History,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -61,7 +63,9 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'News Scanner', path: '/news', icon: Newspaper },
   { label: 'FOIA Tracker', path: '/foia', icon: FileText },
+  { label: 'Agencies', path: '/agencies', icon: Building2 },
   { label: 'Video Pipeline', path: '/videos', icon: Video },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
+  { label: 'Audit Log', path: '/audit', icon: History },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];

@@ -33,8 +33,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.config import settings
+from app.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/health", tags=["health"])
@@ -65,6 +66,7 @@ async def health_basic() -> dict[str, Any]:
 @router.get("/detailed")
 async def health_detailed(
     db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Comprehensive health check for all system dependencies.
 
@@ -200,4 +202,57 @@ async def health_detailed(
         "environment": "development" if settings.DEBUG else "production",
         "system": system_info,
         "checks": checks,
+    }
+
+
+# ── Celery Task Status (separate prefix) ─────────────────────────────────
+
+tasks_router = APIRouter(prefix="/api/tasks", tags=["tasks"])
+
+
+@tasks_router.get("/status")
+async def celery_task_status(
+    _user: str = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Return Celery beat schedule, worker status, and recent task info.
+
+    Requires authentication. Provides visibility into background task health.
+    """
+    from app.tasks.beat_schedule import CELERY_BEAT_SCHEDULE
+
+    # Format beat schedule for display
+    schedule_info = {}
+    for name, config in CELERY_BEAT_SCHEDULE.items():
+        sched = config["schedule"]
+        if isinstance(sched, (int, float)):
+            interval_str = f"every {int(sched)}s ({int(sched) // 60}m)"
+        else:
+            interval_str = str(sched)
+        schedule_info[name] = {
+            "task": config["task"],
+            "interval": interval_str,
+        }
+
+    # Try to ping workers
+    worker_status: dict[str, Any] = {"status": "unknown"}
+    try:
+        from app.tasks.celery_app import celery_app
+
+        inspect = celery_app.control.inspect(timeout=3.0)
+        ping_result = inspect.ping()
+        if ping_result:
+            worker_status = {
+                "status": "online",
+                "workers": list(ping_result.keys()),
+                "count": len(ping_result),
+            }
+        else:
+            worker_status = {"status": "offline", "workers": [], "count": 0}
+    except Exception as exc:
+        worker_status = {"status": "error", "error": str(exc)}
+
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "beat_schedule": schedule_info,
+        "workers": worker_status,
     }

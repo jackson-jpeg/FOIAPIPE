@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.config import settings
 from app.models.audit_log import AuditAction
+from app.rate_limit import limiter
 from app.schemas.auth import LoginRequest, TokenResponse, UserResponse
 from app.services.audit_logger import log_audit_event
 
@@ -27,6 +28,7 @@ def _create_access_token(subject: str) -> str:
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
     body: LoginRequest,
     request: Request,

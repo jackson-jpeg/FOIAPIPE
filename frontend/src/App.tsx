@@ -31,6 +31,8 @@ import { FoiaTrackerPage } from '@/pages/FoiaTrackerPage';
 import { FoiaEditorPage } from '@/pages/FoiaEditorPage';
 import { VideoPipelinePage } from '@/pages/VideoPipelinePage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { AgenciesPage } from '@/pages/AgenciesPage';
+import { AuditLogPage } from '@/pages/AuditLogPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -58,7 +60,7 @@ function PublicRoute() {
   return <Outlet />;
 }
 
-const NAV_PATHS = ['/dashboard', '/news', '/foia', '/videos', '/analytics', '/settings'];
+const NAV_PATHS = ['/dashboard', '/news', '/foia', '/agencies', '/videos', '/analytics', '/audit', '/settings'];
 
 function KeyboardShortcuts() {
   const navigate = useNavigate();
@@ -81,7 +83,7 @@ function KeyboardShortcuts() {
       if (isInput) return;
 
       const num = parseInt(e.key, 10);
-      if (num >= 1 && num <= 6) {
+      if (num >= 1 && num <= NAV_PATHS.length) {
         e.preventDefault();
         navigate(NAV_PATHS[num - 1]);
       }
@@ -115,8 +117,10 @@ export default function App() {
               <Route path="/news" element={<NewsScannerPage />} />
               <Route path="/foia" element={<FoiaTrackerPage />} />
               <Route path="/foia/editor/:id" element={<FoiaEditorPage />} />
+              <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/videos" element={<VideoPipelinePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/audit" element={<AuditLogPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
 

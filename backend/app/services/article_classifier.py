@@ -61,15 +61,35 @@ AGENCY_PATTERNS: dict[str, list[str]] = {
         "plant city pd",
         "pcpd",
     ],
-    "Florida Highway Patrol": [
+    "Florida Highway Patrol - Troop C": [
         "florida highway patrol",
         "fhp",
         "highway patrol",
     ],
-    "USF Police Department": [
+    "University of South Florida Police Department": [
         "usf police",
         "university of south florida police",
         "usfpd",
+    ],
+    "Florida Department of Law Enforcement": [
+        "fdle",
+        "florida department of law enforcement",
+        "state law enforcement",
+    ],
+    "Largo Police Department": [
+        "largo police",
+        "largo pd",
+        "lpd largo",
+    ],
+    "Bradenton Police Department": [
+        "bradenton police",
+        "bradenton pd",
+        "bpd bradenton",
+    ],
+    "Lakeland Police Department": [
+        "lakeland police",
+        "lakeland pd",
+        "lpd lakeland",
     ],
 }
 
@@ -145,7 +165,7 @@ INCIDENT_KEYWORDS: dict[str, list[str]] = {
 POLICE_INDICATORS = [
     "police", "officer", "deputy", "sheriff", "trooper", "cop", "law enforcement",
     "arrest", "detained", "custody", "investigation", "suspect", "department",
-    "tpd", "hcso", "sppd", "pcso", "fhp", "charged", "charge", "booking",
+    "tpd", "hcso", "sppd", "pcso", "fhp", "fdle", "charged", "charge", "booking",
     "jail", "inmate", "authorities",
 ]
 

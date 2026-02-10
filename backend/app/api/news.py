@@ -5,11 +5,12 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
+from app.rate_limit import limiter
 from app.models.agency import Agency
 from app.models.app_setting import AppSetting
 from app.models.foia_request import FoiaRequest, FoiaPriority, FoiaStatus
@@ -169,7 +170,9 @@ async def scan_status(
 
 
 @router.post("/scan-now", response_model=ScanNowResponse)
+@limiter.limit("3/minute")
 async def scan_now(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> ScanNowResponse:

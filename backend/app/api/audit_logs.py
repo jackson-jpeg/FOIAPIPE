@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.audit_log import AuditAction, AuditLog
+from app.models.foia_request import FoiaRequest
+from app.models.foia_status_change import FoiaStatusChange
 
 router = APIRouter(prefix="/api/audit-logs", tags=["audit"])
 
@@ -299,4 +301,74 @@ async def security_events(
         "suspicious_ips": suspicious_ips,
         "sensitive_operations": sensitive_events,
         "total_failed_logins": sum(suspicious_ips.values()),
+    }
+
+
+@router.get("/status-changes")
+async def list_status_changes(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=200, description="Items per page"),
+    case_number: str | None = Query(None, description="Filter by FOIA case number"),
+    changed_by: str | None = Query(None, description="Filter by who made the change"),
+    date_from: datetime | None = Query(None, description="Changes after this date"),
+    date_to: datetime | None = Query(None, description="Changes before this date"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """List FOIA status changes with filtering and pagination.
+
+    Returns the audit trail of every FOIA request status transition, including
+    who made the change, the reason, and any metadata.
+    """
+    stmt = (
+        select(FoiaStatusChange)
+        .join(FoiaRequest, FoiaStatusChange.foia_request_id == FoiaRequest.id)
+        .order_by(FoiaStatusChange.created_at.desc())
+    )
+    count_stmt = (
+        select(func.count(FoiaStatusChange.id))
+        .join(FoiaRequest, FoiaStatusChange.foia_request_id == FoiaRequest.id)
+    )
+
+    filters = []
+    if case_number:
+        filters.append(FoiaRequest.case_number.ilike(f"%{case_number}%"))
+    if changed_by:
+        filters.append(FoiaStatusChange.changed_by.ilike(f"%{changed_by}%"))
+    if date_from:
+        filters.append(FoiaStatusChange.created_at >= date_from)
+    if date_to:
+        filters.append(FoiaStatusChange.created_at <= date_to)
+
+    if filters:
+        stmt = stmt.where(and_(*filters))
+        count_stmt = count_stmt.where(and_(*filters))
+
+    total = (await db.execute(count_stmt)).scalar_one()
+
+    offset = (page - 1) * page_size
+    stmt = stmt.offset(offset).limit(page_size)
+
+    result = await db.execute(stmt)
+    changes = result.scalars().all()
+
+    return {
+        "items": [
+            {
+                "id": str(change.id),
+                "foia_request_id": str(change.foia_request_id),
+                "case_number": change.foia_request.case_number if change.foia_request else None,
+                "from_status": change.from_status,
+                "to_status": change.to_status,
+                "changed_by": change.changed_by,
+                "reason": change.reason,
+                "metadata": change.extra_metadata,
+                "created_at": change.created_at.isoformat() if change.created_at else None,
+            }
+            for change in changes
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size,
     }

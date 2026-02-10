@@ -7,12 +7,13 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
+from app.rate_limit import limiter
 from app.models.agency import Agency
 from app.models.foia_request import FoiaPriority, FoiaRequest, FoiaStatus
 from app.models.foia_status_change import FoiaStatusChange
@@ -385,8 +386,10 @@ async def update_foia_request(
 
 
 @router.post("/{foia_id}/submit")
+@limiter.limit("10/minute")
 async def submit_foia_request(
     foia_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict:
@@ -730,8 +733,10 @@ async def list_denial_reasons(
 
 
 @router.post("/batch-submit")
+@limiter.limit("10/minute")
 async def batch_submit_foia(
     body: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict:

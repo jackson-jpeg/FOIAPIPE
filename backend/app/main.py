@@ -22,9 +22,8 @@ import sentry_sdk
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from app.api.agencies import router as agencies_router
 from app.api.analytics import router as analytics_router
@@ -34,12 +33,13 @@ from app.api.circuit_breakers import router as circuit_breakers_router
 from app.api.dashboard import router as dashboard_router
 from app.api.exports import router as exports_router
 from app.api.foia import router as foia_router
-from app.api.health import router as health_router
+from app.api.health import router as health_router, tasks_router
 from app.api.news import router as news_router
 from app.api.notifications import router as notifications_router
 from app.api.settings import router as settings_router
 from app.api.videos import router as videos_router
 from app.config import settings
+from app.rate_limit import limiter
 
 structlog.configure(
     processors=[
@@ -66,9 +66,6 @@ if settings.SENTRY_DSN:
         enable_tracing=True,
     )
     logger.info("Sentry error tracking initialized", environment="production" if not settings.DEBUG else "development")
-
-# ── Rate Limiter ──────────────────────────────────────────────────────────
-limiter = Limiter(key_func=get_remote_address)
 
 # ── FastAPI App ───────────────────────────────────────────────────────────
 # Disable API docs in production for security
@@ -102,6 +99,7 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────
 app.include_router(health_router)
+app.include_router(tasks_router)
 app.include_router(analytics_router)
 app.include_router(audit_logs_router)
 app.include_router(auth_router)

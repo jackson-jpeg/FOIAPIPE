@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useFoiaStore } from '@/stores/foiaStore';
 import { FOIA_STATUSES } from '@/lib/constants';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Download } from 'lucide-react';
+import client from '@/api/client';
 import * as foiaApi from '@/api/foia';
 
 export function FoiaTrackerPage() {
@@ -83,6 +84,25 @@ export function FoiaTrackerPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const params: Record<string, string> = {};
+      if (statusFilter) params.status = statusFilter;
+      const { data } = await client.get('/exports/foias', { params, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `foias_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      addToast({ type: 'success', title: 'CSV exported' });
+    } catch {
+      addToast({ type: 'error', title: 'Export failed' });
+    }
+  };
+
   const handleSort = (field: string) => {
     if (sortBy === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortBy(field); setSortDir('desc'); }
@@ -105,6 +125,9 @@ export function FoiaTrackerPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportCsv} icon={<Download className="h-4 w-4" />}>
+            Export CSV
+          </Button>
           <Button variant="outline" onClick={() => setShowCalendar(!showCalendar)} icon={<Calendar className="h-4 w-4" />}>
             Deadlines
           </Button>
