@@ -2,18 +2,36 @@
 import logging
 from typing import Optional
 
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+)
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
 async def generate_video_metadata(
     incident_summary: str,
     agency: str,
     incident_date: str,
     incident_type: str = "",
 ) -> dict:
-    """Generate YouTube-optimized title, description, and tags using Claude."""
+    """Generate YouTube-optimized title, description, and tags using Claude.
+
+    Retries up to 3 times with exponential backoff (2-10s) on connection errors.
+    """
     if not settings.ANTHROPIC_API_KEY:
         return _fallback_metadata(incident_summary, agency, incident_date)
 

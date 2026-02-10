@@ -74,3 +74,24 @@ def delete_file(key: str):
     client = _get_s3_client()
     client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=key)
     logger.info(f"Deleted {key}")
+
+
+def test_storage_connection() -> bool:
+    """Test if S3/R2 storage is configured and accessible.
+
+    Returns:
+        True if storage is configured and reachable, False otherwise.
+    """
+    if not settings.S3_BUCKET_NAME:
+        logger.warning("S3_BUCKET_NAME not configured")
+        return False
+
+    try:
+        client = _get_s3_client()
+        # Simple head_bucket check - doesn't count against quota
+        client.head_bucket(Bucket=settings.S3_BUCKET_NAME)
+        logger.info(f"Storage health check passed for bucket: {settings.S3_BUCKET_NAME}")
+        return True
+    except Exception as e:
+        logger.error(f"Storage health check failed: {e}")
+        return False

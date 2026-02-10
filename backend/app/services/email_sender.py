@@ -2,16 +2,33 @@
 
 from __future__ import annotations
 
+import logging
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
 import aiosmtplib
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+)
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((aiosmtplib.SMTPException, ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
 async def send_foia_email(
     to_email: str,
     subject: str,
@@ -19,7 +36,10 @@ async def send_foia_email(
     pdf_bytes: Optional[bytes] = None,
     pdf_filename: str = "foia_request.pdf",
 ) -> dict:
-    """Send a FOIA request email with optional PDF attachment."""
+    """Send a FOIA request email with optional PDF attachment.
+
+    Retries up to 3 times with exponential backoff (2-10s) on SMTP errors.
+    """
     msg = MIMEMultipart()
     msg["From"] = settings.FROM_EMAIL
     msg["To"] = to_email

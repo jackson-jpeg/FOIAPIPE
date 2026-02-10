@@ -24,23 +24,93 @@ async def health_basic() -> dict[str, str]:
 async def health_detailed(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
+    """Comprehensive health check for all system dependencies."""
     checks: dict[str, Any] = {}
 
+    # 1. Database connectivity and query
     try:
-        await db.execute(text("SELECT 1"))
-        checks["database"] = "ok"
+        result = await db.execute(text("SELECT 1 as health"))
+        row = result.scalar_one()
+        checks["database"] = {"status": "ok", "query_result": row}
     except Exception as exc:
-        checks["database"] = f"error: {exc}"
+        checks["database"] = {"status": "error", "error": str(exc)}
 
+    # 2. Redis connectivity
     try:
         r = aioredis.from_url(settings.REDIS_URL)
         try:
             await r.ping()
-            checks["redis"] = "ok"
+            checks["redis"] = {"status": "ok"}
         finally:
             await r.aclose()
     except Exception as exc:
-        checks["redis"] = f"error: {exc}"
+        checks["redis"] = {"status": "error", "error": str(exc)}
 
-    overall = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
-    return {"status": overall, "checks": checks}
+    # 3. Storage (S3/R2) check
+    try:
+        from app.services.storage import test_storage_connection
+        storage_ok = test_storage_connection()
+        checks["storage"] = {"status": "ok" if storage_ok else "not_configured"}
+    except Exception as exc:
+        checks["storage"] = {"status": "error", "error": str(exc)}
+
+    # 4. Circuit breaker health summary
+    try:
+        from app.services.circuit_breaker import get_source_health_summary
+        circuit_summary = await get_source_health_summary(db)
+        checks["circuit_breakers"] = {
+            "status": "ok" if circuit_summary["circuits_open"] == 0 else "degraded",
+            "healthy_sources": circuit_summary["healthy_sources"],
+            "circuits_open": circuit_summary["circuits_open"],
+            "total_sources": circuit_summary["total_sources"],
+        }
+    except Exception as exc:
+        checks["circuit_breakers"] = {"status": "error", "error": str(exc)}
+
+    # 5. Database migration status
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.get_bind())
+        tables = await db.run_sync(lambda conn: inspector.get_table_names())
+        expected_tables = [
+            "news_articles",
+            "foia_requests",
+            "agencies",
+            "videos",
+            "news_source_health",
+        ]
+        missing_tables = [t for t in expected_tables if t not in tables]
+        checks["migrations"] = {
+            "status": "ok" if not missing_tables else "incomplete",
+            "tables_found": len(tables),
+            "missing_tables": missing_tables if missing_tables else None,
+        }
+    except Exception as exc:
+        checks["migrations"] = {"status": "error", "error": str(exc)}
+
+    # 6. SMTP email configuration (check config, don't send)
+    smtp_configured = bool(
+        settings.SMTP_HOST and settings.SMTP_PORT and settings.SMTP_USER
+    )
+    checks["email_smtp"] = {
+        "status": "configured" if smtp_configured else "not_configured",
+        "host": settings.SMTP_HOST or "not_set",
+    }
+
+    # 7. Claude API configuration
+    checks["claude_api"] = {
+        "status": "configured" if settings.ANTHROPIC_API_KEY else "not_configured"
+    }
+
+    # Overall status
+    critical_services = ["database", "redis"]
+    critical_ok = all(
+        checks[svc].get("status") == "ok" for svc in critical_services if svc in checks
+    )
+    overall = "ok" if critical_ok else "degraded"
+
+    return {
+        "status": overall,
+        "timestamp": text("NOW()"),
+        "checks": checks,
+    }

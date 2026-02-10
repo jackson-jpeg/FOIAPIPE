@@ -8,6 +8,13 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+)
 
 from app.config import settings
 
@@ -311,6 +318,26 @@ def score_severity(incident_type: str, text: str) -> int:
     return min(score, 10)
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
+async def _call_claude_api(prompt: str) -> str:
+    """Call Claude API with retry logic (3 attempts, exponential backoff 2-10s)."""
+    import anthropic
+    client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+    response = await client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    return response.content[0].text.strip()
+
+
 async def classify_article_with_ai(
     headline: str,
     body: str,
@@ -340,9 +367,6 @@ async def classify_article_with_ai(
         }
 
     try:
-        import anthropic
-        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-
         # Truncate body to 1000 chars for cost optimization
         truncated_body = body[:1000] if len(body) > 1000 else body
 
@@ -396,13 +420,7 @@ REJECT (score 1-2) if article is:
 - Crime alert or wanted person notice
 - Historical retrospective or anniversary story"""
 
-        response = await client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=512,
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        text = response.content[0].text.strip()
+        text = await _call_claude_api(prompt)
 
         # Extract JSON from response
         start = text.find("{")
