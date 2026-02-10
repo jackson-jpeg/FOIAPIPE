@@ -63,13 +63,21 @@ async def _scan_rss_async():
         )
         articles = (await db.execute(stmt)).scalars().all()
 
+        auto_foia_triggered = 0
         for article in articles:
             try:
                 await classify_and_score_article(article, db)
+                if article.auto_foia_eligible and not article.auto_foia_filed:
+                    from app.tasks.foia_tasks import auto_submit_foia
+                    auto_submit_foia.delay(str(article.id))
+                    auto_foia_triggered += 1
+                    logger.info("Triggered auto-FOIA for article %s (severity=%s)", article.id, article.severity_score)
             except Exception as e:
                 logger.error("Classification error for article %s: %s", article.id, e)
 
         await db.commit()
+        if auto_foia_triggered:
+            result["auto_foia_triggered"] = auto_foia_triggered
         return result
 
 
@@ -94,6 +102,7 @@ async def _scan_scrape_async():
         articles = (await db.execute(stmt)).scalars().all()
 
         scraped_count = 0
+        auto_foia_triggered = 0
         for article in articles:
             try:
                 result = await scrape_article(article.url)
@@ -101,11 +110,19 @@ async def _scan_scrape_async():
                 article.raw_html = result.get("raw_html")
                 await classify_and_score_article(article, db)
                 scraped_count += 1
+                if article.auto_foia_eligible and not article.auto_foia_filed:
+                    from app.tasks.foia_tasks import auto_submit_foia
+                    auto_submit_foia.delay(str(article.id))
+                    auto_foia_triggered += 1
+                    logger.info("Triggered auto-FOIA for article %s (severity=%s)", article.id, article.severity_score)
             except Exception as e:
                 logger.error("Scrape error for %s: %s", article.url, e)
 
         await db.commit()
-        return {"scraped": scraped_count}
+        result = {"scraped": scraped_count}
+        if auto_foia_triggered:
+            result["auto_foia_triggered"] = auto_foia_triggered
+        return result
 
 
 @celery_app.task(name="app.tasks.news_tasks.scan_news_rss", bind=True, max_retries=3)
@@ -153,13 +170,21 @@ async def _scan_web_sources_async():
         )
         articles = (await db.execute(stmt)).scalars().all()
 
+        auto_foia_triggered = 0
         for article in articles:
             try:
                 await classify_and_score_article(article, db)
+                if article.auto_foia_eligible and not article.auto_foia_filed:
+                    from app.tasks.foia_tasks import auto_submit_foia
+                    auto_submit_foia.delay(str(article.id))
+                    auto_foia_triggered += 1
+                    logger.info("Triggered auto-FOIA for article %s (severity=%s)", article.id, article.severity_score)
             except Exception as e:
                 logger.error("Classification error for article %s: %s", article.id, e)
 
         await db.commit()
+        if auto_foia_triggered:
+            result["auto_foia_triggered"] = auto_foia_triggered
         return result
 
 

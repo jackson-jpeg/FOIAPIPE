@@ -24,7 +24,7 @@ interface RecentArticle {
   id: string;
   title: string;
   source: string;
-  severity: string;
+  severity: 'high' | 'medium' | 'low';
   created_at: string;
 }
 
@@ -33,7 +33,7 @@ interface TopVideo {
   title: string;
   views: number;
   status: string;
-  published_at: string;
+  published_at: string | null;
 }
 
 interface ActivityItem {

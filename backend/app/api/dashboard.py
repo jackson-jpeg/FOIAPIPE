@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
@@ -26,7 +27,8 @@ from app.models import (
 )
 from app.models.agency import Agency
 from app.models.news_source_health import NewsSourceHealth
-from sqlalchemy import and_
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -39,7 +41,14 @@ async def dashboard_stats(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict[str, Any]:
-    """Return aggregate statistics for the dashboard overview."""
+    """Return aggregate statistics for the dashboard overview.
+
+    Returns a structure with:
+    - stats: summary numbers with week-over-week trends
+    - recent_articles: 5 most recent news articles
+    - top_videos: 5 top-performing videos by views
+    - activities: 10 most recent notification activity items
+    """
     try:
         r = aioredis.from_url(settings.REDIS_URL)
         try:
@@ -49,12 +58,17 @@ async def dashboard_stats(
         finally:
             await r.aclose()
     except Exception:
-        cached = None
+        pass
 
     now = datetime.now(timezone.utc)
     week_ago = now - timedelta(days=7)
+    two_weeks_ago = now - timedelta(days=14)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_month_start = (month_start - timedelta(days=1)).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
 
+    # ── Article counts ────────────────────────────────────────────────────
     total_articles = (
         await db.execute(select(func.count(NewsArticle.id)))
     ).scalar_one()
@@ -67,6 +81,18 @@ async def dashboard_stats(
         )
     ).scalar_one()
 
+    articles_last_week = (
+        await db.execute(
+            select(func.count(NewsArticle.id)).where(
+                and_(
+                    NewsArticle.created_at >= two_weeks_ago,
+                    NewsArticle.created_at < week_ago,
+                )
+            )
+        )
+    ).scalar_one()
+
+    # ── FOIA counts ───────────────────────────────────────────────────────
     foia_rows = (
         await db.execute(
             select(FoiaRequest.status, func.count(FoiaRequest.id)).group_by(
@@ -74,57 +100,202 @@ async def dashboard_stats(
             )
         )
     ).all()
-    active_foias: dict[str, int] = {row[0].value: row[1] for row in foia_rows}
+    foia_by_status: dict[str, int] = {row[0].value: row[1] for row in foia_rows}
+    closed_statuses = {"fulfilled", "denied", "closed"}
+    active_foias = sum(
+        count for status, count in foia_by_status.items() if status not in closed_statuses
+    )
 
+    foias_this_week = (
+        await db.execute(
+            select(func.count(FoiaRequest.id)).where(
+                FoiaRequest.created_at >= week_ago
+            )
+        )
+    ).scalar_one()
+
+    foias_last_week = (
+        await db.execute(
+            select(func.count(FoiaRequest.id)).where(
+                and_(
+                    FoiaRequest.created_at >= two_weeks_ago,
+                    FoiaRequest.created_at < week_ago,
+                )
+            )
+        )
+    ).scalar_one()
+
+    # ── Video counts ──────────────────────────────────────────────────────
     video_rows = (
         await db.execute(
             select(Video.status, func.count(Video.id)).group_by(Video.status)
         )
     ).all()
-    video_pipeline_counts: dict[str, int] = {
-        row[0].value: row[1] for row in video_rows
-    }
+    video_by_status: dict[str, int] = {row[0].value: row[1] for row in video_rows}
+    terminal_statuses = {"published", "archived"}
+    videos_in_pipeline = sum(
+        count for status, count in video_by_status.items() if status not in terminal_statuses
+    )
 
-    total_views = (
-        await db.execute(select(func.coalesce(func.sum(VideoAnalytics.views), 0)))
+    videos_this_week = (
+        await db.execute(
+            select(func.count(Video.id)).where(Video.created_at >= week_ago)
+        )
     ).scalar_one()
 
-    revenue_mtd = (
+    videos_last_week = (
         await db.execute(
-            select(func.coalesce(func.sum(RevenueTransaction.amount), 0)).where(
-                RevenueTransaction.is_income.is_(True),
-                RevenueTransaction.transaction_date >= month_start.date(),
+            select(func.count(Video.id)).where(
+                and_(
+                    Video.created_at >= two_weeks_ago,
+                    Video.created_at < week_ago,
+                )
             )
         )
     ).scalar_one()
 
-    recent_rows = (
+    # ── Views ─────────────────────────────────────────────────────────────
+    total_views = (
+        await db.execute(select(func.coalesce(func.sum(VideoAnalytics.views), 0)))
+    ).scalar_one()
+
+    views_this_week = (
+        await db.execute(
+            select(func.coalesce(func.sum(VideoAnalytics.views), 0)).where(
+                VideoAnalytics.date >= week_ago.date()
+            )
+        )
+    ).scalar_one()
+
+    views_last_week = (
+        await db.execute(
+            select(func.coalesce(func.sum(VideoAnalytics.views), 0)).where(
+                and_(
+                    VideoAnalytics.date >= two_weeks_ago.date(),
+                    VideoAnalytics.date < week_ago.date(),
+                )
+            )
+        )
+    ).scalar_one()
+
+    # ── Revenue ───────────────────────────────────────────────────────────
+    revenue_mtd = float(
+        (
+            await db.execute(
+                select(func.coalesce(func.sum(RevenueTransaction.amount), 0)).where(
+                    RevenueTransaction.is_income.is_(True),
+                    RevenueTransaction.transaction_date >= month_start.date(),
+                )
+            )
+        ).scalar_one()
+    )
+
+    revenue_prev_month = float(
+        (
+            await db.execute(
+                select(func.coalesce(func.sum(RevenueTransaction.amount), 0)).where(
+                    and_(
+                        RevenueTransaction.is_income.is_(True),
+                        RevenueTransaction.transaction_date >= prev_month_start.date(),
+                        RevenueTransaction.transaction_date < month_start.date(),
+                    )
+                )
+            )
+        ).scalar_one()
+    )
+
+    # ── Trend calculations (week-over-week %) ─────────────────────────────
+    def wow_trend(current: int | float, previous: int | float) -> float:
+        if previous == 0:
+            return 100.0 if current > 0 else 0.0
+        return round(((current - previous) / previous) * 100, 1)
+
+    # ── Recent articles ───────────────────────────────────────────────────
+    recent_article_rows = (
+        await db.execute(
+            select(NewsArticle)
+            .order_by(NewsArticle.created_at.desc())
+            .limit(5)
+        )
+    ).scalars().all()
+
+    recent_articles = [
+        {
+            "id": str(a.id),
+            "title": a.headline,
+            "source": a.source,
+            "severity": (
+                a.severity_score if a.severity_score and a.severity_score >= 7
+                else "medium" if a.severity_score and a.severity_score >= 4
+                else "low"
+            ) if a.severity_score else "low",
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+        }
+        for a in recent_article_rows
+    ]
+
+    # ── Top videos ────────────────────────────────────────────────────────
+    top_video_rows = await db.execute(
+        select(
+            Video.id,
+            Video.title,
+            Video.status,
+            Video.published_at,
+            func.coalesce(func.sum(VideoAnalytics.views), 0).label("total_views"),
+        )
+        .outerjoin(VideoAnalytics, VideoAnalytics.video_id == Video.id)
+        .group_by(Video.id, Video.title, Video.status, Video.published_at)
+        .order_by(func.coalesce(func.sum(VideoAnalytics.views), 0).desc())
+        .limit(5)
+    )
+
+    top_videos = [
+        {
+            "id": str(row.id),
+            "title": row.title,
+            "views": int(row.total_views),
+            "status": row.status.value if row.status else "unknown",
+            "published_at": row.published_at.isoformat() if row.published_at else None,
+        }
+        for row in top_video_rows.all()
+    ]
+
+    # ── Activity feed (from notifications) ────────────────────────────────
+    notification_rows = (
         await db.execute(
             select(Notification)
             .order_by(Notification.created_at.desc())
             .limit(10)
         )
     ).scalars().all()
-    recent_activity = [
+
+    activities = [
         {
             "id": str(n.id),
             "type": n.type.value,
-            "title": n.title,
-            "message": n.message,
-            "created_at": n.created_at.isoformat() if n.created_at else None,
-            "link": n.link,
+            "message": n.message or n.title,
+            "timestamp": n.created_at.isoformat() if n.created_at else None,
         }
-        for n in recent_rows
+        for n in notification_rows
     ]
 
+    # ── Assemble response ─────────────────────────────────────────────────
     result = {
-        "total_articles": total_articles,
-        "articles_this_week": articles_this_week,
-        "active_foias": active_foias,
-        "video_pipeline_counts": video_pipeline_counts,
-        "total_views": total_views,
-        "revenue_mtd": float(revenue_mtd),
-        "recent_activity": recent_activity,
+        "stats": {
+            "total_articles": total_articles,
+            "active_foias": active_foias,
+            "videos_in_pipeline": videos_in_pipeline,
+            "total_views": int(total_views),
+            "revenue_mtd": revenue_mtd,
+            "articles_trend": wow_trend(articles_this_week, articles_last_week),
+            "foias_trend": wow_trend(foias_this_week, foias_last_week),
+            "videos_trend": wow_trend(videos_this_week, videos_last_week),
+            "views_trend": wow_trend(views_this_week, views_last_week),
+            "revenue_trend": wow_trend(revenue_mtd, revenue_prev_month),
+        },
+        "recent_articles": recent_articles,
+        "top_videos": top_videos,
+        "activities": activities,
     }
 
     try:
@@ -134,7 +305,7 @@ async def dashboard_stats(
         finally:
             await r.aclose()
     except Exception as e:
-        logger.warning(f"Failed to cache dashboard stats in Redis: {e}")
+        logger.warning("Failed to cache dashboard stats in Redis: %s", e)
 
     return result
 
