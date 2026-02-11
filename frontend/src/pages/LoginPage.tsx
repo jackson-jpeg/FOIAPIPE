@@ -21,12 +21,12 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface-primary p-4">
       <div className="w-full max-w-md animate-fade-in">
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <span className="relative flex h-3 w-3">
-              <span className="absolute inset-0 rounded-full bg-accent-primary/20 blur-sm" />
+              <span className="absolute inset-0 rounded-full bg-accent-primary/30 blur-sm" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-accent-primary" />
             </span>
             <h1 className="text-2xl font-bold text-text-primary tracking-wider">
@@ -38,7 +38,7 @@ export function LoginPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-overlay">
+        <div className="rounded-2xl bg-surface-secondary border border-surface-border p-8 shadow-overlay">
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="Username"
@@ -65,7 +65,7 @@ export function LoginPage() {
             />
 
             {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
                 {error}
               </div>
             )}

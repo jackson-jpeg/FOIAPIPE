@@ -6,51 +6,51 @@ const config: Config = {
     extend: {
       colors: {
         surface: {
-          DEFAULT: '#faf8f6',       // Warm cream background (Claude-style)
-          primary: '#faf8f6',
-          secondary: '#ffffff',     // Pure white for cards
-          tertiary: '#f5f3f1',      // Subtle elevated surfaces
-          hover: '#f0eeec',         // Hover state
-          border: '#e6e4e2',        // Subtle borders (rarely used)
-          'border-light': '#efefed',
+          DEFAULT: '#0a0f1a',          // Deep navy — primary background
+          primary: '#0a0f1a',
+          secondary: '#0f1724',        // Slightly lighter — cards, panels
+          tertiary: '#151d2e',         // Elevated surfaces, table headers
+          hover: '#1a2332',            // Hover state
+          border: '#1e293b',           // Primary borders (slate-800)
+          'border-light': '#334155',   // Lighter borders (slate-700)
         },
         text: {
-          primary: '#1a1816',       // Near-black for primary text
-          secondary: '#666461',     // Gray for secondary text
-          tertiary: '#9a9894',      // Lighter gray for metadata
-          quaternary: '#c4c2bf',    // Placeholder text
+          primary: '#f1f5f9',          // Slate-100 — high contrast text
+          secondary: '#94a3b8',        // Slate-400 — secondary text
+          tertiary: '#64748b',         // Slate-500 — metadata
+          quaternary: '#475569',       // Slate-600 — placeholders, disabled
         },
         accent: {
-          primary: '#d97706',       // Warm amber (journalism/alert)
-          'primary-hover': '#b45309',
-          'primary-subtle': 'rgba(217, 119, 6, 0.08)',
-          'primary-muted': 'rgba(217, 119, 6, 0.15)',
-          green: '#059669',         // Emerald for success
-          'green-subtle': 'rgba(5, 150, 105, 0.08)',
-          'green-muted': 'rgba(5, 150, 105, 0.15)',
-          amber: '#d97706',
-          'amber-subtle': 'rgba(217, 119, 6, 0.08)',
-          'amber-muted': 'rgba(217, 119, 6, 0.15)',
-          red: '#dc2626',           // Red for danger
-          'red-subtle': 'rgba(220, 38, 38, 0.08)',
-          'red-muted': 'rgba(220, 38, 38, 0.15)',
-          blue: '#2563eb',          // Blue for info
-          'blue-subtle': 'rgba(37, 99, 235, 0.08)',
-          'blue-muted': 'rgba(37, 99, 235, 0.15)',
-          purple: '#7c3aed',        // Purple for special
-          'purple-subtle': 'rgba(124, 58, 237, 0.08)',
-          'purple-muted': 'rgba(124, 58, 237, 0.15)',
+          primary: '#06b6d4',          // Cyan-500 — main accent
+          'primary-hover': '#0891b2',  // Cyan-600
+          'primary-subtle': 'rgba(6, 182, 212, 0.10)',
+          'primary-muted': 'rgba(6, 182, 212, 0.20)',
+          green: '#22c55e',            // Green-500 — success, money
+          'green-subtle': 'rgba(34, 197, 94, 0.10)',
+          'green-muted': 'rgba(34, 197, 94, 0.20)',
+          amber: '#f59e0b',           // Amber-500 — warnings
+          'amber-subtle': 'rgba(245, 158, 11, 0.10)',
+          'amber-muted': 'rgba(245, 158, 11, 0.20)',
+          red: '#ef4444',             // Red-500 — danger, critical
+          'red-subtle': 'rgba(239, 68, 68, 0.10)',
+          'red-muted': 'rgba(239, 68, 68, 0.20)',
+          blue: '#3b82f6',            // Blue-500 — info
+          'blue-subtle': 'rgba(59, 130, 246, 0.10)',
+          'blue-muted': 'rgba(59, 130, 246, 0.20)',
+          purple: '#a855f7',          // Purple-500 — AI operations
+          'purple-subtle': 'rgba(168, 85, 247, 0.10)',
+          'purple-muted': 'rgba(168, 85, 247, 0.20)',
         },
         chart: {
-          revenue: '#059669',        // accent.green
-          views: '#2563eb',          // accent.blue
-          grid: '#e6e4e2',          // surface.border
-          axis: '#9a9894',          // text.tertiary
+          revenue: '#22c55e',
+          views: '#3b82f6',
+          grid: '#1e293b',
+          axis: '#64748b',
           tooltip: {
-            bg: '#ffffff',          // surface.secondary
-            border: '#e6e4e2',      // surface.border
-            text: '#1a1816',        // text.primary
-            label: '#9a9894',       // text.tertiary
+            bg: '#0f1724',
+            border: '#1e293b',
+            text: '#f1f5f9',
+            label: '#64748b',
           }
         },
       },
@@ -59,21 +59,20 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Menlo', 'monospace'],
       },
       fontSize: {
-        '2xs': ['0.6875rem', { lineHeight: '1rem' }], // 11px - metadata only
-        xs: ['0.75rem', { lineHeight: '1.2rem' }], // 12px - labels, captions
-        sm: ['0.8125rem', { lineHeight: '1.3rem' }], // 13px - secondary text
-        base: ['0.9375rem', { lineHeight: '1.5rem' }], // 15px - body text (increased from 14px)
-        lg: ['1.0625rem', { lineHeight: '1.6875rem' }], // 17px
-        xl: ['1.25rem', { lineHeight: '2rem' }], // 20px
-        '2xl': ['1.5rem', { lineHeight: '2.25rem' }], // 24px
-        '3xl': ['1.875rem', { lineHeight: '2.625rem' }], // 30px
-        // Display scale for H6-H1 with negative letter-spacing
-        'display-xs': ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em' }], // 18px - H6
-        'display-sm': ['1.5rem', { lineHeight: '2.25rem', letterSpacing: '-0.015em' }], // 24px - H5
-        'display-md': ['1.875rem', { lineHeight: '2.625rem', letterSpacing: '-0.02em' }], // 30px - H4
-        'display-lg': ['2.25rem', { lineHeight: '3rem', letterSpacing: '-0.025em' }], // 36px - H3
-        'display-xl': ['3rem', { lineHeight: '4rem', letterSpacing: '-0.03em' }], // 48px - H2
-        'display-2xl': ['3.75rem', { lineHeight: '4.75rem', letterSpacing: '-0.035em' }], // 60px - H1
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+        xs: ['0.75rem', { lineHeight: '1.2rem' }],
+        sm: ['0.8125rem', { lineHeight: '1.3rem' }],
+        base: ['0.9375rem', { lineHeight: '1.5rem' }],
+        lg: ['1.0625rem', { lineHeight: '1.6875rem' }],
+        xl: ['1.25rem', { lineHeight: '2rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2.25rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.625rem' }],
+        'display-xs': ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em' }],
+        'display-sm': ['1.5rem', { lineHeight: '2.25rem', letterSpacing: '-0.015em' }],
+        'display-md': ['1.875rem', { lineHeight: '2.625rem', letterSpacing: '-0.02em' }],
+        'display-lg': ['2.25rem', { lineHeight: '3rem', letterSpacing: '-0.025em' }],
+        'display-xl': ['3rem', { lineHeight: '4rem', letterSpacing: '-0.03em' }],
+        'display-2xl': ['3.75rem', { lineHeight: '4.75rem', letterSpacing: '-0.035em' }],
       },
       letterSpacing: {
         tighter: '-0.03em',
@@ -88,14 +87,16 @@ const config: Config = {
         '2xl': '1rem',
       },
       boxShadow: {
-        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
-        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.08)',
-        'elevated': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
-        'overlay': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-        'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)',
-        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
-        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3)',
+        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4)',
+        'elevated': '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5)',
+        'overlay': '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+        'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)',
+        'glow-cyan': '0 0 20px rgba(6, 182, 212, 0.15)',
+        'glow-green': '0 0 20px rgba(34, 197, 94, 0.15)',
+        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.3)',
+        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4)',
+        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5)',
       },
       animation: {
         'fade-in': 'fadeIn 200ms ease-out',
@@ -105,10 +106,11 @@ const config: Config = {
         'slide-in-right': 'slideInRight 300ms cubic-bezier(0.16, 1, 0.3, 1)',
         'scale-in': 'scaleIn 200ms cubic-bezier(0.16, 1, 0.3, 1)',
         'shimmer': 'shimmer 2s ease-in-out infinite',
-        'shimmer-flow': 'shimmerFlow 2.5s ease-in-out infinite', // Dual-layer gradient animation
+        'shimmer-flow': 'shimmerFlow 2.5s ease-in-out infinite',
         'pulse-subtle': 'pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'orb-pulse': 'orbPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite', // Status orb animation
-        'spring': 'spring 300ms cubic-bezier(0.34, 1.56, 0.64, 1)', // Tactile spring easing
+        'orb-pulse': 'orbPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'spring': 'spring 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'scan-line': 'scanLine 3s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -158,10 +160,14 @@ const config: Config = {
           '50%': { transform: 'scale(0.98)' },
           '100%': { transform: 'scale(1)' },
         },
+        scanLine: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
       },
       transitionTimingFunction: {
         'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
-        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Tactile spring for buttons
+        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
     },
   },

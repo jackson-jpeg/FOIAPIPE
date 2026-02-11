@@ -9,7 +9,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'center' | 'slide-over'; // Add slide-over variant for News-to-FOIA bridge
+  variant?: 'center' | 'slide-over';
 }
 
 const sizeStyles = {
@@ -61,16 +61,16 @@ export function Modal({
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className={cn(
-          'relative bg-white shadow-overlay',
+          'relative bg-surface-secondary border border-surface-border shadow-overlay',
           isSlideOver
             ? 'h-full w-full max-w-2xl animate-slide-in-right rounded-none'
             : cn('w-full rounded-2xl animate-scale-in', sizeStyles[size])
         )}
       >
-        <div className="flex items-center justify-between border-b border-surface-border/30 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-surface-border/50 px-6 py-5">
           <h2 className="text-lg font-semibold text-text-primary tracking-tight">{title}</h2>
           <button
             onClick={onClose}
@@ -83,7 +83,7 @@ export function Modal({
           {children}
         </div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-surface-border/30 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-surface-border/50 px-6 py-4">
             {footer}
           </div>
         )}

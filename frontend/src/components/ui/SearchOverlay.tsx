@@ -51,7 +51,6 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       action: () => {
         navigate('/news-scanner');
         onClose();
-        // Trigger scan action
       },
       category: 'action',
     },
@@ -147,7 +146,6 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     };
   }, [isOpen, onClose, filteredActions, selectedIndex]);
 
-  // Reset selected index when filtered actions change
   useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
@@ -160,7 +158,6 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     action: 'Actions',
   };
 
-  // Group actions by category
   const groupedActions = filteredActions.reduce((acc, action) => {
     if (!acc[action.category]) {
       acc[action.category] = [];
@@ -177,10 +174,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-md" />
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-overlay animate-scale-in">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md" />
+      <div className="relative w-full max-w-2xl rounded-2xl bg-surface-secondary border border-surface-border shadow-overlay animate-scale-in">
         {/* Search Input */}
-        <div className="flex items-center gap-4 px-6 py-5 border-b border-surface-border/30">
+        <div className="flex items-center gap-4 px-6 py-5 border-b border-surface-border/50">
           <Search className="h-5 w-5 shrink-0 text-text-tertiary" />
           <input
             ref={inputRef}
@@ -227,14 +224,14 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                           className={cn(
                             'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left',
                             isSelected
-                              ? 'bg-accent-primary-subtle text-text-primary shadow-sm'
+                              ? 'bg-accent-primary-subtle text-text-primary'
                               : 'text-text-secondary hover:bg-surface-hover'
                           )}
                         >
                           <div
                             className={cn(
                               'shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-                              isSelected ? 'bg-amber-100 text-accent-primary' : 'bg-surface-tertiary text-text-tertiary'
+                              isSelected ? 'bg-accent-primary/20 text-accent-primary' : 'bg-surface-tertiary text-text-tertiary'
                             )}
                           >
                             {action.icon}
@@ -261,22 +258,22 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         </div>
 
         {/* Footer with keyboard hints */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 border-t border-surface-border/30 bg-surface-tertiary/50">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-t border-surface-border/50 bg-surface-tertiary/30">
           <div className="flex items-center gap-4 text-xs text-text-secondary">
             <div className="flex items-center gap-1.5">
-              <kbd className="rounded-lg bg-white px-2 py-1 font-mono font-medium shadow-sm">
-                ↑↓
+              <kbd className="rounded-lg bg-surface-primary px-2 py-1 font-mono font-medium border border-surface-border">
+
               </kbd>
               <span>Navigate</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <kbd className="rounded-lg bg-white px-2 py-1 font-mono font-medium shadow-sm">
-                ↵
+              <kbd className="rounded-lg bg-surface-primary px-2 py-1 font-mono font-medium border border-surface-border">
+
               </kbd>
               <span>Open</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <kbd className="rounded-lg bg-white px-2 py-1 font-mono font-medium shadow-sm">
+              <kbd className="rounded-lg bg-surface-primary px-2 py-1 font-mono font-medium border border-surface-border">
                 ESC
               </kbd>
               <span>Close</span>

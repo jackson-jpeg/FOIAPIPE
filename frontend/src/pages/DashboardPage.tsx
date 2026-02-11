@@ -84,7 +84,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-white shadow-card p-6 space-y-3">
+            <div key={i} className="rounded-xl bg-surface-secondary border border-surface-border/50 p-6 space-y-3">
               <Skeleton variant="text" className="h-3 w-16" />
               <Skeleton variant="text" className="h-5 w-12" />
               <Skeleton variant="text" className="h-2.5 w-10" />

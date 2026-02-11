@@ -38,9 +38,9 @@ export function Select({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           className={cn(
-            'h-10 w-full appearance-none rounded-lg border bg-white shadow-inner pl-4 pr-10 text-sm text-text-primary',
+            'h-10 w-full appearance-none rounded-lg border bg-surface-primary pl-4 pr-10 text-sm text-text-primary',
             'transition-all duration-150',
-            'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:shadow-sm',
+            'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20',
             'disabled:pointer-events-none disabled:opacity-40 disabled:bg-surface-tertiary',
             error
               ? 'border-accent-red focus:border-accent-red focus:ring-accent-red/20'

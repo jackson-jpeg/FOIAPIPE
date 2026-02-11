@@ -8,7 +8,7 @@ export interface Column<T> {
   label: string;
   sortable?: boolean;
   render?: (item: T) => ReactNode;
-  width?: string; // Optional column width (e.g., "w-12", "w-1/4")
+  width?: string;
 }
 
 interface TableProps<T> {
@@ -20,7 +20,7 @@ interface TableProps<T> {
   onRowClick?: (item: T) => void;
   loading?: boolean;
   emptyMessage?: string;
-  striped?: boolean; // Add striped row backgrounds
+  striped?: boolean;
 }
 
 export function Table<T extends Record<string, unknown>>({
@@ -49,7 +49,7 @@ export function Table<T extends Record<string, unknown>>({
 
   if (loading) {
     return (
-      <div className="overflow-hidden rounded-xl bg-white shadow-card">
+      <div className="overflow-hidden rounded-xl bg-surface-secondary border border-surface-border/50">
         <table className="w-full">
           <thead>
             <tr className="bg-surface-tertiary">
@@ -84,14 +84,14 @@ export function Table<T extends Record<string, unknown>>({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center rounded-xl bg-white shadow-card py-16 text-text-tertiary">
+      <div className="flex items-center justify-center rounded-xl bg-surface-secondary border border-surface-border/50 py-16 text-text-tertiary">
         <p className="text-sm">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-card">
+    <div className="overflow-hidden rounded-xl bg-surface-secondary border border-surface-border/50">
       <table className="w-full">
         <thead>
           <tr className="bg-surface-tertiary">
@@ -117,7 +117,7 @@ export function Table<T extends Record<string, unknown>>({
             <tr
               key={idx}
               className={cn(
-                'transition-colors',
+                'transition-colors border-t border-surface-border/30',
                 striped && idx % 2 === 1 && 'bg-surface-tertiary/30',
                 onRowClick && 'cursor-pointer hover:bg-surface-hover'
               )}

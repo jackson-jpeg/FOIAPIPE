@@ -255,7 +255,7 @@ export function NewsScannerPage() {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-accent-amber/20 px-5 py-4 shadow-elevated animate-slide-up">
+        <div className="flex items-center gap-3 rounded-xl bg-accent-primary-subtle border border-accent-primary/20 px-5 py-4 shadow-elevated animate-slide-up">
           <span className="text-sm font-bold text-text-primary">{selectedIds.size} selected</span>
           <div className="h-4 w-px bg-accent-primary/30" />
           <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />}>
@@ -364,7 +364,7 @@ export function NewsScannerPage() {
 
           {/* AI-Generated Draft Preview */}
           {selectedAgencyId && (
-            <div className="rounded-lg border-2 border-dashed border-accent-purple/20 bg-gradient-to-br from-purple-50/50 to-blue-50/50 p-4">
+            <div className="rounded-lg border-2 border-dashed border-accent-purple/20 bg-accent-purple-subtle p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-accent-purple" />
                 <h3 className="text-sm font-semibold text-text-primary">AI-Generated Draft</h3>

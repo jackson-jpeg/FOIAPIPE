@@ -97,7 +97,6 @@ export function CommandBar() {
       icon: <RefreshCw className="h-4 w-4" />,
       category: 'Actions',
       onSelect: async () => {
-        // This would trigger the news scan
         setIsOpen(false);
       },
     },
@@ -122,7 +121,6 @@ export function CommandBar() {
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Open with Cmd+K or Ctrl+K
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
       setIsOpen(prev => !prev);
@@ -130,14 +128,12 @@ export function CommandBar() {
       setSelectedIndex(0);
     }
 
-    // Close with Escape
     if (e.key === 'Escape') {
       setIsOpen(false);
       setSearch('');
       setSelectedIndex(0);
     }
 
-    // Navigate with arrow keys
     if (isOpen) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -161,7 +157,6 @@ export function CommandBar() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Reset selection when search changes
   useEffect(() => {
     setSelectedIndex(0);
   }, [search]);
@@ -179,14 +174,14 @@ export function CommandBar() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 animate-fade-in"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in"
         onClick={() => setIsOpen(false)}
       />
 
       {/* Command Bar */}
       <div className="fixed inset-x-0 top-0 pt-[20vh] px-4 z-50 pointer-events-none">
         <div className="max-w-xl mx-auto pointer-events-auto animate-slide-down">
-          <div className="bg-white rounded-xl shadow-overlay border border-surface-border overflow-hidden">
+          <div className="bg-surface-secondary rounded-xl shadow-overlay border border-surface-border overflow-hidden">
             {/* Search Input */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-border">
               <Search className="h-4 w-4 text-text-tertiary" />
@@ -250,11 +245,14 @@ export function CommandBar() {
             <div className="flex items-center justify-between px-4 py-2 border-t border-surface-border bg-surface-tertiary/30">
               <div className="flex items-center gap-4 text-2xs text-text-tertiary">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded bg-white border border-surface-border font-mono">↑↓</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-surface-primary border border-surface-border font-mono">
+                    </kbd>
                   Navigate
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded bg-white border border-surface-border font-mono">↵</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-surface-primary border border-surface-border font-mono">
+
+                  </kbd>
                   Select
                 </span>
               </div>

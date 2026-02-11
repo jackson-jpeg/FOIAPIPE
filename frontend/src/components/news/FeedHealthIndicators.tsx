@@ -51,7 +51,7 @@ export function FeedHealthIndicators() {
 
   if (loading && breakers.length === 0) {
     return (
-      <div className="rounded-xl border border-surface-border bg-white p-6">
+      <div className="rounded-xl border border-surface-border bg-surface-secondary p-6">
         <h3 className="text-sm font-semibold text-text-primary mb-4">Feed Health</h3>
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -67,7 +67,7 @@ export function FeedHealthIndicators() {
   }
 
   return (
-    <div className="rounded-xl border border-surface-border bg-white overflow-hidden">
+    <div className="rounded-xl border border-surface-border bg-surface-secondary overflow-hidden">
       <div className="px-5 py-4 border-b border-surface-border/30">
         <h3 className="text-sm font-semibold text-text-primary">Feed Health</h3>
       </div>

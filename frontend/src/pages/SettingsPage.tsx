@@ -79,7 +79,7 @@ export function SettingsPage() {
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-150 ${
+        className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-text-primary shadow-sm transition-transform duration-150 ${
           checked ? 'translate-x-[14px]' : 'translate-x-0.5'
         } mt-[2px]`}
       />

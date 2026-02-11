@@ -8,8 +8,8 @@ interface StatCardProps {
   value: string;
   trend?: { value: number; isPositive: boolean };
   icon?: ReactNode;
-  sparkline?: number[]; // Optional ambient data visualization
-  gradient?: 'amber' | 'blue' | 'emerald' | 'purple' | 'rose'; // Gradient variant for personality
+  sparkline?: number[];
+  gradient?: 'amber' | 'blue' | 'emerald' | 'purple' | 'rose' | 'cyan';
   className?: string;
   style?: CSSProperties;
 }
@@ -24,13 +24,13 @@ export function StatCard({
   className,
   style,
 }: StatCardProps) {
-  const gradientClass = gradient ? `gradient-${gradient}` : 'bg-white';
+  const gradientClass = gradient ? `gradient-${gradient}` : 'bg-surface-secondary';
 
   return (
     <div
       className={cn(
-        'group rounded-xl shadow-card transition-all duration-200 p-6 cursor-pointer',
-        'hover:shadow-card-hover hover:-translate-y-0.5',
+        'group rounded-xl border border-surface-border/50 transition-all duration-200 p-6 cursor-pointer',
+        'hover:border-accent-primary/30 hover:-translate-y-0.5',
         gradientClass,
         className
       )}
@@ -41,11 +41,12 @@ export function StatCard({
           <span className={cn(
             'inline-flex items-center justify-center w-11 h-11 rounded-lg',
             'transition-transform group-hover:scale-110',
-            gradient === 'amber' && 'bg-amber-100 text-amber-600',
-            gradient === 'blue' && 'bg-blue-100 text-blue-600',
-            gradient === 'emerald' && 'bg-emerald-100 text-emerald-600',
-            gradient === 'purple' && 'bg-purple-100 text-purple-600',
-            gradient === 'rose' && 'bg-rose-100 text-rose-600',
+            gradient === 'amber' && 'bg-amber-500/15 text-amber-400',
+            gradient === 'blue' && 'bg-blue-500/15 text-blue-400',
+            gradient === 'emerald' && 'bg-emerald-500/15 text-emerald-400',
+            gradient === 'purple' && 'bg-purple-500/15 text-purple-400',
+            gradient === 'rose' && 'bg-rose-500/15 text-rose-400',
+            gradient === 'cyan' && 'bg-cyan-500/15 text-cyan-400',
             !gradient && 'bg-surface-tertiary text-text-secondary'
           )}>
             {icon}
@@ -67,14 +68,13 @@ export function StatCard({
       </div>
       <p className="text-sm font-medium text-text-secondary mb-1">{label}</p>
       <p className="text-4xl font-bold text-text-primary tracking-tight tabular-nums">{value}</p>
-      {/* Ambient sparkline visualization */}
       {sparkline && sparkline.length > 0 && (
         <div className="mt-4 h-8 opacity-50 transition-opacity group-hover:opacity-100">
           <Sparkline
             data={sparkline}
             width={120}
             height={32}
-            color="rgba(217, 119, 6, 0.5)"
+            color="rgba(6, 182, 212, 0.5)"
             className="text-accent-primary"
           />
         </div>

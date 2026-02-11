@@ -22,7 +22,7 @@ export function Sidebar({
   const sidebarContent = (
     <div
       className={cn(
-        'flex h-full flex-col bg-white shadow-sm transition-[width] duration-150 ease-out-expo',
+        'flex h-full flex-col bg-surface-secondary border-r border-surface-border/50 transition-[width] duration-150 ease-out-expo',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -103,7 +103,7 @@ export function Sidebar({
       <>
         {mobileOpen && (
           <div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fade-in"
             onClick={onMobileClose}
           />
         )}

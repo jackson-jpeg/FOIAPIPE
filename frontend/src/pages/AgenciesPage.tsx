@@ -116,7 +116,7 @@ function InlineEditCell({
           onBlur={handleSave}
           disabled={saving}
           className={cn(
-            'h-7 w-full rounded border border-accent-primary/50 bg-white px-2 text-sm text-text-primary',
+            'h-7 w-full rounded border border-accent-primary/50 bg-surface-primary px-2 text-sm text-text-primary',
             'focus:outline-none focus:ring-2 focus:ring-accent-primary/20',
             type === 'number' && 'w-20'
           )}
@@ -212,7 +212,7 @@ function AgencyExpandedRow({
               rows={6}
               placeholder="Custom FOIA request template for this agency..."
               className={cn(
-                'w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
+                'w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
                 'transition-all duration-150 resize-y',
                 'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20'
               )}
@@ -243,12 +243,12 @@ function AgencyExpandedRow({
                     'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 focus-visible:ring-offset-2',
                     'disabled:pointer-events-none disabled:opacity-40',
-                    isActive ? 'bg-accent-primary' : 'bg-gray-200'
+                    isActive ? 'bg-accent-primary' : 'bg-surface-border-light'
                   )}
                 >
                   <span
                     className={cn(
-                      'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out',
+                      'pointer-events-none inline-block h-5 w-5 rounded-full bg-text-primary shadow-sm ring-0 transition-transform duration-200 ease-in-out',
                       isActive ? 'translate-x-5' : 'translate-x-0'
                     )}
                   />
@@ -271,7 +271,7 @@ function AgencyExpandedRow({
                 rows={3}
                 placeholder="Internal notes about this agency..."
                 className={cn(
-                  'w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
+                  'w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
                   'transition-all duration-150 resize-y',
                   'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20'
                 )}
@@ -563,7 +563,7 @@ export function AgenciesPage() {
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-surface-border/50 bg-white shadow-card">
+        <div className="overflow-x-auto rounded-xl border border-surface-border/50 bg-surface-secondary">
           <table className="w-full">
             <thead>
               <tr className="border-b border-surface-border/50 bg-surface-tertiary/30">
