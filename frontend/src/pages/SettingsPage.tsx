@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Save, Building2 } from 'lucide-react';
+import { Save, Building2, Wifi, Database, HardDrive, Mail, Youtube, Bot } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { StatusOrb } from '@/components/ui/StatusOrb';
+import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useToast } from '@/components/ui/Toast';
 import { getAgencies, type Agency } from '@/api/agencies';
+import client from '@/api/client';
+
+interface SystemHealth {
+  status: string;
+  checks: Record<string, { status: string; error?: string; [key: string]: any }>;
+}
 
 export function SettingsPage() {
   const { settings, loading, saving, fetchSettings, updateSettings } = useSettingsStore();
@@ -22,6 +29,9 @@ export function SettingsPage() {
 
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [agenciesLoading, setAgenciesLoading] = useState(true);
+
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
 
   useEffect(() => {
     fetchSettings();
@@ -50,6 +60,20 @@ export function SettingsPage() {
       }
     }
     loadAgencies();
+  }, []);
+
+  useEffect(() => {
+    async function loadHealth() {
+      try {
+        const { data } = await client.get('/health/detailed');
+        setHealth(data);
+      } catch {
+        // silently fail
+      } finally {
+        setHealthLoading(false);
+      }
+    }
+    loadHealth();
   }, []);
 
   const handleSave = async () => {
@@ -86,6 +110,21 @@ export function SettingsPage() {
     </button>
   );
 
+  function statusToOrb(status: string): 'success' | 'warning' | 'danger' | 'default' {
+    if (status === 'ok' || status === 'configured') return 'success';
+    if (status === 'degraded' || status === 'incomplete') return 'warning';
+    if (status === 'error') return 'danger';
+    return 'default';
+  }
+
+  const serviceItems = [
+    { key: 'database', label: 'PostgreSQL', icon: Database },
+    { key: 'redis', label: 'Redis', icon: Wifi },
+    { key: 'storage', label: 'File Storage (S3/R2)', icon: HardDrive },
+    { key: 'email_smtp', label: 'SMTP Email', icon: Mail },
+    { key: 'claude_api', label: 'Claude AI', icon: Bot },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -93,7 +132,7 @@ export function SettingsPage() {
         <div>
           <h1 className="heading-3 mb-2">Settings</h1>
           <p className="text-sm text-text-secondary">
-            Configure scanner behavior, notifications, and agency management
+            Configure scanner behavior, notifications, and system integrations
           </p>
         </div>
         <Button
@@ -118,6 +157,69 @@ export function SettingsPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* System Status */}
+          <Card title="System Status">
+            {healthLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <Skeleton variant="text" className="h-3.5 w-32" />
+                    <Skeleton variant="text" className="h-3.5 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {serviceItems.map(({ key, label, icon: Icon }) => {
+                  const check = health?.checks?.[key];
+                  const status = check?.status || 'unknown';
+                  return (
+                    <div key={key} className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-4 w-4 text-text-tertiary" />
+                        <span className="text-sm text-text-primary">{label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {check?.host && (
+                          <span className="text-2xs text-text-quaternary font-mono">{check.host}</span>
+                        )}
+                        <Badge
+                          variant={status === 'ok' || status === 'configured' ? 'success' : status === 'error' ? 'danger' : 'default'}
+                          size="sm"
+                        >
+                          {status}
+                        </Badge>
+                        <StatusOrb color={statusToOrb(status)} size="sm" pulse={false} />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* YouTube API - separate since it's not in health checks */}
+                <div className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Youtube className="h-4 w-4 text-text-tertiary" />
+                    <span className="text-sm text-text-primary">YouTube API</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" size="sm">not_configured</Badge>
+                    <StatusOrb color="default" size="sm" pulse={false} />
+                  </div>
+                </div>
+
+                {/* Circuit Breakers summary */}
+                {health?.checks?.circuit_breakers && (
+                  <div className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors border-t border-surface-border/30 mt-2 pt-2">
+                    <span className="text-sm text-text-primary">News Source Health</span>
+                    <span className="text-xs text-text-secondary font-mono">
+                      {health.checks.circuit_breakers.healthy_sources}/{health.checks.circuit_breakers.total_sources} healthy
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+
           {/* Scanner Configuration */}
           <Card title="Scanner Configuration">
             <div className="space-y-4">
