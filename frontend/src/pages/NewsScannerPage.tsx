@@ -93,17 +93,24 @@ export function NewsScannerPage() {
   };
 
   const handleFileFoia = async (id: string) => {
-    if (agencies.length === 0) {
+    let agencyList = agencies;
+    if (agencyList.length === 0) {
       try {
         const data = await agenciesApi.getAgencies({ page_size: 100 });
-        setAgencies(data.items || []);
+        agencyList = data.items || [];
+        setAgencies(agencyList);
       } catch {
         addToast({ type: 'error', title: 'Failed to load agencies' });
         return;
       }
     }
     setFoiaModalArticleId(id);
-    setSelectedAgencyId('');
+    // Auto-select the detected agency if it matches a known agency
+    const article = articles.find(a => a.id === id);
+    const matchedAgency = article?.detected_agency
+      ? agencyList.find(a => a.name === article.detected_agency)
+      : null;
+    setSelectedAgencyId(matchedAgency?.id || '');
   };
 
   const handleConfirmFileFoia = async () => {

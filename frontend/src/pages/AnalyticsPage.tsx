@@ -10,6 +10,7 @@ import { VelocityChart } from '@/components/analytics/VelocityChart';
 import { FoiaPerformanceTable } from '@/components/analytics/FoiaPerformanceTable';
 import { VideoProfitabilityTable } from '@/components/analytics/VideoProfitabilityTable';
 import { BreakEvenCard } from '@/components/analytics/BreakEvenCard';
+import { RevenueTransactionsTable } from '@/components/analytics/RevenueTransactionsTable';
 import { StatCard } from '@/components/ui/StatCard';
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
 import { DollarSign, Eye, Users, TrendingUp, Target } from 'lucide-react';
@@ -155,6 +156,9 @@ export function AnalyticsPage() {
         </div>
         <BreakEvenCard data={breakEven} />
       </div>
+
+      {/* Revenue Transactions */}
+      <RevenueTransactionsTable range={range} />
 
       {/* Video Profitability */}
       <VideoProfitabilityTable data={profitability} />

@@ -91,6 +91,52 @@ AGENCY_PATTERNS: dict[str, list[str]] = {
         "lakeland pd",
         "lpd lakeland",
     ],
+    "Manatee County Sheriff's Office": [
+        "manatee county sheriff",
+        "manatee sheriff",
+        "mcso",
+    ],
+    "Polk County Sheriff's Office": [
+        "polk county sheriff",
+        "polk sheriff",
+        "grady judd",
+        "sheriff judd",
+    ],
+    "Sarasota Police Department": [
+        "sarasota police",
+        "sarasota pd",
+        "spd sarasota",
+    ],
+    "Sarasota County Sheriff's Office": [
+        "sarasota county sheriff",
+        "sarasota sheriff",
+    ],
+    "Hernando County Sheriff's Office": [
+        "hernando county sheriff",
+        "hernando sheriff",
+    ],
+    "Pinellas Park Police Department": [
+        "pinellas park police",
+        "pinellas park pd",
+    ],
+    "Tarpon Springs Police Department": [
+        "tarpon springs police",
+        "tarpon springs pd",
+    ],
+    "Dunedin Police Department": [
+        "dunedin police",
+        "dunedin pd",
+    ],
+    "New Port Richey Police Department": [
+        "new port richey police",
+        "new port richey pd",
+        "nprpd",
+    ],
+    "Winter Haven Police Department": [
+        "winter haven police",
+        "winter haven pd",
+        "whpd",
+    ],
 }
 
 INCIDENT_KEYWORDS: dict[str, list[str]] = {
@@ -165,7 +211,7 @@ INCIDENT_KEYWORDS: dict[str, list[str]] = {
 POLICE_INDICATORS = [
     "police", "officer", "deputy", "sheriff", "trooper", "cop", "law enforcement",
     "arrest", "detained", "custody", "investigation", "suspect", "department",
-    "tpd", "hcso", "sppd", "pcso", "fhp", "fdle", "charged", "charge", "booking",
+    "tpd", "hcso", "sppd", "pcso", "fhp", "fdle", "mcso", "whpd", "nprpd", "charged", "charge", "booking",
     "jail", "inmate", "authorities",
 ]
 
