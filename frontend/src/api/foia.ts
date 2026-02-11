@@ -71,6 +71,11 @@ export async function getDeadlines() {
   return data;
 }
 
+export async function batchSubmit(payload: { agency_ids: string[]; request_text?: string; priority?: string; auto_submit?: boolean }) {
+  const { data } = await client.post('/foia/batch-submit', payload);
+  return data;
+}
+
 export async function getCostPrediction(params: { agency_id: string; incident_type?: string; estimated_duration_minutes?: number }) {
   const { data } = await client.get('/foia/cost-prediction', { params });
   return data;

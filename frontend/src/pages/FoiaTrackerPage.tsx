@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { FoiaTable } from '@/components/foia/FoiaTable';
 import { FoiaForm } from '@/components/foia/FoiaForm';
+import { BatchFoiaForm } from '@/components/foia/BatchFoiaForm';
 import { FoiaDetail } from '@/components/foia/FoiaDetail';
 import { DeadlineCalendar } from '@/components/foia/DeadlineCalendar';
 import { StatCard } from '@/components/ui/StatCard';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useFoiaStore } from '@/stores/foiaStore';
 import { FOIA_STATUSES } from '@/lib/constants';
-import { Plus, Calendar, Download } from 'lucide-react';
+import { Plus, Calendar, Download, Layers } from 'lucide-react';
 import client from '@/api/client';
 import * as foiaApi from '@/api/foia';
 
@@ -18,6 +19,7 @@ export function FoiaTrackerPage() {
   const { requests, loading, total, fetchRequests } = useFoiaStore();
   const { addToast } = useToast();
   const [showForm, setShowForm] = useState(false);
+  const [showBatchForm, setShowBatchForm] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [statusSummary, setStatusSummary] = useState<Record<string, number>>({});
@@ -131,6 +133,9 @@ export function FoiaTrackerPage() {
           <Button variant="outline" onClick={() => setShowCalendar(!showCalendar)} icon={<Calendar className="h-4 w-4" />}>
             Deadlines
           </Button>
+          <Button variant="outline" onClick={() => setShowBatchForm(true)} icon={<Layers className="h-4 w-4" />}>
+            Batch Submit
+          </Button>
           <Button variant="primary" onClick={() => setShowForm(true)} icon={<Plus className="h-4 w-4" />}>
             New Request
           </Button>
@@ -191,6 +196,9 @@ export function FoiaTrackerPage() {
 
       {/* Create Form Modal */}
       <FoiaForm isOpen={showForm} onClose={() => setShowForm(false)} onSubmit={handleCreateFoia} />
+
+      {/* Batch Submit Modal */}
+      <BatchFoiaForm isOpen={showBatchForm} onClose={() => setShowBatchForm(false)} onComplete={loadData} />
 
       {/* Detail Panel */}
       <FoiaDetail
