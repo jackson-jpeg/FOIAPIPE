@@ -248,6 +248,60 @@ async def update_video(
     return _to_response(video)
 
 
+@router.delete("/{video_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_video(
+    video_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> None:
+    """Delete a video and its associated subtitles. Published videos cannot be deleted."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Video not found"
+        )
+    if video.status == VideoStatus.published:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete a published video. Archive it instead.",
+        )
+    await db.delete(video)
+    await db.flush()
+    logger.info(f"Deleted video {video_id} (title={video.title})")
+
+
+@router.post("/{video_id}/duplicate", response_model=VideoResponse, status_code=status.HTTP_201_CREATED)
+async def duplicate_video(
+    video_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> VideoResponse:
+    """Create a copy of a video entry (metadata only, not files)."""
+    source = await db.get(Video, video_id)
+    if not source:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Video not found"
+        )
+    clone = Video(
+        title=f"{source.title or 'Untitled'} (copy)",
+        description=source.description,
+        tags=list(source.tags) if source.tags else None,
+        foia_request_id=source.foia_request_id,
+        status=VideoStatus.raw_received,
+        raw_storage_key=source.raw_storage_key,
+        duration_seconds=source.duration_seconds,
+        resolution=source.resolution,
+        file_size_bytes=source.file_size_bytes,
+        editing_notes=source.editing_notes,
+        priority=source.priority,
+    )
+    db.add(clone)
+    await db.flush()
+    await db.refresh(clone)
+    logger.info(f"Duplicated video {video_id} -> {clone.id}")
+    return _to_response(clone)
+
+
 # ── File Upload ──────────────────────────────────────────────────────────
 
 

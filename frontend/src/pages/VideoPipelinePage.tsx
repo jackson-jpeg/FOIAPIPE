@@ -78,6 +78,29 @@ export function VideoPipelinePage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await videosApi.deleteVideo(id);
+      addToast({ type: 'success', title: 'Video deleted' });
+      setSelectedId(null);
+      fetchVideos();
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Failed to delete video';
+      addToast({ type: 'error', title: msg });
+    }
+  };
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const clone = await videosApi.duplicateVideo(id);
+      addToast({ type: 'success', title: 'Video duplicated' });
+      fetchVideos();
+      setSelectedId(clone.id);
+    } catch {
+      addToast({ type: 'error', title: 'Failed to duplicate video' });
+    }
+  };
+
   const selectedVideo = selectedId ? videos.find((v: any) => v.id === selectedId) || null : null;
 
   return (
@@ -118,6 +141,8 @@ export function VideoPipelinePage() {
         onGenerateThumbnail={handleGenerateThumbnail}
         onUploadToYoutube={handleUploadToYoutube}
         onRefresh={fetchVideos}
+        onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
       />
     </div>
   );

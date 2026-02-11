@@ -11,6 +11,8 @@ import { FoiaPerformanceTable } from '@/components/analytics/FoiaPerformanceTabl
 import { VideoProfitabilityTable } from '@/components/analytics/VideoProfitabilityTable';
 import { BreakEvenCard } from '@/components/analytics/BreakEvenCard';
 import { RevenueTransactionsTable } from '@/components/analytics/RevenueTransactionsTable';
+import { IncidentTypeChart } from '@/components/analytics/IncidentTypeChart';
+import { PublishingInsightsCard } from '@/components/analytics/PublishingInsightsCard';
 import { StatCard } from '@/components/ui/StatCard';
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
 import { DollarSign, Eye, Users, TrendingUp, Target } from 'lucide-react';
@@ -30,12 +32,13 @@ export function AnalyticsPage() {
   const [foiaPerformance, setFoiaPerformance] = useState<any[]>([]);
   const [profitability, setProfitability] = useState<any[]>([]);
   const [breakEven, setBreakEven] = useState<any>(null);
+  const [incidentData, setIncidentData] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [ov, rev, views, top, fun, agency, roi, velocity, foiaPerf, profit, be] = await Promise.all([
+        const [ov, rev, views, top, fun, agency, roi, velocity, foiaPerf, profit, be, incident] = await Promise.all([
           analyticsApi.getOverview(range),
           analyticsApi.getRevenue(range),
           analyticsApi.getViews(range),
@@ -47,6 +50,7 @@ export function AnalyticsPage() {
           analyticsApi.getFoiaPerformance().catch(() => []),
           analyticsApi.getVideoProfitability().catch(() => []),
           analyticsApi.getBreakEvenAnalysis().catch(() => null),
+          analyticsApi.getByIncidentType(range).catch(() => []),
         ]);
         setOverview(ov);
         setRevenueData((rev as any)?.data || rev || []);
@@ -59,6 +63,7 @@ export function AnalyticsPage() {
         setFoiaPerformance(foiaPerf || []);
         setProfitability(profit || []);
         setBreakEven(be);
+        setIncidentData(incident || []);
       } catch (error) {
         console.error('Analytics load error:', error);
       } finally {
@@ -143,10 +148,16 @@ export function AnalyticsPage() {
         {funnel && <FunnelChart steps={funnel.steps || []} />}
       </div>
 
-      {/* Agency Breakdown & Pipeline Velocity */}
+      {/* Agency Breakdown & Incident Type */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AgencyBreakdownChart data={agencyData} />
+        <IncidentTypeChart data={incidentData} />
+      </div>
+
+      {/* Pipeline Velocity & Publishing Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <VelocityChart data={velocityData} />
+        <PublishingInsightsCard />
       </div>
 
       {/* FOIA Performance & Break-Even */}

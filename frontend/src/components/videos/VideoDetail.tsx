@@ -4,7 +4,10 @@ import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
 import { formatDate, formatDuration } from '@/lib/formatters';
 import { VIDEO_STATUSES } from '@/lib/constants';
-import { X, Upload, Image, Save, ExternalLink, Youtube, Play, Zap, Captions, Trash2 } from 'lucide-react';
+import {
+  X, Upload, Image, Save, ExternalLink, Youtube, Play, Zap, Captions,
+  Trash2, Copy, Archive, Scissors, Type,
+} from 'lucide-react';
 import * as videosApi from '@/api/videos';
 import { useToast } from '@/components/ui/Toast';
 import type { Video } from '@/types';
@@ -18,6 +21,8 @@ interface VideoDetailProps {
   onGenerateThumbnail: (id: string) => void;
   onUploadToYoutube: (id: string) => void;
   onRefresh: () => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
 }
 
 interface Subtitle {
@@ -29,7 +34,7 @@ interface Subtitle {
   created_at: string | null;
 }
 
-export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onGenerateThumbnail, onUploadToYoutube, onRefresh }: VideoDetailProps) {
+export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onGenerateThumbnail, onUploadToYoutube, onRefresh, onDelete, onDuplicate }: VideoDetailProps) {
   const { addToast } = useToast();
   const [title, setTitle] = useState(video?.title || '');
   const [description, setDescription] = useState(video?.description || '');
@@ -37,6 +42,13 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   const [tags, setTags] = useState(video?.tags?.join(', ') || '');
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showTrimForm, setShowTrimForm] = useState(false);
+  const [showIntroForm, setShowIntroForm] = useState(false);
+  const [trimStart, setTrimStart] = useState('0');
+  const [trimEnd, setTrimEnd] = useState('');
+  const [introText, setIntroText] = useState('');
+  const [introDuration, setIntroDuration] = useState('5');
 
   useEffect(() => {
     if (video?.id) {
@@ -46,11 +58,22 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
     }
   }, [video?.id]);
 
+  useEffect(() => {
+    if (video) {
+      setTitle(video.title || '');
+      setDescription(video.description || '');
+      setEditingNotes(video.editing_notes || '');
+      setTags(video.tags?.join(', ') || '');
+      setTrimEnd(video.duration_seconds ? String(video.duration_seconds) : '');
+    }
+  }, [video?.id]);
+
   if (!isOpen || !video) return null;
 
   const statusOptions = Object.entries(VIDEO_STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
   const statusInfo = VIDEO_STATUSES[video.status as keyof typeof VIDEO_STATUSES];
   const hasFile = !!(video.raw_storage_key || video.processed_storage_key);
+  const isPublished = video.status === 'published';
 
   const handleSave = () => {
     onUpdate(video.id, {
@@ -107,6 +130,30 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
     }
   };
 
+  const handleTrim = () => {
+    const start = parseFloat(trimStart);
+    const end = parseFloat(trimEnd);
+    if (isNaN(start) || isNaN(end) || start >= end) {
+      addToast({ type: 'error', title: 'Invalid trim range' });
+      return;
+    }
+    setShowTrimForm(false);
+    handleProcessing('Trim', () => videosApi.trimVideo(video.id, start, end), 'Video trimmed successfully');
+  };
+
+  const handleAddIntro = () => {
+    if (!introText.trim()) {
+      addToast({ type: 'error', title: 'Intro text is required' });
+      return;
+    }
+    setShowIntroForm(false);
+    handleProcessing('Intro', () => videosApi.addIntro(video.id, introText.trim(), parseInt(introDuration) || 5), 'Intro card added');
+  };
+
+  const handleArchive = () => {
+    onUpdate(video.id, { status: 'archived' as any });
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] animate-fade-in" onClick={onClose} />
@@ -125,18 +172,64 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
               {video.foia_case_number && <span className="text-2xs font-mono text-text-quaternary">{video.foia_case_number}</span>}
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-surface-tertiary rounded-lg transition-colors">
-            <X className="h-4 w-4 text-text-tertiary" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Quick Actions */}
+            <button
+              onClick={() => onDuplicate(video.id)}
+              title="Duplicate"
+              className="p-1.5 hover:bg-surface-tertiary rounded-lg transition-colors text-text-tertiary hover:text-text-primary"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+            {!isPublished && (
+              <button
+                onClick={handleArchive}
+                title="Archive"
+                className="p-1.5 hover:bg-surface-tertiary rounded-lg transition-colors text-text-tertiary hover:text-text-primary"
+              >
+                <Archive className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {!isPublished && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                title="Delete"
+                className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors text-text-tertiary hover:text-accent-red"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <button onClick={onClose} className="p-1.5 hover:bg-surface-tertiary rounded-lg transition-colors text-text-tertiary">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-5 space-y-5">
+          {/* Delete Confirmation */}
+          {showDeleteConfirm && (
+            <div className="rounded-lg border border-accent-red/30 bg-red-500/5 p-4 space-y-3">
+              <p className="text-sm text-text-primary font-medium">Delete this video?</p>
+              <p className="text-xs text-text-secondary">This will permanently remove the video entry and all its subtitles. Storage files will not be deleted.</p>
+              <div className="flex gap-2">
+                <Button variant="danger" size="sm" onClick={() => { onDelete(video.id); onClose(); }}>
+                  Delete
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Metadata */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             {video.duration_seconds && <div><p className="text-text-quaternary mb-0.5">Duration</p><p className="font-mono text-text-primary tabular-nums">{formatDuration(video.duration_seconds)}</p></div>}
             {video.resolution && <div><p className="text-text-quaternary mb-0.5">Resolution</p><p className="font-mono text-text-primary">{video.resolution}</p></div>}
             {video.file_size_bytes && <div><p className="text-text-quaternary mb-0.5">File Size</p><p className="font-mono text-text-primary tabular-nums">{(video.file_size_bytes / 1048576).toFixed(1)} MB</p></div>}
             <div><p className="text-text-quaternary mb-0.5">Created</p><p className="text-text-primary tabular-nums">{formatDate(video.created_at)}</p></div>
+            {video.visibility && <div><p className="text-text-quaternary mb-0.5">Visibility</p><p className="text-text-primary capitalize">{video.visibility}</p></div>}
+            {video.priority > 0 && <div><p className="text-text-quaternary mb-0.5">Priority</p><p className="text-text-primary tabular-nums">{video.priority}</p></div>}
           </div>
 
           {/* Upload */}
@@ -189,7 +282,79 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
                 >
                   Subtitles
                 </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={() => setShowTrimForm(!showTrimForm)}
+                  loading={processingAction === 'Trim'}
+                  icon={<Scissors className="h-3 w-3" />}
+                >
+                  Trim
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={() => setShowIntroForm(!showIntroForm)}
+                  loading={processingAction === 'Intro'}
+                  icon={<Type className="h-3 w-3" />}
+                >
+                  Add Intro
+                </Button>
               </div>
+
+              {/* Trim Form */}
+              {showTrimForm && (
+                <div className="mt-2 p-3 rounded-md bg-surface-tertiary/30 space-y-2">
+                  <p className="text-2xs text-text-tertiary">Trim video (seconds)</p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={trimStart}
+                      onChange={e => setTrimStart(e.target.value)}
+                      placeholder="Start"
+                      className="w-20 rounded-md bg-surface-primary border border-surface-border px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                    />
+                    <span className="text-text-quaternary text-xs">to</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={trimEnd}
+                      onChange={e => setTrimEnd(e.target.value)}
+                      placeholder="End"
+                      className="w-20 rounded-md bg-surface-primary border border-surface-border px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                    />
+                    <Button variant="primary" size="sm" onClick={handleTrim}>Trim</Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Intro Form */}
+              {showIntroForm && (
+                <div className="mt-2 p-3 rounded-md bg-surface-tertiary/30 space-y-2">
+                  <p className="text-2xs text-text-tertiary">Add text intro card</p>
+                  <input
+                    type="text"
+                    value={introText}
+                    onChange={e => setIntroText(e.target.value)}
+                    placeholder="Intro text (e.g. agency name, date)"
+                    className="w-full rounded-md bg-surface-primary border border-surface-border px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={introDuration}
+                      onChange={e => setIntroDuration(e.target.value)}
+                      className="w-16 rounded-md bg-surface-primary border border-surface-border px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                    />
+                    <span className="text-2xs text-text-quaternary">seconds</span>
+                    <Button variant="primary" size="sm" onClick={handleAddIntro}>Add Intro</Button>
+                  </div>
+                </div>
+              )}
+
               {video.processed_storage_key && (
                 <p className="text-2xs text-text-quaternary">Processed version available</p>
               )}
@@ -247,6 +412,19 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
             value={video.status}
             onChange={(value) => onUpdate(video.id, { status: value as Video['status'] })}
           />
+
+          {/* Priority */}
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">Priority (0 = normal)</label>
+            <input
+              type="number"
+              min="0"
+              max="10"
+              value={video.priority}
+              onChange={e => onUpdate(video.id, { priority: parseInt(e.target.value) || 0 } as any)}
+              className="w-20 rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 transition-all duration-150"
+            />
+          </div>
 
           {/* Title */}
           <div>

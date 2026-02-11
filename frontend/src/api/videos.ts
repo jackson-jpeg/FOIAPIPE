@@ -75,6 +75,15 @@ export async function uploadToYoutube(id: string): Promise<{ success: boolean; m
   return data;
 }
 
+export async function deleteVideo(id: string): Promise<void> {
+  await client.delete(`/videos/${id}`);
+}
+
+export async function duplicateVideo(id: string): Promise<Video> {
+  const { data } = await client.post(`/videos/${id}/duplicate`);
+  return data;
+}
+
 export async function getPipelineCounts(): Promise<{ counts: Record<string, number> }> {
   const { data } = await client.get('/videos/pipeline-counts');
   return data;
