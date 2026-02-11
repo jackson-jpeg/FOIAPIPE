@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,11 +13,41 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.config import settings
 from app.models.audit_log import AuditAction
-from app.rate_limit import limiter
 from app.schemas.auth import LoginRequest, TokenResponse, UserResponse
 from app.services.audit_logger import log_audit_event
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+LOGIN_RATE_LIMIT = 5  # max attempts
+LOGIN_RATE_WINDOW = 60  # per 60 seconds
+
+
+async def _check_login_rate_limit(request: Request) -> None:
+    """Inline rate limit for login (5 attempts/minute per IP).
+
+    Uses Redis directly to avoid slowapi decorator breaking Pydantic body parsing.
+    """
+    try:
+        client_ip = request.client.host if request.client else "unknown"
+        key = f"foiapipe:ratelimit:login:{client_ip}"
+        r = aioredis.from_url(settings.REDIS_URL)
+        try:
+            count = await r.incr(key)
+            if count == 1:
+                await r.expire(key, LOGIN_RATE_WINDOW)
+            if count > LOGIN_RATE_LIMIT:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many login attempts. Try again in 1 minute.",
+                )
+        finally:
+            await r.aclose()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning("Login rate limit check failed (allowing request): %s", e)
 
 
 def _create_access_token(subject: str) -> str:
@@ -28,7 +60,6 @@ def _create_access_token(subject: str) -> str:
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/minute")
 async def login(
     body: LoginRequest,
     request: Request,
@@ -39,6 +70,8 @@ async def login(
     Currently supports a single admin user whose password is set via the
     ADMIN_PASSWORD environment variable.
     """
+    await _check_login_rate_limit(request)
+
     # Validate credentials
     if body.username != "admin" or body.password != settings.ADMIN_PASSWORD:
         # Log failed login attempt

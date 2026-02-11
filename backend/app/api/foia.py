@@ -733,10 +733,8 @@ async def list_denial_reasons(
 
 
 @router.post("/batch-submit")
-@limiter.limit("10/minute")
 async def batch_submit_foia(
     body: dict,
-    request: Request,
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict:
