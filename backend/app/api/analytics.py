@@ -66,9 +66,20 @@ async def analytics_overview(
     total_revenue = float(revenue) if revenue else 0
     avg_rpm = (total_revenue / total_views * 1000) if total_views > 0 else 0
 
+    # Total costs (FOIA + expenses)
+    foia_cost_result = await db.execute(
+        select(func.coalesce(func.sum(FoiaRequest.actual_cost), 0))
+    )
+    expense_result = await db.execute(
+        select(func.coalesce(func.sum(RevenueTransaction.amount), 0))
+        .where(RevenueTransaction.is_income == False)
+    )
+    total_costs = float(foia_cost_result.scalar() or 0) + float(expense_result.scalar() or 0)
+
     return {
         "total_views": total_views,
         "total_revenue": round(total_revenue, 2),
+        "total_costs": round(total_costs, 2),
         "total_subscribers": int(subs) if subs else 0,
         "avg_rpm": round(avg_rpm, 2),
         "period_views": total_views,

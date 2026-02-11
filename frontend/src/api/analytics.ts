@@ -88,3 +88,28 @@ export async function getRevenueSummary(range: string = '30d') {
   const { data } = await client.get('/analytics/revenue/summary', { params: { range } });
   return data;
 }
+
+export async function getOptimalPublishTimes() {
+  const { data } = await client.get('/analytics/publishing/optimal-times');
+  return data;
+}
+
+export async function getPublishingRecommendations() {
+  const { data } = await client.get('/analytics/publishing/recommendations');
+  return data;
+}
+
+export async function getFoiaPerformance() {
+  const { data } = await client.get('/analytics/foia/performance');
+  return data;
+}
+
+export async function getVideoProfitability() {
+  const { data } = await client.get('/analytics/videos/profitability');
+  return data;
+}
+
+export async function getBreakEvenAnalysis() {
+  const { data } = await client.get('/analytics/revenue/break-even');
+  return data;
+}

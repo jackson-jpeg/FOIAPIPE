@@ -7,6 +7,9 @@ import { FunnelChart } from '@/components/analytics/FunnelChart';
 import { AgencyBreakdownChart } from '@/components/analytics/AgencyBreakdownChart';
 import { ROITable } from '@/components/analytics/ROITable';
 import { VelocityChart } from '@/components/analytics/VelocityChart';
+import { FoiaPerformanceTable } from '@/components/analytics/FoiaPerformanceTable';
+import { VideoProfitabilityTable } from '@/components/analytics/VideoProfitabilityTable';
+import { BreakEvenCard } from '@/components/analytics/BreakEvenCard';
 import { StatCard } from '@/components/ui/StatCard';
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
 import { DollarSign, Eye, Users, TrendingUp, Target } from 'lucide-react';
@@ -23,12 +26,15 @@ export function AnalyticsPage() {
   const [agencyData, setAgencyData] = useState<any[]>([]);
   const [roiData, setRoiData] = useState<any[]>([]);
   const [velocityData, setVelocityData] = useState<any[]>([]);
+  const [foiaPerformance, setFoiaPerformance] = useState<any[]>([]);
+  const [profitability, setProfitability] = useState<any[]>([]);
+  const [breakEven, setBreakEven] = useState<any>(null);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [ov, rev, views, top, fun, agency, roi, velocity] = await Promise.all([
+        const [ov, rev, views, top, fun, agency, roi, velocity, foiaPerf, profit, be] = await Promise.all([
           analyticsApi.getOverview(range),
           analyticsApi.getRevenue(range),
           analyticsApi.getViews(range),
@@ -37,6 +43,9 @@ export function AnalyticsPage() {
           analyticsApi.getByAgency(range).catch(() => []),
           analyticsApi.getRoi().catch(() => []),
           analyticsApi.getVelocity().catch(() => []),
+          analyticsApi.getFoiaPerformance().catch(() => []),
+          analyticsApi.getVideoProfitability().catch(() => []),
+          analyticsApi.getBreakEvenAnalysis().catch(() => null),
         ]);
         setOverview(ov);
         setRevenueData((rev as any)?.data || rev || []);
@@ -46,8 +55,11 @@ export function AnalyticsPage() {
         setAgencyData(agency || []);
         setRoiData(roi || []);
         setVelocityData(velocity || []);
-      } catch {
-        // Silently handle errors for empty state
+        setFoiaPerformance(foiaPerf || []);
+        setProfitability(profit || []);
+        setBreakEven(be);
+      } catch (error) {
+        console.error('Analytics load error:', error);
       } finally {
         setLoading(false);
       }
@@ -91,7 +103,7 @@ export function AnalyticsPage() {
             label="Net Profit"
             value={`$${netProfit.toLocaleString()}`}
             icon={<Target className="h-5 w-5" />}
-            gradient="cyan"
+            gradient={netProfit >= 0 ? 'cyan' : 'rose'}
           />
           <StatCard
             label="Total Views"
@@ -135,6 +147,17 @@ export function AnalyticsPage() {
         <AgencyBreakdownChart data={agencyData} />
         <VelocityChart data={velocityData} />
       </div>
+
+      {/* FOIA Performance & Break-Even */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <FoiaPerformanceTable data={foiaPerformance} />
+        </div>
+        <BreakEvenCard data={breakEven} />
+      </div>
+
+      {/* Video Profitability */}
+      <VideoProfitabilityTable data={profitability} />
 
       {/* ROI Analysis */}
       <ROITable data={roiData} />
