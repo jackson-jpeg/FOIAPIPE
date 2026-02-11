@@ -33,6 +33,10 @@ from app.services.storage import upload_file
 from app.services.video_processor import (
     extract_metadata,
     generate_thumbnail as ffmpeg_generate_thumbnail,
+    trim_video as ffmpeg_trim,
+    add_intro_card as ffmpeg_intro_card,
+    export_youtube_optimized as ffmpeg_yt_export,
+    generate_youtube_thumbnail as ffmpeg_yt_thumbnail,
 )
 from app.services.subtitle_generator import (
     STTProvider,
@@ -410,6 +414,206 @@ async def generate_video_thumbnail(
             os.unlink(thumb_path)
 
     return _to_response(video)
+
+
+# ── Video Processing ─────────────────────────────────────────────────────
+
+
+@router.post("/{video_id}/trim")
+async def trim_video(
+    video_id: uuid.UUID,
+    start: float = Query(..., ge=0, description="Start time in seconds"),
+    end: float = Query(..., gt=0, description="End time in seconds"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Trim a video to a segment. Stores result as the processed version."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    storage_key = video.raw_storage_key
+    if not storage_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No raw video uploaded")
+
+    from app.services.storage import download_file
+
+    raw_bytes = download_file(storage_key)
+    suffix = os.path.splitext(storage_key)[1] or ".mp4"
+
+    src_path = None
+    out_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(raw_bytes)
+            src_path = tmp.name
+        out_path = src_path + f".trimmed{suffix}"
+
+        await ffmpeg_trim(src_path, out_path, start, end)
+
+        with open(out_path, "rb") as f:
+            processed_bytes = f.read()
+
+        processed_key = f"videos/processed/{video_id}_trimmed{suffix}"
+        upload_file(processed_bytes, processed_key, "video/mp4")
+
+        video.processed_storage_key = processed_key
+        await db.flush()
+
+        return {"success": True, "storage_key": processed_key, "message": f"Trimmed {start}s to {end}s"}
+    finally:
+        if src_path and os.path.exists(src_path):
+            os.unlink(src_path)
+        if out_path and os.path.exists(out_path):
+            os.unlink(out_path)
+
+
+@router.post("/{video_id}/add-intro")
+async def add_intro(
+    video_id: uuid.UUID,
+    text: str = Query(..., description="Intro card text"),
+    duration: int = Query(5, ge=1, le=15, description="Intro duration in seconds"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Add a text intro card to the beginning of the video."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    storage_key = video.processed_storage_key or video.raw_storage_key
+    if not storage_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No video file in storage")
+
+    from app.services.storage import download_file
+
+    video_bytes = download_file(storage_key)
+    suffix = os.path.splitext(storage_key)[1] or ".mp4"
+
+    src_path = None
+    out_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(video_bytes)
+            src_path = tmp.name
+        out_path = src_path + f".intro{suffix}"
+
+        await ffmpeg_intro_card(src_path, out_path, text, duration)
+
+        with open(out_path, "rb") as f:
+            processed_bytes = f.read()
+
+        processed_key = f"videos/processed/{video_id}_intro{suffix}"
+        upload_file(processed_bytes, processed_key, "video/mp4")
+
+        video.processed_storage_key = processed_key
+        await db.flush()
+
+        return {"success": True, "storage_key": processed_key, "message": f"Added {duration}s intro card"}
+    finally:
+        if src_path and os.path.exists(src_path):
+            os.unlink(src_path)
+        if out_path and os.path.exists(out_path):
+            os.unlink(out_path)
+
+
+@router.post("/{video_id}/optimize-youtube")
+async def optimize_for_youtube(
+    video_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Re-encode video to H.264 1080p optimized for YouTube upload."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    storage_key = video.processed_storage_key or video.raw_storage_key
+    if not storage_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No video file in storage")
+
+    from app.services.storage import download_file
+
+    video_bytes = download_file(storage_key)
+
+    src_path = None
+    out_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+            tmp.write(video_bytes)
+            src_path = tmp.name
+        out_path = src_path + ".yt_optimized.mp4"
+
+        await ffmpeg_yt_export(src_path, out_path)
+
+        with open(out_path, "rb") as f:
+            processed_bytes = f.read()
+
+        processed_key = f"videos/processed/{video_id}_yt_optimized.mp4"
+        upload_file(processed_bytes, processed_key, "video/mp4")
+
+        video.processed_storage_key = processed_key
+        await db.flush()
+
+        metadata = await extract_metadata(out_path)
+        return {"success": True, "storage_key": processed_key, "metadata": metadata}
+    finally:
+        if src_path and os.path.exists(src_path):
+            os.unlink(src_path)
+        if out_path and os.path.exists(out_path):
+            os.unlink(out_path)
+
+
+@router.post("/{video_id}/generate-youtube-thumbnail")
+async def generate_yt_thumbnail(
+    video_id: uuid.UUID,
+    title_text: str = Query(None, description="Title text overlay"),
+    agency_text: str = Query(None, description="Agency/date text overlay"),
+    timestamp: int = Query(30, ge=0, description="Timestamp to extract frame"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate a YouTube-style thumbnail with text overlays and gradient."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    storage_key = video.processed_storage_key or video.raw_storage_key
+    if not storage_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No video file in storage")
+
+    from app.services.storage import download_file
+
+    video_bytes = download_file(storage_key)
+
+    src_path = None
+    thumb_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+            tmp.write(video_bytes)
+            src_path = tmp.name
+        thumb_path = src_path + ".yt_thumb.jpg"
+
+        title = title_text or video.title or "Bodycam Footage"
+        agency = agency_text or ""
+
+        await ffmpeg_yt_thumbnail(src_path, thumb_path, title, agency, timestamp)
+
+        with open(thumb_path, "rb") as f:
+            thumb_bytes = f.read()
+
+        thumb_key = f"videos/thumbnails/{video_id}_yt.jpg"
+        upload_file(thumb_bytes, thumb_key, "image/jpeg")
+
+        video.thumbnail_storage_key = thumb_key
+        await db.flush()
+
+        return {"success": True, "storage_key": thumb_key}
+    finally:
+        if src_path and os.path.exists(src_path):
+            os.unlink(src_path)
+        if thumb_path and os.path.exists(thumb_path):
+            os.unlink(thumb_path)
 
 
 # ── YouTube Upload ───────────────────────────────────────────────────────

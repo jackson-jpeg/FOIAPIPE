@@ -117,6 +117,7 @@ export function VideoPipelinePage() {
         onUploadRaw={handleUploadRaw}
         onGenerateThumbnail={handleGenerateThumbnail}
         onUploadToYoutube={handleUploadToYoutube}
+        onRefresh={fetchVideos}
       />
     </div>
   );

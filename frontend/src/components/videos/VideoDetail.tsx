@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
 import { formatDate, formatDuration } from '@/lib/formatters';
 import { VIDEO_STATUSES } from '@/lib/constants';
-import { X, Upload, Image, Save, ExternalLink, Youtube } from 'lucide-react';
+import { X, Upload, Image, Save, ExternalLink, Youtube, Play, Zap, Captions, Trash2 } from 'lucide-react';
+import * as videosApi from '@/api/videos';
+import { useToast } from '@/components/ui/Toast';
 import type { Video } from '@/types';
 
 interface VideoDetailProps {
@@ -15,18 +17,40 @@ interface VideoDetailProps {
   onUploadRaw: (id: string, file: File) => void;
   onGenerateThumbnail: (id: string) => void;
   onUploadToYoutube: (id: string) => void;
+  onRefresh: () => void;
 }
 
-export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onGenerateThumbnail, onUploadToYoutube }: VideoDetailProps) {
+interface Subtitle {
+  id: string;
+  language: string;
+  format: string;
+  provider: string;
+  segment_count: number | null;
+  created_at: string | null;
+}
+
+export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onGenerateThumbnail, onUploadToYoutube, onRefresh }: VideoDetailProps) {
+  const { addToast } = useToast();
   const [title, setTitle] = useState(video?.title || '');
   const [description, setDescription] = useState(video?.description || '');
   const [editingNotes, setEditingNotes] = useState(video?.editing_notes || '');
   const [tags, setTags] = useState(video?.tags?.join(', ') || '');
+  const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
+  const [processingAction, setProcessingAction] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (video?.id) {
+      videosApi.listSubtitles(video.id)
+        .then(data => setSubtitles(data.subtitles || []))
+        .catch(() => setSubtitles([]));
+    }
+  }, [video?.id]);
 
   if (!isOpen || !video) return null;
 
   const statusOptions = Object.entries(VIDEO_STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
   const statusInfo = VIDEO_STATUSES[video.status as keyof typeof VIDEO_STATUSES];
+  const hasFile = !!(video.raw_storage_key || video.processed_storage_key);
 
   const handleSave = () => {
     onUpdate(video.id, {
@@ -40,6 +64,47 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) onUploadRaw(video.id, file);
+  };
+
+  const handleProcessing = async (action: string, fn: () => Promise<any>, successMsg: string) => {
+    setProcessingAction(action);
+    try {
+      await fn();
+      addToast({ type: 'success', title: successMsg });
+      onRefresh();
+    } catch {
+      addToast({ type: 'error', title: `${action} failed` });
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const handleOptimize = () => handleProcessing(
+    'Optimize', () => videosApi.optimizeForYoutube(video.id), 'Video optimized for YouTube'
+  );
+
+  const handleYtThumbnail = () => handleProcessing(
+    'YT Thumbnail', () => videosApi.generateYoutubeThumbnail(video.id, { title_text: video.title || undefined }), 'YouTube thumbnail generated'
+  );
+
+  const handleGenerateSubtitles = () => handleProcessing(
+    'Subtitles',
+    async () => {
+      await videosApi.generateSubtitles(video.id, { provider: 'whisper' });
+      const data = await videosApi.listSubtitles(video.id);
+      setSubtitles(data.subtitles || []);
+    },
+    'Subtitles generated'
+  );
+
+  const handleDeleteSubtitle = async (subId: string) => {
+    try {
+      await videosApi.deleteSubtitle(video.id, subId);
+      setSubtitles(prev => prev.filter(s => s.id !== subId));
+      addToast({ type: 'info', title: 'Subtitle deleted' });
+    } catch {
+      addToast({ type: 'error', title: 'Failed to delete subtitle' });
+    }
   };
 
   return (
@@ -88,15 +153,70 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
             </div>
           )}
 
-          {/* Thumbnail */}
-          {video.raw_storage_key && (
-            <Button variant="outline" size="sm" onClick={() => onGenerateThumbnail(video.id)} icon={<Image className="h-3 w-3" />}>
-              Generate Thumbnail
-            </Button>
+          {/* Processing Tools */}
+          {hasFile && (
+            <div className="rounded-lg border border-surface-border p-3.5 space-y-2.5">
+              <h3 className="text-xs font-medium text-text-primary">Processing Tools</h3>
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  variant="outline" size="sm"
+                  onClick={() => onGenerateThumbnail(video.id)}
+                  icon={<Image className="h-3 w-3" />}
+                >
+                  Thumbnail
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={handleYtThumbnail}
+                  loading={processingAction === 'YT Thumbnail'}
+                  icon={<Play className="h-3 w-3" />}
+                >
+                  YT Thumbnail
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={handleOptimize}
+                  loading={processingAction === 'Optimize'}
+                  icon={<Zap className="h-3 w-3" />}
+                >
+                  Optimize
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={handleGenerateSubtitles}
+                  loading={processingAction === 'Subtitles'}
+                  icon={<Captions className="h-3 w-3" />}
+                >
+                  Subtitles
+                </Button>
+              </div>
+              {video.processed_storage_key && (
+                <p className="text-2xs text-text-quaternary">Processed version available</p>
+              )}
+            </div>
+          )}
+
+          {/* Subtitles */}
+          {subtitles.length > 0 && (
+            <div className="rounded-lg border border-surface-border p-3.5 space-y-2">
+              <h3 className="text-xs font-medium text-text-primary">Subtitles</h3>
+              {subtitles.map(sub => (
+                <div key={sub.id} className="flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-text-primary font-mono">{sub.language}</span>
+                    <span className="text-text-quaternary ml-1.5">{sub.format}</span>
+                    {sub.segment_count && <span className="text-text-quaternary ml-1.5">{sub.segment_count} segments</span>}
+                  </div>
+                  <button onClick={() => handleDeleteSubtitle(sub.id)} className="text-text-tertiary hover:text-accent-red transition-colors">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* Upload to YouTube */}
-          {(video.raw_storage_key || video.processed_storage_key) && !video.youtube_video_id && (
+          {hasFile && !video.youtube_video_id && (
             <Button
               variant="primary"
               size="sm"
