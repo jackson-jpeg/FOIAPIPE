@@ -573,6 +573,17 @@ async def generate_video_subtitles(
             f"{validation.get('file_size_bytes')} bytes)"
         )
 
+        # Auto-upload to YouTube if video is published
+        youtube_uploaded = False
+        if video.youtube_video_id and subtitle_path:
+            try:
+                from app.services.subtitle_generator import upload_subtitles_to_youtube
+                youtube_uploaded = await upload_subtitles_to_youtube(
+                    video.youtube_video_id, subtitle_path, language
+                )
+            except Exception as e:
+                logger.warning(f"Auto-upload subtitles to YouTube failed: {e}")
+
         return {
             "success": True,
             "subtitle_id": str(subtitle_record.id),
@@ -582,6 +593,7 @@ async def generate_video_subtitles(
             "segment_count": validation.get("segment_count"),
             "file_size_bytes": validation.get("file_size_bytes"),
             "provider": provider.value,
+            "youtube_uploaded": youtube_uploaded,
         }
 
     except HTTPException:
@@ -712,3 +724,48 @@ async def delete_video_subtitle(
         "success": True,
         "message": f"Subtitle {subtitle_info} deleted successfully",
     }
+
+
+@router.post("/{video_id}/subtitles/{subtitle_id}/upload-youtube")
+async def upload_subtitle_to_youtube(
+    video_id: uuid.UUID,
+    subtitle_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Upload an existing subtitle track to YouTube."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+    if not video.youtube_video_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Video not uploaded to YouTube yet")
+
+    subtitle = await db.get(VideoSubtitle, subtitle_id)
+    if not subtitle or str(subtitle.video_id) != str(video_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subtitle not found for this video")
+
+    if not subtitle.storage_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No subtitle file in storage")
+
+    tmp_path = None
+    try:
+        from app.services.storage import download_file as dl_file
+        sub_bytes = dl_file(subtitle.storage_key)
+
+        suffix = f".{subtitle.format}" if subtitle.format else ".srt"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(sub_bytes)
+            tmp_path = tmp.name
+
+        from app.services.subtitle_generator import upload_subtitles_to_youtube
+        success = await upload_subtitles_to_youtube(
+            video.youtube_video_id, tmp_path, subtitle.language or "en"
+        )
+
+        if not success:
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="YouTube subtitle upload failed")
+
+        return {"success": True, "message": f"Subtitles uploaded to YouTube for video {video.youtube_video_id}"}
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)

@@ -70,3 +70,13 @@ export async function getDeadlines() {
   const { data } = await client.get('/foia/deadlines');
   return data;
 }
+
+export async function getCostPrediction(params: { agency_id: string; incident_type?: string; estimated_duration_minutes?: number }) {
+  const { data } = await client.get('/foia/cost-prediction', { params });
+  return data;
+}
+
+export async function getRoiProjection(params: { predicted_cost: number; incident_type?: string; virality_score?: number }) {
+  const { data } = await client.get('/foia/roi-projection', { params });
+  return data;
+}

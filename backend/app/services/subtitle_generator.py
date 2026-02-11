@@ -269,19 +269,28 @@ async def upload_subtitles_to_youtube(
         True if successful
     """
     try:
-        from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
-
-        # This would require YouTube credentials
-        # For now, this is a placeholder for future implementation
+        from app.services.youtube_client import _get_youtube_service
 
         logger.info(f"Uploading subtitles to YouTube video {video_id}")
 
-        # TODO: Implement YouTube subtitle upload
-        # Requires YouTube Data API v3 credentials
+        youtube = _get_youtube_service()
+        media = MediaFileUpload(subtitle_file_path, mimetype="application/octet-stream")
+        youtube.captions().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "videoId": video_id,
+                    "language": language,
+                    "name": f"{language} subtitles",
+                    "isDraft": False,
+                }
+            },
+            media_body=media,
+        ).execute()
 
-        logger.warning("YouTube subtitle upload not yet implemented")
-        return False
+        logger.info(f"Subtitles uploaded to YouTube video {video_id}")
+        return True
 
     except Exception as e:
         logger.error(f"YouTube subtitle upload failed: {e}")
