@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
 import { formatDate, formatDuration } from '@/lib/formatters';
 import { VIDEO_STATUSES } from '@/lib/constants';
-import { X, Upload, Image, Save, ExternalLink } from 'lucide-react';
+import { X, Upload, Image, Save, ExternalLink, Youtube } from 'lucide-react';
 import type { Video } from '@/types';
 
 interface VideoDetailProps {
@@ -14,9 +14,10 @@ interface VideoDetailProps {
   onUpdate: (id: string, data: Partial<Video>) => void;
   onUploadRaw: (id: string, file: File) => void;
   onGenerateThumbnail: (id: string) => void;
+  onUploadToYoutube: (id: string) => void;
 }
 
-export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onGenerateThumbnail }: VideoDetailProps) {
+export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onGenerateThumbnail, onUploadToYoutube }: VideoDetailProps) {
   const [title, setTitle] = useState(video?.title || '');
   const [description, setDescription] = useState(video?.description || '');
   const [editingNotes, setEditingNotes] = useState(video?.editing_notes || '');
@@ -91,6 +92,21 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
           {video.raw_storage_key && (
             <Button variant="outline" size="sm" onClick={() => onGenerateThumbnail(video.id)} icon={<Image className="h-3 w-3" />}>
               Generate Thumbnail
+            </Button>
+          )}
+
+          {/* Upload to YouTube */}
+          {(video.raw_storage_key || video.processed_storage_key) && !video.youtube_video_id && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => onUploadToYoutube(video.id)}
+              disabled={video.youtube_upload_status === 'queued' || video.youtube_upload_status === 'uploading'}
+              icon={<Youtube className="h-3.5 w-3.5" />}
+            >
+              {video.youtube_upload_status === 'queued' ? 'Queued...' :
+               video.youtube_upload_status === 'uploading' ? 'Uploading...' :
+               'Upload to YouTube'}
             </Button>
           )}
 

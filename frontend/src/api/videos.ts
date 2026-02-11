@@ -33,6 +33,11 @@ export async function generateThumbnail(id: string): Promise<{ thumbnail_url: st
   return data;
 }
 
+export async function uploadToYoutube(id: string): Promise<{ success: boolean; message: string; video_id: string }> {
+  const { data } = await client.post(`/videos/${id}/upload-youtube`);
+  return data;
+}
+
 export async function getPipelineCounts(): Promise<{ counts: Record<string, number> }> {
   const { data } = await client.get('/videos/pipeline-counts');
   return data;

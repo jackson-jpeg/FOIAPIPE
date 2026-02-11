@@ -412,6 +412,50 @@ async def generate_video_thumbnail(
     return _to_response(video)
 
 
+# ── YouTube Upload ───────────────────────────────────────────────────────
+
+
+@router.post("/{video_id}/upload-youtube")
+async def upload_to_youtube(
+    video_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Queue a video for upload to YouTube via Celery background task.
+
+    The video must have a file in storage (raw or processed) and a title.
+    Upload starts as a background task. Status is tracked in youtube_upload_status.
+    """
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    if not (video.processed_storage_key or video.raw_storage_key):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No video file in storage. Upload raw footage first.",
+        )
+
+    if video.youtube_video_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Video already uploaded to YouTube: {video.youtube_url}",
+        )
+
+    # Queue Celery task
+    from app.tasks.youtube_tasks import upload_video as upload_task
+    upload_task.delay(str(video.id))
+
+    video.youtube_upload_status = "queued"
+    await db.flush()
+
+    return {
+        "success": True,
+        "message": f"Video '{video.title or video.id}' queued for YouTube upload",
+        "video_id": str(video.id),
+    }
+
+
 # ── Subtitle Generation ──────────────────────────────────────────────────
 
 

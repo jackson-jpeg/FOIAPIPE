@@ -57,6 +57,16 @@ export function VideoPipelinePage() {
     }
   };
 
+  const handleUploadToYoutube = async (id: string) => {
+    try {
+      await videosApi.uploadToYoutube(id);
+      addToast({ type: 'success', title: 'Video queued for YouTube upload' });
+      fetchVideos();
+    } catch {
+      addToast({ type: 'error', title: 'Failed to queue YouTube upload' });
+    }
+  };
+
   const handleCreate = async () => {
     try {
       const video = await videosApi.createVideo({});
@@ -106,6 +116,7 @@ export function VideoPipelinePage() {
         onUpdate={handleUpdate}
         onUploadRaw={handleUploadRaw}
         onGenerateThumbnail={handleGenerateThumbnail}
+        onUploadToYoutube={handleUploadToYoutube}
       />
     </div>
   );
