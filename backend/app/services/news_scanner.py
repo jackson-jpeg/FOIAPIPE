@@ -45,7 +45,8 @@ RSS_FEEDS = [
         "source": "Google News",
     },
     {"url": "https://www.wtsp.com/feeds/syndication/rss/news/local", "source": "10 Tampa Bay / WTSP"},
-    {"url": "https://patch.com/florida/tampa/rss", "source": "Patch Tampa"},
+    {"url": "https://www.baynews9.com/fl/tampa/news.rss", "source": "Bay News 9"},
+    {"url": "https://www.wfts.com/news/local-news.rss", "source": "WFTS Tampa Bay"},
 ]
 
 DEDUP_SIMILARITY_THRESHOLD = 85

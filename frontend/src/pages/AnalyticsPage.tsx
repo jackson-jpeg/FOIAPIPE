@@ -4,9 +4,12 @@ import { RevenueChart } from '@/components/analytics/RevenueChart';
 import { ViewsChart } from '@/components/analytics/ViewsChart';
 import { TopVideosTable } from '@/components/analytics/TopVideosTable';
 import { FunnelChart } from '@/components/analytics/FunnelChart';
+import { AgencyBreakdownChart } from '@/components/analytics/AgencyBreakdownChart';
+import { ROITable } from '@/components/analytics/ROITable';
+import { VelocityChart } from '@/components/analytics/VelocityChart';
 import { StatCard } from '@/components/ui/StatCard';
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
-import { DollarSign, Eye, Users, TrendingUp } from 'lucide-react';
+import { DollarSign, Eye, Users, TrendingUp, Target } from 'lucide-react';
 import * as analyticsApi from '@/api/analytics';
 
 export function AnalyticsPage() {
@@ -17,23 +20,32 @@ export function AnalyticsPage() {
   const [viewsData, setViewsData] = useState<any[]>([]);
   const [topVideos, setTopVideos] = useState<any[]>([]);
   const [funnel, setFunnel] = useState<any>(null);
+  const [agencyData, setAgencyData] = useState<any[]>([]);
+  const [roiData, setRoiData] = useState<any[]>([]);
+  const [velocityData, setVelocityData] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [ov, rev, views, top, fun] = await Promise.all([
+        const [ov, rev, views, top, fun, agency, roi, velocity] = await Promise.all([
           analyticsApi.getOverview(range),
           analyticsApi.getRevenue(range),
           analyticsApi.getViews(range),
           analyticsApi.getTopVideos(range),
           analyticsApi.getFunnel(),
+          analyticsApi.getByAgency(range).catch(() => []),
+          analyticsApi.getRoi().catch(() => []),
+          analyticsApi.getVelocity().catch(() => []),
         ]);
         setOverview(ov);
         setRevenueData((rev as any)?.data || rev || []);
         setViewsData((views as any)?.data || views || []);
         setTopVideos(top || []);
         setFunnel(fun);
+        setAgencyData(agency || []);
+        setRoiData(roi || []);
+        setVelocityData(velocity || []);
       } catch {
         // Silently handle errors for empty state
       } finally {
@@ -42,6 +54,10 @@ export function AnalyticsPage() {
     };
     load();
   }, [range]);
+
+  const netProfit = overview
+    ? (overview.total_revenue || 0) - (overview.total_costs || 0)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -58,22 +74,28 @@ export function AnalyticsPage() {
 
       {/* Stat Cards */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)}
         </div>
       ) : overview ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard
             label="Gross Revenue"
-            value={`$${overview.total_revenue?.toLocaleString() || '0'}`}
+            value={`$${(overview.total_revenue || 0).toLocaleString()}`}
             trend={overview.trends?.revenue ? { value: overview.trends.revenue.value, isPositive: overview.trends.revenue.is_positive } : undefined}
             icon={<DollarSign className="h-5 w-5" />}
             gradient="emerald"
             sparkline={revenueData.slice(-7).map(d => d.value)}
           />
           <StatCard
+            label="Net Profit"
+            value={`$${netProfit.toLocaleString()}`}
+            icon={<Target className="h-5 w-5" />}
+            gradient="cyan"
+          />
+          <StatCard
             label="Total Views"
-            value={overview.total_views?.toLocaleString() || '0'}
+            value={(overview.total_views || 0).toLocaleString()}
             trend={overview.trends?.views ? { value: overview.trends.views.value, isPositive: overview.trends.views.is_positive } : undefined}
             icon={<Eye className="h-5 w-5" />}
             gradient="blue"
@@ -81,20 +103,20 @@ export function AnalyticsPage() {
           />
           <StatCard
             label="Subscribers"
-            value={overview.total_subscribers?.toLocaleString() || '0'}
+            value={(overview.total_subscribers || 0).toLocaleString()}
             icon={<Users className="h-5 w-5" />}
             gradient="purple"
           />
           <StatCard
             label="Avg RPM"
-            value={`$${overview.avg_rpm?.toFixed(2) || '0.00'}`}
+            value={`$${(overview.avg_rpm || 0).toFixed(2)}`}
             icon={<TrendingUp className="h-5 w-5" />}
             gradient="amber"
           />
         </div>
       ) : null}
 
-      {/* Charts */}
+      {/* Revenue & Views Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RevenueChart data={revenueData} />
         <ViewsChart data={viewsData} />
@@ -107,6 +129,15 @@ export function AnalyticsPage() {
         </div>
         {funnel && <FunnelChart steps={funnel.steps || []} />}
       </div>
+
+      {/* Agency Breakdown & Pipeline Velocity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AgencyBreakdownChart data={agencyData} />
+        <VelocityChart data={velocityData} />
+      </div>
+
+      {/* ROI Analysis */}
+      <ROITable data={roiData} />
     </div>
   );
 }
