@@ -196,8 +196,8 @@ export function NewsScannerPage() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-text-primary mb-2">News Scanner</h1>
-          <p className="text-base text-text-secondary">
+          <h1 className="heading-3 mb-2">News Scanner</h1>
+          <p className="text-sm text-text-secondary">
             Monitor and classify police accountability news from Tampa Bay sources
           </p>
         </div>

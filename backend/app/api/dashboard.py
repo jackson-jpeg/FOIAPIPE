@@ -279,6 +279,25 @@ async def dashboard_stats(
         for n in notification_rows
     ]
 
+    # ── Pipeline funnel ──────────────────────────────────────────────────
+    total_foias = sum(foia_by_status.values())
+    foias_submitted = sum(
+        count for status, count in foia_by_status.items()
+        if status not in {"draft", "ready"}
+    )
+    foias_fulfilled = foia_by_status.get("fulfilled", 0) + foia_by_status.get("partial", 0)
+    total_videos = sum(video_by_status.values())
+    videos_published = video_by_status.get("published", 0)
+
+    pipeline = [
+        {"stage": "Articles", "count": total_articles, "color": "#f59e0b"},
+        {"stage": "FOIAs Filed", "count": total_foias, "color": "#3b82f6"},
+        {"stage": "Submitted", "count": foias_submitted, "color": "#8b5cf6"},
+        {"stage": "Fulfilled", "count": foias_fulfilled, "color": "#22c55e"},
+        {"stage": "Videos", "count": total_videos, "color": "#06b6d4"},
+        {"stage": "Published", "count": videos_published, "color": "#10b981"},
+    ]
+
     # ── Assemble response ─────────────────────────────────────────────────
     result = {
         "stats": {
@@ -293,6 +312,7 @@ async def dashboard_stats(
             "views_trend": wow_trend(views_this_week, views_last_week),
             "revenue_trend": wow_trend(revenue_mtd, revenue_prev_month),
         },
+        "pipeline": pipeline,
         "recent_articles": recent_articles,
         "top_videos": top_videos,
         "activities": activities,

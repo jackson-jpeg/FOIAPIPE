@@ -4,6 +4,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusOrb } from '@/components/ui/StatusOrb';
+import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
 import client from '@/api/client';
 import { formatRelativeTime, formatCompactNumber, formatCurrency } from '@/lib/formatters';
 
@@ -43,11 +44,18 @@ interface ActivityItem {
   timestamp: string;
 }
 
+interface PipelineStage {
+  stage: string;
+  count: number;
+  color: string;
+}
+
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [articles, setArticles] = useState<RecentArticle[]>([]);
   const [videos, setVideos] = useState<TopVideo[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [pipeline, setPipeline] = useState<PipelineStage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,6 +64,7 @@ export function DashboardPage() {
         const response = await client.get('/dashboard/stats');
         const data = response.data;
         setStats(data.stats);
+        setPipeline(data.pipeline ?? []);
         setArticles(data.recent_articles ?? []);
         setVideos(data.top_videos ?? []);
         setActivities(data.activities ?? []);
@@ -71,11 +80,11 @@ export function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Page Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-text-primary tracking-tight">
+      <div>
+        <h1 className="heading-3 mb-2">
           Dashboard
         </h1>
-        <p className="mt-1 text-sm text-text-tertiary">
+        <p className="text-sm text-text-secondary">
           Monitor your accountability journalism workflow
         </p>
       </div>
@@ -140,6 +149,11 @@ export function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* Pipeline Funnel */}
+      {!loading && pipeline.length > 0 && (
+        <PipelineFunnel stages={pipeline} />
+      )}
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
