@@ -25,9 +25,9 @@ SAMPLE_RSS = """<?xml version="1.0" encoding="UTF-8"?>
       <pubDate>Mon, 09 Feb 2026 12:00:00 GMT</pubDate>
     </item>
     <item>
-      <title>New park opens in St. Petersburg</title>
-      <link>https://example.com/park-stpete</link>
-      <description>A new community park opened today.</description>
+      <title>Bodycam footage released in St. Petersburg police pursuit</title>
+      <link>https://example.com/bodycam-stpete</link>
+      <description>St. Petersburg Police released bodycam footage of a pursuit.</description>
       <pubDate>Mon, 09 Feb 2026 10:00:00 GMT</pubDate>
     </item>
   </channel>

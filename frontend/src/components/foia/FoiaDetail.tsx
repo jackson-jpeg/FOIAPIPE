@@ -479,7 +479,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium text-text-primary mb-1.5">Agency's Explanation (optional)</label>
+              <label className="block text-xs font-medium text-text-primary mb-1.5">Agency&apos;s Explanation (optional)</label>
               <textarea
                 className="w-full rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[60px] transition-all duration-150"
                 value={appealExplanation}

@@ -5,12 +5,13 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from pathlib import Path as FilePath
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from fastapi.responses import Response
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_user, get_db
 from app.rate_limit import limiter
@@ -49,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/foia", tags=["foia"])
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+TEMPLATES_DIR = FilePath(__file__).resolve().parent.parent / "templates"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
@@ -354,7 +355,17 @@ async def get_foia_request(
     _user: str = Depends(get_current_user),
 ) -> FoiaRequestDetail:
     """Return full detail of a single FOIA request with related data."""
-    foia = await db.get(FoiaRequest, foia_id)
+    stmt = (
+        select(FoiaRequest)
+        .where(FoiaRequest.id == foia_id)
+        .options(
+            selectinload(FoiaRequest.agency),
+            selectinload(FoiaRequest.news_article),
+            selectinload(FoiaRequest.videos),
+            selectinload(FoiaRequest.status_changes),
+        )
+    )
+    foia = (await db.execute(stmt)).scalar_one_or_none()
     if not foia:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
@@ -471,8 +482,8 @@ async def update_foia_request(
 @router.post("/{foia_id}/submit")
 @limiter.limit("10/minute")
 async def submit_foia_request(
-    foia_id: uuid.UUID,
     request: Request,
+    foia_id: uuid.UUID = Path(...),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> dict:

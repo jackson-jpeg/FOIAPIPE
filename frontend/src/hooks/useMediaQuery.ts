@@ -22,9 +22,12 @@ export function useMediaQuery(query: string): boolean {
 }
 
 export function useBreakpoint() {
-  const isMobile = !useMediaQuery('(min-width: 768px)');
-  const isTablet = useMediaQuery('(min-width: 768px)') && !useMediaQuery('(min-width: 1024px)');
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const isMinMd = useMediaQuery('(min-width: 768px)');
+  const isMinLg = useMediaQuery('(min-width: 1024px)');
 
-  return { isMobile, isTablet, isDesktop };
+  return {
+    isMobile: !isMinMd,
+    isTablet: isMinMd && !isMinLg,
+    isDesktop: isMinLg,
+  };
 }
