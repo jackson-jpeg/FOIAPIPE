@@ -178,12 +178,16 @@ async def test_submit_foia_request(client: AsyncClient, db_session: AsyncSession
     foia = await _seed_foia(db_session, agency)
     await db_session.commit()
 
-    with patch("app.api.foia.send_foia_email", new_callable=AsyncMock) as mock_send:
+    with patch("app.api.foia.send_foia_email", new_callable=AsyncMock) as mock_send, \
+         patch("app.services.storage.upload_file") as mock_upload, \
+         patch("app.api.foia.distributed_lock") as mock_lock:
         mock_send.return_value = {"success": True, "message": "Sent"}
-        # Also mock S3 to avoid real upload
-        with patch("app.services.storage.upload_file") as mock_upload:
-            mock_upload.return_value = None
-            response = await client.post(f"/api/foia/{foia.id}/submit")
+        mock_upload.return_value = None
+        # Make the lock context manager a no-op
+        mock_lock.return_value = AsyncMock()
+        mock_lock.return_value.__aenter__ = AsyncMock(return_value=None)
+        mock_lock.return_value.__aexit__ = AsyncMock(return_value=None)
+        response = await client.post(f"/api/foia/{foia.id}/submit")
 
     assert response.status_code == 200
     data = response.json()
@@ -213,7 +217,11 @@ async def test_submit_rejects_no_agency_email(client: AsyncClient, db_session: A
     foia = await _seed_foia(db_session, agency)
     await db_session.commit()
 
-    response = await client.post(f"/api/foia/{foia.id}/submit")
+    with patch("app.api.foia.distributed_lock") as mock_lock:
+        mock_lock.return_value = AsyncMock()
+        mock_lock.return_value.__aenter__ = AsyncMock(return_value=None)
+        mock_lock.return_value.__aexit__ = AsyncMock(return_value=None)
+        response = await client.post(f"/api/foia/{foia.id}/submit")
     assert response.status_code == 400
     assert "email" in response.json()["detail"].lower()
 

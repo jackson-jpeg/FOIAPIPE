@@ -378,6 +378,18 @@ async def upload_raw_video(
     """
     logger.info(f"Uploading raw video for {video_id}: {file.filename}")
 
+    # Validate file type
+    ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".flv", ".m4v"}
+    MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
+
+    filename = file.filename or ""
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type '{ext or 'unknown'}' not allowed. Accepted: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+        )
+
     video = await db.get(Video, video_id)
     if not video:
         raise HTTPException(
@@ -389,6 +401,12 @@ async def upload_raw_video(
     if not file_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file"
+        )
+
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large ({len(file_bytes) / (1024**3):.1f} GB). Maximum: 2 GB",
         )
 
     # Write to a temp file for ffprobe metadata extraction

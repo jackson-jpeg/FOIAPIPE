@@ -388,7 +388,10 @@ async def list_foia_requests(
     _user: str = Depends(get_current_user),
 ) -> FoiaRequestList:
     """Return a paginated list of FOIA requests with filters."""
-    stmt = select(FoiaRequest)
+    stmt = select(FoiaRequest).options(
+        selectinload(FoiaRequest.agency),
+        selectinload(FoiaRequest.news_article),
+    )
     count_stmt = select(func.count(FoiaRequest.id))
 
     # Apply filters
