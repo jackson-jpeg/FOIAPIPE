@@ -6,10 +6,44 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { FOIA_STATUSES } from '@/lib/constants';
-import { History, ArrowRight, Filter } from 'lucide-react';
+import { History, ArrowRight, Filter, Download, ChevronUp, ChevronDown } from 'lucide-react';
 import { getStatusChanges, type AuditLogEntry } from '@/api/audit';
 
 const PAGE_SIZE = 50;
+
+type SortField = 'created_at' | 'case_number' | 'changed_by';
+type SortDir = 'asc' | 'desc';
+
+function SortableHeader({
+  label,
+  field,
+  sortBy,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  field: SortField;
+  sortBy: SortField;
+  sortDir: SortDir;
+  onSort: (field: SortField) => void;
+}) {
+  const isActive = sortBy === field;
+  return (
+    <th
+      className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3 cursor-pointer select-none hover:text-text-primary transition-colors"
+      onClick={() => onSort(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {isActive && (
+          sortDir === 'asc'
+            ? <ChevronUp className="h-3 w-3 text-accent-primary" />
+            : <ChevronDown className="h-3 w-3 text-accent-primary" />
+        )}
+      </span>
+    </th>
+  );
+}
 
 export function AuditLogPage() {
   const { addToast } = useToast();
@@ -25,6 +59,10 @@ export function AuditLogPage() {
   const [changedBy, setChangedBy] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Sorting (client-side on loaded page)
+  const [sortBy, setSortBy] = useState<SortField>('created_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -44,8 +82,7 @@ export function AuditLogPage() {
       setTotal(data.total);
       setTotalPages(data.total_pages);
     } catch (error: any) {
-      const detail =
-        error.response?.data?.detail || 'Failed to load audit logs';
+      const detail = error.response?.data?.detail || 'Failed to load audit logs';
       addToast({ type: 'error', title: 'Error', message: detail });
     } finally {
       setLoading(false);
@@ -69,6 +106,65 @@ export function AuditLogPage() {
     changedBy.trim() !== '' ||
     dateFrom !== '' ||
     dateTo !== '';
+
+  // ── Sorting ───────────────────────────────────────────────────────────
+
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(field === 'created_at' ? 'desc' : 'asc');
+    }
+  };
+
+  const sortedItems = [...items].sort((a, b) => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    if (sortBy === 'created_at') {
+      return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
+    }
+    if (sortBy === 'case_number') {
+      return a.case_number.localeCompare(b.case_number) * dir;
+    }
+    if (sortBy === 'changed_by') {
+      return a.changed_by.localeCompare(b.changed_by) * dir;
+    }
+    return 0;
+  });
+
+  // ── CSV Export ────────────────────────────────────────────────────────
+
+  const handleExportCsv = () => {
+    if (items.length === 0) return;
+
+    const headers = ['Timestamp', 'Case Number', 'From Status', 'To Status', 'Changed By', 'Reason'];
+    const rows = sortedItems.map((entry) => [
+      new Date(entry.created_at).toISOString(),
+      entry.case_number,
+      entry.from_status,
+      entry.to_status,
+      entry.changed_by,
+      (entry.reason || '').replace(/"/g, '""'),
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `audit_log_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    addToast({ type: 'success', title: 'CSV exported' });
+  };
+
+  // ── Helpers ───────────────────────────────────────────────────────────
 
   const formatTimestamp = (iso: string): string => {
     const date = new Date(iso);
@@ -102,11 +198,21 @@ export function AuditLogPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="heading-3 mb-2">Audit Log</h1>
-        <p className="text-sm text-text-secondary">
-          FOIA request status change history
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-3 mb-2">Audit Log</h1>
+          <p className="text-sm text-text-secondary">
+            FOIA request status change history
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleExportCsv}
+          disabled={items.length === 0}
+          icon={<Download className="h-4 w-4" />}
+        >
+          Export CSV
+        </Button>
       </div>
 
       {/* Filter Bar */}
@@ -132,33 +238,39 @@ export function AuditLogPage() {
             }}
           />
         </div>
-        <div className="w-44">
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value);
-              setPage(1);
-            }}
-            placeholder="From date"
-          />
-        </div>
-        <div className="w-44">
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value);
-              setPage(1);
-            }}
-            placeholder="To date"
-          />
+        <div className="flex items-center gap-2">
+          <div className="w-44">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setPage(1);
+              }}
+              placeholder="From date"
+            />
+          </div>
+          <span className="text-xs text-text-quaternary">to</span>
+          <div className="w-44">
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setPage(1);
+              }}
+              placeholder="To date"
+            />
+          </div>
         </div>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={handleClearFilters}>
             Clear Filters
           </Button>
         )}
+        <span className="ml-auto text-xs text-text-tertiary tabular-nums">
+          {total} {total === 1 ? 'entry' : 'entries'}
+        </span>
       </div>
 
       {/* Table */}
@@ -177,34 +289,28 @@ export function AuditLogPage() {
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-surface-border">
+        <div className="overflow-x-auto rounded-xl border border-surface-border/50 bg-surface-secondary">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-surface-border bg-surface-secondary">
-                <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">
-                  Timestamp
-                </th>
-                <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">
-                  Case Number
-                </th>
+              <tr className="border-b border-surface-border/50 bg-surface-tertiary/30">
+                <SortableHeader label="Timestamp" field="created_at" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                <SortableHeader label="Case Number" field="case_number" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">
                   Status Change
                 </th>
-                <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">
-                  Changed By
-                </th>
+                <SortableHeader label="Changed By" field="changed_by" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">
                   Reason
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-border">
-              {items.map((entry) => (
+            <tbody className="divide-y divide-surface-border/30">
+              {sortedItems.map((entry) => (
                 <tr
                   key={entry.id}
                   className="hover:bg-surface-hover transition-colors"
                 >
-                  <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap tabular-nums">
                     {formatTimestamp(entry.created_at)}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-primary font-mono">
@@ -220,7 +326,7 @@ export function AuditLogPage() {
                   <td className="px-4 py-3 text-sm text-text-primary">
                     {entry.changed_by}
                   </td>
-                  <td className="px-4 py-3 text-sm text-text-secondary max-w-xs truncate">
+                  <td className="px-4 py-3 text-sm text-text-secondary max-w-xs truncate" title={entry.reason || undefined}>
                     {entry.reason || '\u2014'}
                   </td>
                 </tr>
@@ -236,7 +342,15 @@ export function AuditLogPage() {
           <span className="text-xs text-text-tertiary tabular-nums">
             Page {page} of {totalPages} ({total} total)
           </span>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(1)}
+            >
+              First
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -252,6 +366,14 @@ export function AuditLogPage() {
               onClick={() => setPage((p) => p + 1)}
             >
               Next
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(totalPages)}
+            >
+              Last
             </Button>
           </div>
         </div>

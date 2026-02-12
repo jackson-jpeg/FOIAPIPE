@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { KanbanBoard } from '@/components/videos/KanbanBoard';
 import { VideoDetail } from '@/components/videos/VideoDetail';
 import { Button } from '@/components/ui/Button';
+import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { useVideoStore } from '@/stores/videoStore';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Plus } from 'lucide-react';
+import { Plus, Film, Upload, CheckCircle, Eye } from 'lucide-react';
 import * as videosApi from '@/api/videos';
 import type { VideoStatus } from '@/types';
+import { VIDEO_STATUSES } from '@/lib/constants';
 
 export function VideoPipelinePage() {
   const { videos, loading, fetchVideos } = useVideoStore();
@@ -15,6 +17,32 @@ export function VideoPipelinePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => { fetchVideos(); }, [fetchVideos]);
+
+  // ── Computed stats ────────────────────────────────────────────────────
+
+  const stats = useMemo(() => {
+    const total = videos.length;
+    const published = videos.filter((v: any) => v.status === 'published').length;
+    const inProgress = videos.filter((v: any) =>
+      ['editing', 'ai_processing', 'review', 'ready'].includes(v.status)
+    ).length;
+    const uploading = videos.filter((v: any) => v.status === 'uploading').length;
+    const totalViews = videos.reduce((acc: number, v: any) => acc + (v.views || 0), 0);
+
+    return { total, published, inProgress, uploading, totalViews };
+  }, [videos]);
+
+  // ── Status distribution for mini bar ──────────────────────────────────
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    videos.forEach((v: any) => {
+      counts[v.status] = (counts[v.status] || 0) + 1;
+    });
+    return counts;
+  }, [videos]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────
 
   const handleStatusChange = async (videoId: string, newStatus: string) => {
     try {
@@ -118,6 +146,85 @@ export function VideoPipelinePage() {
         </Button>
       </div>
 
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl bg-surface-secondary border border-surface-border/50 p-6 space-y-3">
+              <Skeleton variant="text" className="h-3 w-16" />
+              <Skeleton variant="text" className="h-5 w-12" />
+            </div>
+          ))
+        ) : (
+          <>
+            <StatCard
+              label="Total Videos"
+              value={String(stats.total)}
+              icon={<Film className="h-5 w-5" />}
+              gradient="blue"
+            />
+            <StatCard
+              label="In Progress"
+              value={String(stats.inProgress)}
+              icon={<Upload className="h-5 w-5" />}
+              gradient="amber"
+            />
+            <StatCard
+              label="Published"
+              value={String(stats.published)}
+              icon={<CheckCircle className="h-5 w-5" />}
+              gradient="emerald"
+            />
+            <StatCard
+              label="Total Views"
+              value={stats.totalViews > 0 ? stats.totalViews.toLocaleString() : '--'}
+              icon={<Eye className="h-5 w-5" />}
+              gradient="purple"
+            />
+          </>
+        )}
+      </div>
+
+      {/* Status Distribution Bar */}
+      {!loading && videos.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-text-tertiary uppercase tracking-wider">Distribution</span>
+            <span className="text-xs text-text-quaternary tabular-nums">{videos.length} videos</span>
+          </div>
+          <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary/50">
+            {Object.entries(statusCounts).map(([status, count]) => {
+              const info = VIDEO_STATUSES[status as keyof typeof VIDEO_STATUSES];
+              const pct = (count / videos.length) * 100;
+              if (pct === 0) return null;
+              return (
+                <div
+                  key={status}
+                  className="h-full transition-all duration-500"
+                  style={{ width: `${pct}%`, backgroundColor: info?.color || '#64748b' }}
+                  title={`${info?.label || status}: ${count}`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(statusCounts).map(([status, count]) => {
+              const info = VIDEO_STATUSES[status as keyof typeof VIDEO_STATUSES];
+              return (
+                <span key={status} className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: info?.color || '#64748b' }}
+                  />
+                  {info?.label || status} ({count})
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Kanban Board */}
       {loading ? (
         <div className="flex gap-3">
           {Array.from({ length: 5 }).map((_, i) => (

@@ -18,7 +18,7 @@ export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit
     return (
       <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
         <table className="w-full">
-          <thead className="bg-surface-tertiary/50">
+          <thead className="bg-surface-tertiary/50 sticky top-0 z-10">
             <tr>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Case #</th>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Agency</th>
@@ -76,7 +76,7 @@ export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit
   return (
     <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
       <table className="w-full">
-        <thead className="bg-surface-tertiary/50">
+        <thead className="bg-surface-tertiary/50 sticky top-0 z-10">
           <tr>
             <SortHeader label="Case #" field="case_number" />
             <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Agency</th>
