@@ -24,8 +24,8 @@ async def _check_inbox_async():
     from app.database import async_session_factory
     from app.models.foia_request import FoiaRequest, FoiaStatus
     from app.models.foia_status_change import FoiaStatusChange
-    from app.models.notification import Notification, NotificationChannel, NotificationType
     from app.services.email_monitor import check_inbox
+    from app.services.notification_sender import send_notification
 
     responses = await check_inbox()
     if not responses:
@@ -57,6 +57,8 @@ async def _check_inbox_async():
                 "denied": FoiaStatus.denied,
                 "processing": FoiaStatus.processing,
                 "cost_estimate": FoiaStatus.processing,
+                "fee_waiver": FoiaStatus.processing,
+                "extension": FoiaStatus.processing,
             }
 
             old_status = foia.status
@@ -75,6 +77,9 @@ async def _check_inbox_async():
                         "subject": resp.get("subject"),
                         "date": resp.get("date"),
                         "has_attachments": resp.get("has_attachments"),
+                        "attachment_keys": resp.get("attachment_keys", []),
+                        "fee_waiver": resp.get("fee_waiver"),
+                        "extension_days": resp.get("extension_days"),
                     },
                 )
                 db.add(audit_entry)
@@ -86,36 +91,26 @@ async def _check_inbox_async():
                 elif response_type == "fulfilled":
                     foia.fulfilled_at = datetime.now(timezone.utc)
 
-                # Create user notification
-                notification_type_map = {
-                    "acknowledged": NotificationType.foia_acknowledged,
-                    "fulfilled": NotificationType.foia_fulfilled,
-                    "denied": NotificationType.foia_denied,
-                    "processing": NotificationType.foia_submitted,
-                    "cost_estimate": NotificationType.foia_submitted,
-                }
-                notification_title = {
-                    "acknowledged": "FOIA Acknowledged",
-                    "fulfilled": "FOIA Fulfilled",
-                    "denied": "FOIA Denied",
-                    "processing": "FOIA Processing",
-                    "cost_estimate": "FOIA Cost Estimate",
-                }
-                notification = Notification(
-                    type=notification_type_map.get(response_type, NotificationType.foia_acknowledged),
-                    channel=NotificationChannel.in_app,
-                    title=notification_title.get(response_type, "FOIA Update"),
-                    message=f"Case {case_number}: {resp.get('subject', 'Agency response received')}",
-                    link=f"/foia?detail={foia.id}",
-                )
-                db.add(notification)
-
                 logger.info(
                     f"Updated FOIA {case_number}: {old_status.value} → {new_status.value}"
                 )
 
+            # Update cost estimate
             if resp.get("estimated_cost") is not None:
                 foia.estimated_cost = resp["estimated_cost"]
+
+            # Handle fee waiver decision
+            fee_waiver = resp.get("fee_waiver")
+            if fee_waiver == "granted":
+                foia.payment_status = "fee_waived"
+            elif fee_waiver == "denied":
+                foia.payment_status = "fee_waiver_denied"
+
+            # Handle timeline extension — push due_date forward
+            extension_days = resp.get("extension_days")
+            if extension_days and foia.due_date:
+                foia.due_date = foia.due_date + timedelta(days=extension_days)
+                logger.info(f"Extended due date for {case_number} by {extension_days} days")
 
             # Store response email (with dedup check)
             if not foia.response_emails:
@@ -129,6 +124,40 @@ async def _check_inbox_async():
                 foia.response_emails = foia.response_emails + [resp]
 
             processed += 1
+
+            # Send multi-channel notification (email + SMS + in-app)
+            notification_event_map = {
+                "acknowledged": "foia_acknowledged",
+                "fulfilled": "foia_fulfilled",
+                "denied": "foia_denied",
+                "processing": "foia_acknowledged",
+                "cost_estimate": "foia_acknowledged",
+                "fee_waiver": "foia_acknowledged",
+                "extension": "foia_acknowledged",
+            }
+            notification_title_map = {
+                "acknowledged": "FOIA Acknowledged",
+                "fulfilled": "FOIA Fulfilled — Records Available",
+                "denied": "FOIA Denied",
+                "processing": "FOIA Processing",
+                "cost_estimate": f"FOIA Cost Estimate: ${resp.get('estimated_cost', '?')}",
+                "fee_waiver": f"Fee Waiver {(fee_waiver or 'update').title()}",
+                "extension": f"Timeline Extended +{extension_days or '?'} Days",
+            }
+            event_type = notification_event_map.get(response_type, "foia_acknowledged")
+            title = notification_title_map.get(response_type, "FOIA Update")
+            attachments_note = ""
+            if resp.get("attachment_keys"):
+                attachments_note = f" ({len(resp['attachment_keys'])} attachments saved)"
+
+            try:
+                await send_notification(event_type, {
+                    "title": title,
+                    "message": f"Case {case_number}: {resp.get('subject', 'Agency response received')}{attachments_note}",
+                    "link": f"/foia?detail={foia.id}",
+                })
+            except Exception as e:
+                logger.error(f"Notification send failed for {case_number}: {e}")
 
         await db.commit()
         return {"processed": processed}

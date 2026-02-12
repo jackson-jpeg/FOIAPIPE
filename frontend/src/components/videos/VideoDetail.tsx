@@ -6,9 +6,10 @@ import { formatDate, formatDuration } from '@/lib/formatters';
 import { VIDEO_STATUSES } from '@/lib/constants';
 import {
   X, Upload, Image, Save, ExternalLink, Youtube, Play, Zap, Captions,
-  Trash2, Copy, Archive, Scissors, Type,
+  Trash2, Copy, Archive, Scissors, Type, Link2, Unlink,
 } from 'lucide-react';
 import * as videosApi from '@/api/videos';
+import * as foiaApi from '@/api/foia';
 import { useToast } from '@/components/ui/Toast';
 import type { Video } from '@/types';
 
@@ -45,6 +46,7 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTrimForm, setShowTrimForm] = useState(false);
   const [showIntroForm, setShowIntroForm] = useState(false);
+  const [foiaOptions, setFoiaOptions] = useState<{ value: string; label: string }[]>([]);
   const [trimStart, setTrimStart] = useState('0');
   const [trimEnd, setTrimEnd] = useState('');
   const [introText, setIntroText] = useState('');
@@ -55,6 +57,15 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
       videosApi.listSubtitles(video.id)
         .then(data => setSubtitles(data.subtitles || []))
         .catch(() => setSubtitles([]));
+      foiaApi.getFoiaRequests({ page_size: 200, sort_by: 'created_at', sort_dir: 'desc' })
+        .then((data: any) => {
+          const items = data.items || data || [];
+          setFoiaOptions(items.map((f: any) => ({
+            value: f.id,
+            label: `${f.case_number} — ${f.agency_name || 'Unknown Agency'} (${f.status})`,
+          })));
+        })
+        .catch(() => setFoiaOptions([]));
     }
   }, [video?.id]);
 
@@ -412,6 +423,36 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
             value={video.status}
             onChange={(value) => onUpdate(video.id, { status: value as Video['status'] })}
           />
+
+          {/* FOIA Linking */}
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              <Link2 className="inline h-3 w-3 mr-1 -mt-0.5" />
+              Linked FOIA Request
+            </label>
+            {video.foia_request_id ? (
+              <div className="flex items-center justify-between rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2">
+                <span className="text-xs font-mono text-text-primary">
+                  {video.foia_case_number || video.foia_request_id.slice(0, 8)}
+                </span>
+                <button
+                  onClick={() => onUpdate(video.id, { foia_request_id: null } as any)}
+                  title="Unlink FOIA"
+                  className="p-1 hover:bg-red-500/10 rounded transition-colors text-text-tertiary hover:text-accent-red"
+                >
+                  <Unlink className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <Select
+                options={[{ value: '', label: 'No FOIA linked' }, ...foiaOptions]}
+                value=""
+                onChange={(value) => {
+                  if (value) onUpdate(video.id, { foia_request_id: value } as any);
+                }}
+              />
+            )}
+          </div>
 
           {/* Priority */}
           <div>

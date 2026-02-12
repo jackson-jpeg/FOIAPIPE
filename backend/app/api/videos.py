@@ -241,6 +241,16 @@ async def update_video(
             status_code=status.HTTP_404_NOT_FOUND, detail="Video not found"
         )
     update_data = body.model_dump(exclude_unset=True)
+
+    # Validate FOIA request exists if linking
+    if "foia_request_id" in update_data and update_data["foia_request_id"] is not None:
+        foia = await db.get(FoiaRequest, update_data["foia_request_id"])
+        if not foia:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="FOIA request not found",
+            )
+
     for field, value in update_data.items():
         setattr(video, field, value)
     await db.flush()

@@ -23,6 +23,7 @@ class VideoUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     tags: list[str] | None = None
+    foia_request_id: uuid.UUID | None = None
     status: VideoStatus | None = None
     editing_notes: str | None = None
     priority: int | None = None

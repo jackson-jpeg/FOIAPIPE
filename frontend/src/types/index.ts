@@ -117,6 +117,7 @@ export interface VideoUpdate {
   title?: string;
   description?: string;
   tags?: string[];
+  foia_request_id?: string | null;
   status?: VideoStatus;
   editing_notes?: string;
   priority?: number;

@@ -113,3 +113,8 @@ export async function getBreakEvenAnalysis() {
   const { data } = await client.get('/analytics/revenue/break-even');
   return data;
 }
+
+export async function getAgencyResponseAnalytics() {
+  const { data } = await client.get('/analytics/agency-response');
+  return data;
+}

@@ -486,6 +486,108 @@ async def foia_performance_by_agency(
     ]
 
 
+@router.get("/agency-response")
+async def agency_response_analytics(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Detailed per-agency FOIA response analytics.
+
+    Returns per-agency metrics including:
+    - Status breakdown (count per status)
+    - Cost statistics (min, max, avg, total)
+    - Response time statistics
+    - Total linked videos and revenue
+    """
+    from app.models.agency import Agency
+    from app.models.foia_request import FoiaStatus
+
+    # Per-agency aggregated metrics
+    result = await db.execute(
+        select(
+            Agency.id,
+            Agency.name,
+            Agency.abbreviation,
+            func.count(FoiaRequest.id).label("total_requests"),
+            func.count(case((FoiaRequest.status == FoiaStatus.fulfilled, 1))).label("fulfilled"),
+            func.count(case((FoiaRequest.status == FoiaStatus.partial, 1))).label("partial"),
+            func.count(case((FoiaRequest.status == FoiaStatus.denied, 1))).label("denied"),
+            func.count(case((FoiaRequest.status == FoiaStatus.submitted, 1))).label("pending"),
+            func.count(case((FoiaRequest.status == FoiaStatus.processing, 1))).label("processing"),
+            func.count(case((FoiaRequest.status == FoiaStatus.acknowledged, 1))).label("acknowledged"),
+            func.avg(
+                func.extract("epoch", FoiaRequest.fulfilled_at - FoiaRequest.submitted_at) / 86400
+            ).label("avg_days"),
+            func.min(
+                func.extract("epoch", FoiaRequest.fulfilled_at - FoiaRequest.submitted_at) / 86400
+            ).label("min_days"),
+            func.max(
+                func.extract("epoch", FoiaRequest.fulfilled_at - FoiaRequest.submitted_at) / 86400
+            ).label("max_days"),
+            func.coalesce(func.avg(FoiaRequest.actual_cost), 0).label("avg_cost"),
+            func.coalesce(func.min(FoiaRequest.actual_cost), 0).label("min_cost"),
+            func.coalesce(func.max(FoiaRequest.actual_cost), 0).label("max_cost"),
+            func.coalesce(func.sum(FoiaRequest.actual_cost), 0).label("total_cost"),
+        )
+        .join(FoiaRequest, FoiaRequest.agency_id == Agency.id, isouter=True)
+        .where(FoiaRequest.id.isnot(None))
+        .group_by(Agency.id, Agency.name, Agency.abbreviation)
+        .order_by(func.count(FoiaRequest.id).desc())
+    )
+
+    agencies = []
+    for row in result.all():
+        total = row.total_requests or 0
+        fulfilled = (row.fulfilled or 0) + (row.partial or 0)
+        denied = row.denied or 0
+
+        # Video count and revenue for this agency
+        video_result = await db.execute(
+            select(
+                func.count(Video.id.distinct()).label("video_count"),
+                func.coalesce(func.sum(VideoAnalytics.estimated_revenue), 0).label("revenue"),
+            )
+            .join(FoiaRequest, Video.foia_request_id == FoiaRequest.id)
+            .join(VideoAnalytics, VideoAnalytics.video_id == Video.id, isouter=True)
+            .where(FoiaRequest.agency_id == row.id)
+        )
+        video_row = video_result.one()
+
+        agencies.append({
+            "agency_id": str(row.id),
+            "agency_name": row.name,
+            "abbreviation": row.abbreviation,
+            "total_requests": total,
+            "status_breakdown": {
+                "fulfilled": row.fulfilled or 0,
+                "partial": row.partial or 0,
+                "denied": denied,
+                "pending": row.pending or 0,
+                "processing": row.processing or 0,
+                "acknowledged": row.acknowledged or 0,
+            },
+            "fulfillment_rate": round(fulfilled / max(total, 1) * 100, 1),
+            "denial_rate": round(denied / max(total, 1) * 100, 1),
+            "response_time": {
+                "avg_days": round(float(row.avg_days or 0), 1),
+                "min_days": round(float(row.min_days or 0), 1),
+                "max_days": round(float(row.max_days or 0), 1),
+            },
+            "cost": {
+                "avg": round(float(row.avg_cost), 2),
+                "min": round(float(row.min_cost), 2),
+                "max": round(float(row.max_cost), 2),
+                "total": round(float(row.total_cost), 2),
+            },
+            "videos": {
+                "count": video_row.video_count or 0,
+                "total_revenue": round(float(video_row.revenue or 0), 2),
+            },
+        })
+
+    return agencies
+
+
 @router.get("/videos/profitability")
 async def video_profitability_ranking(
     db: AsyncSession = Depends(get_db),
