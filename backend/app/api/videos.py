@@ -47,6 +47,7 @@ from app.services.subtitle_generator import (
     validate_subtitle_file,
 )
 from app.models.video_subtitle import VideoSubtitle
+from app.services.cache import publish_sse
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])
 logger = logging.getLogger(__name__)
@@ -263,6 +264,7 @@ async def update_video(
             status_code=status.HTTP_404_NOT_FOUND, detail="Video not found"
         )
     update_data = body.model_dump(exclude_unset=True)
+    old_status = video.status
 
     # Validate FOIA request exists if linking
     if "foia_request_id" in update_data and update_data["foia_request_id"] is not None:
@@ -277,6 +279,14 @@ async def update_video(
         setattr(video, field, value)
     await db.flush()
     await db.refresh(video)
+
+    if "status" in update_data and video.status != old_status:
+        await publish_sse("video_status_changed", {
+            "video_id": str(video.id),
+            "old_status": old_status.value if hasattr(old_status, "value") else str(old_status),
+            "new_status": video.status.value if hasattr(video.status, "value") else str(video.status),
+        })
+
     return _to_response(video)
 
 

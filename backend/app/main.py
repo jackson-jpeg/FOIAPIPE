@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 import sentry_sdk
 import structlog
@@ -24,6 +25,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.agencies import router as agencies_router
 from app.api.analytics import router as analytics_router
@@ -36,7 +38,9 @@ from app.api.foia import router as foia_router
 from app.api.health import router as health_router, tasks_router
 from app.api.news import router as news_router
 from app.api.notifications import router as notifications_router
+from app.api.search import router as search_router
 from app.api.settings import router as settings_router
+from app.api.sse import router as sse_router
 from app.api.videos import router as videos_router
 from app.config import settings
 from app.rate_limit import limiter
@@ -55,6 +59,36 @@ structlog.configure(
 )
 
 logger = structlog.get_logger()
+
+
+# ── Security Headers Middleware ───────────────────────────────────────────
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if not settings.DEBUG:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
+# ── Lifespan (startup + graceful shutdown) ────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("FOIA Archive starting up", version="1.0.0")
+    yield
+    logger.info("FOIA Archive shutting down")
+    from app.services.cache import close_redis
+    try:
+        await close_redis()
+    except Exception:
+        pass
+    from app.database import engine
+    await engine.dispose()
+    logger.info("Shutdown complete")
+
 
 # ── Sentry Error Tracking ─────────────────────────────────────────────────
 if settings.SENTRY_DSN:
@@ -82,6 +116,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url=docs_url,
     redoc_url=redoc_url,
+    lifespan=lifespan,
 )
 
 # Add rate limiting state and exception handler
@@ -96,6 +131,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Routers ───────────────────────────────────────────────────────────────
 app.include_router(health_router)
@@ -110,13 +146,10 @@ app.include_router(agencies_router)
 app.include_router(foia_router)
 app.include_router(news_router)
 app.include_router(notifications_router)
+app.include_router(search_router)
 app.include_router(settings_router)
+app.include_router(sse_router)
 app.include_router(videos_router)
-
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    logger.info("FOIA Archive starting", version="1.0.0")
 
 
 # ── Root health endpoint ──────────────────────────────────────────────────

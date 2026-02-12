@@ -49,6 +49,10 @@ async def _publish_scheduled_async():
             except Exception as e:
                 logger.error(f"Failed to trigger upload for video {video.id}: {e}")
 
+        if count > 0:
+            from app.services.cache import publish_sse
+            await publish_sse("video_scheduled_publish", {"triggered": count})
+
         return {"published": count}
 
 

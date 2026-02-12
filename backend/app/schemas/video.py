@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.video import VideoStatus
 
@@ -15,13 +15,13 @@ from app.models.video import VideoStatus
 
 class VideoCreate(BaseModel):
     foia_request_id: uuid.UUID | None = None
-    title: str | None = None
-    description: str | None = None
+    title: str | None = Field(None, max_length=200)
+    description: str | None = Field(None, max_length=5000)
 
 
 class VideoUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
+    title: str | None = Field(None, max_length=200)
+    description: str | None = Field(None, max_length=5000)
     tags: list[str] | None = None
     foia_request_id: uuid.UUID | None = None
     status: VideoStatus | None = None

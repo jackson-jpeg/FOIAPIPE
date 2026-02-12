@@ -7,30 +7,30 @@ from datetime import datetime
 
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ── Create / Update ──────────────────────────────────────────────────────
 
 
 class AgencyCreate(BaseModel):
-    name: str
-    abbreviation: str | None = None
-    foia_email: str | None = None
-    foia_phone: str | None = None
-    foia_address: str | None = None
-    website: str | None = None
+    name: str = Field(..., min_length=1, max_length=200)
+    abbreviation: str | None = Field(None, max_length=20)
+    foia_email: str | None = Field(None, max_length=254)
+    foia_phone: str | None = Field(None, max_length=30)
+    foia_address: str | None = Field(None, max_length=500)
+    website: str | None = Field(None, max_length=500)
     state: str = "FL"
-    jurisdiction: str | None = None
-    notes: str | None = None
+    jurisdiction: str | None = Field(None, max_length=200)
+    notes: str | None = Field(None, max_length=2000)
     foia_template: str | None = None
     typical_cost_per_hour: Decimal | None = None
 
 
 class AgencyUpdate(BaseModel):
-    name: str | None = None
-    abbreviation: str | None = None
-    foia_email: str | None = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    abbreviation: str | None = Field(None, max_length=20)
+    foia_email: str | None = Field(None, max_length=254)
     foia_phone: str | None = None
     foia_address: str | None = None
     website: str | None = None

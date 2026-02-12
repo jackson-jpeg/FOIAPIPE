@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.foia_request import FoiaPriority, FoiaStatus
 
@@ -17,18 +17,18 @@ from app.models.foia_request import FoiaPriority, FoiaStatus
 class FoiaRequestCreate(BaseModel):
     agency_id: uuid.UUID
     news_article_id: uuid.UUID | None = None
-    request_text: str | None = None  # auto-generate if not provided
+    request_text: str | None = Field(None, max_length=10000)
     priority: FoiaPriority | None = None
 
 
 class FoiaRequestUpdate(BaseModel):
     status: FoiaStatus | None = None
-    notes: str | None = None
+    notes: str | None = Field(None, max_length=5000)
     priority: FoiaPriority | None = None
-    agency_reference_number: str | None = None
+    agency_reference_number: str | None = Field(None, max_length=100)
     estimated_cost: Decimal | None = None
     actual_cost: Decimal | None = None
-    payment_status: str | None = None
+    payment_status: str | None = Field(None, max_length=50)
 
 
 # ── Responses ─────────────────────────────────────────────────────────────

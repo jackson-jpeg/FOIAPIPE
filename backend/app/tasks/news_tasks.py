@@ -145,7 +145,18 @@ def scan_news_rss(self):
     """Scan all configured RSS feeds for new articles."""
     logger.info("Starting RSS scan")
     try:
-        result = _run_async(_scan_rss_async())
+        async def _locked_scan():
+            from app.services.cache import LockError, distributed_lock, publish_sse
+            try:
+                async with distributed_lock("news-rss-scan", timeout=600):
+                    result = await _scan_rss_async()
+                    if result and not result.get("skipped"):
+                        await publish_sse("scan_complete", {"result": result})
+                    return result
+            except LockError:
+                logger.info("RSS scan already running (lock held), skipping")
+                return {"skipped": True, "reason": "lock_held"}
+        result = _run_async(_locked_scan())
         logger.info("RSS scan complete: %s", result)
         return result
     except Exception as exc:

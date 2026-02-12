@@ -419,9 +419,27 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
                     <span className="text-text-quaternary ml-1.5">{sub.format}</span>
                     {sub.segment_count && <span className="text-text-quaternary ml-1.5">{sub.segment_count} segments</span>}
                   </div>
-                  <button onClick={() => handleDeleteSubtitle(sub.id)} className="text-text-tertiary hover:text-accent-red transition-colors">
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {video.youtube_video_id && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await videosApi.uploadSubtitleToYoutube(video.id, sub.id);
+                            addToast({ type: 'success', title: 'Subtitle uploaded to YouTube' });
+                          } catch {
+                            addToast({ type: 'error', title: 'Failed to upload subtitle' });
+                          }
+                        }}
+                        className="text-text-tertiary hover:text-accent-primary transition-colors"
+                        title="Upload to YouTube"
+                      >
+                        <Youtube className="h-3 w-3" />
+                      </button>
+                    )}
+                    <button onClick={() => handleDeleteSubtitle(sub.id)} className="text-text-tertiary hover:text-accent-red transition-colors">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

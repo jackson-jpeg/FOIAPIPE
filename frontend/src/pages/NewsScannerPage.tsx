@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ScannerStatus } from '@/components/news/ScannerStatus';
 import { ScanLogTable } from '@/components/news/ScanLogTable';
 import { FeedHealthIndicators } from '@/components/news/FeedHealthIndicators';
@@ -11,6 +11,7 @@ import { StatusOrb } from '@/components/ui/StatusOrb';
 import { useNewsStore } from '@/stores/newsStore';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useSSE } from '@/hooks/useSSE';
 import { RefreshCw, FileText, X, Check, Sparkles, Download } from 'lucide-react';
 import { INCIDENT_TYPES } from '@/lib/constants';
 import * as newsApi from '@/api/news';
@@ -63,6 +64,12 @@ export function NewsScannerPage() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  // SSE: refetch articles when a scan completes
+  const sseHandlers = useMemo(() => ({
+    scan_complete: () => loadArticles(),
+  }), [loadArticles]);
+  useSSE(sseHandlers);
 
   useEffect(() => {
     newsApi.getScanStatus().then(setScanStatus).catch((error) => {

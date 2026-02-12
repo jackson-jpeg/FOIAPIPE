@@ -26,6 +26,7 @@ from app.schemas.agency_contact import (
     AgencyContactResponse,
     AgencyContactUpdate,
 )
+from app.services.cache import cache_delete_pattern, cache_get, cache_set
 
 router = APIRouter(prefix="/api/agencies", tags=["agencies"])
 
@@ -49,6 +50,11 @@ async def list_agencies(
     _user: str = Depends(get_current_user),
 ) -> AgencyList:
     """Return all agencies, with optional search/active/jurisdiction filters."""
+    cache_key = f"agencies:list:{search}:{is_active}:{jurisdiction_type}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return AgencyList(**cached)
+
     stmt = select(Agency).order_by(Agency.name)
 
     if search:
@@ -110,10 +116,12 @@ async def list_agencies(
 
     total = (await db.execute(count_stmt)).scalar_one()
 
-    return AgencyList(
+    result_data = AgencyList(
         items=[AgencyResponse.model_validate(a) for a in agencies],
         total=total,
     )
+    await cache_set(cache_key, result_data.model_dump(mode="json"), ttl=600)
+    return result_data
 
 
 @router.get("/{agency_id}", response_model=AgencyResponse)
@@ -253,6 +261,7 @@ async def create_agency(
     db.add(agency)
     await db.flush()
     await db.refresh(agency)
+    await cache_delete_pattern("agencies:*")
     return AgencyResponse.model_validate(agency)
 
 
@@ -274,6 +283,7 @@ async def update_agency(
         setattr(agency, field, value)
     await db.flush()
     await db.refresh(agency)
+    await cache_delete_pattern("agencies:*")
     return AgencyResponse.model_validate(agency)
 
 
@@ -558,3 +568,4 @@ async def delete_agency(
         )
     await db.delete(agency)
     await db.flush()
+    await cache_delete_pattern("agencies:*")

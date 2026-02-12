@@ -44,3 +44,48 @@ def cleanup_old_scanlogs():
     except Exception as e:
         logger.error(f"Cleanup failed: {e}")
         return {"error": str(e)}
+
+
+async def _backup_database_async():
+    import subprocess
+
+    from app.config import settings
+
+    db_url = settings.DATABASE_URL
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    backup_file = f"/tmp/foiaarchive_backup_{timestamp}.sql"
+
+    try:
+        result = subprocess.run(
+            ["pg_dump", db_url, "-f", backup_file, "--no-owner", "--no-acl"],
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
+        if result.returncode != 0:
+            logger.error(f"pg_dump failed: {result.stderr}")
+            return {"success": False, "error": result.stderr}
+
+        import os
+        size = os.path.getsize(backup_file)
+        logger.info(f"Database backup created: {backup_file} ({size} bytes)")
+        return {"success": True, "file": backup_file, "size_bytes": size}
+    except FileNotFoundError:
+        logger.warning("pg_dump not available, skipping backup")
+        return {"success": False, "error": "pg_dump not found"}
+    except subprocess.TimeoutExpired:
+        logger.error("Database backup timed out")
+        return {"success": False, "error": "timeout"}
+
+
+@celery_app.task(name="app.tasks.maintenance_tasks.run_database_backup")
+def run_database_backup():
+    """Run a database backup using pg_dump."""
+    logger.info("Starting database backup")
+    try:
+        result = _run_async(_backup_database_async())
+        logger.info(f"Backup result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Backup failed: {e}")
+        return {"error": str(e)}

@@ -464,7 +464,18 @@ def check_foia_inbox(self):
     """Check IMAP inbox for FOIA responses."""
     logger.info("Checking FOIA inbox")
     try:
-        result = _run_async(_check_inbox_async())
+        async def _locked_check():
+            from app.services.cache import LockError, distributed_lock, publish_sse
+            try:
+                async with distributed_lock("foia-inbox-check", timeout=300):
+                    result = await _check_inbox_async()
+                    if result and result.get("processed", 0) > 0:
+                        await publish_sse("foia_response", {"processed": result["processed"]})
+                    return result
+            except LockError:
+                logger.info("Inbox check already running, skipping")
+                return {"skipped": True, "reason": "lock_held"}
+        result = _run_async(_locked_check())
         logger.info(f"Inbox check complete: {result}")
         return result
     except Exception as exc:

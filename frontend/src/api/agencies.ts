@@ -145,3 +145,8 @@ export async function updateAgencyTemplate(agencyId: string, template: string): 
 export async function deleteAgencyTemplate(agencyId: string): Promise<void> {
   await client.delete(`/agencies/${agencyId}/template`);
 }
+
+export async function getAgencyContact(agencyId: string, contactId: string): Promise<AgencyContact> {
+  const response = await client.get(`/agencies/${agencyId}/contacts/${contactId}`);
+  return response.data;
+}

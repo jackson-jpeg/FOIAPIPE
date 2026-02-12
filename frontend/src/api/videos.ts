@@ -110,3 +110,8 @@ export async function getVideoAnalytics(id: string, days?: number): Promise<any>
   const { data } = await client.get(`/videos/${id}/analytics`, { params });
   return data;
 }
+
+export async function uploadSubtitleToYoutube(videoId: string, subtitleId: string): Promise<{ success: boolean; message: string }> {
+  const { data } = await client.post(`/videos/${videoId}/subtitles/${subtitleId}/upload-youtube`);
+  return data;
+}

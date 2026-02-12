@@ -43,6 +43,7 @@ from app.services.appeal_generator import (
     get_appeal_recommendations,
 )
 from app.services.ai_client import generate_foia_suggestions, generate_followup_letter
+from app.services.cache import LockError, distributed_lock, publish_sse
 
 logger = logging.getLogger(__name__)
 
@@ -593,6 +594,16 @@ async def submit_foia_request(
             detail=f"Cannot submit a request with status '{foia.status.value}'. Must be draft or ready.",
         )
 
+    # Distributed lock to prevent double submission
+    try:
+        lock_ctx = distributed_lock(f"foia-submit-{foia_id}", timeout=120)
+        await lock_ctx.__aenter__()
+    except LockError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This FOIA request is already being submitted.",
+        )
+
     # Ensure agency has a FOIA email
     agency = foia.agency
     if not agency or not agency.foia_email:
@@ -683,6 +694,14 @@ async def submit_foia_request(
     db.add(notif)
 
     await db.refresh(foia)
+
+    await lock_ctx.__aexit__(None, None, None)
+
+    await publish_sse("foia_submitted", {
+        "foia_id": str(foia.id),
+        "case_number": foia.case_number,
+        "agency_name": agency.name,
+    })
 
     return {
         "success": True,

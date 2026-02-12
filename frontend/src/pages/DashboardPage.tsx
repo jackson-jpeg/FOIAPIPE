@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Newspaper,
@@ -35,6 +35,7 @@ import {
   type SystemMetrics,
 } from '@/api/dashboard';
 import { exportFoias } from '@/api/exports';
+import { useSSE } from '@/hooks/useSSE';
 import { formatRelativeTime, formatCompactNumber, formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
 
@@ -65,6 +66,19 @@ export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
 
+  const refreshDashboard = useCallback(async () => {
+    try {
+      const data = await getDashboardStats();
+      setStats(data.stats);
+      setPipeline(data.pipeline ?? []);
+      setArticles(data.recent_articles ?? []);
+      setVideos(data.top_videos ?? []);
+      setActivities(data.activities ?? []);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchDashboard() {
       try {
@@ -86,6 +100,17 @@ export function DashboardPage() {
     getDashboardSummary().then(setSummary).catch(() => {});
     getSystemMetrics().then(setMetrics).catch(() => {});
   }, []);
+
+  // SSE: refetch dashboard stats on any event
+  const sseHandlers = useMemo(() => ({
+    scan_complete: () => refreshDashboard(),
+    foia_response: () => refreshDashboard(),
+    foia_submitted: () => refreshDashboard(),
+    video_published: () => refreshDashboard(),
+    video_status_changed: () => refreshDashboard(),
+    video_scheduled_publish: () => refreshDashboard(),
+  }), [refreshDashboard]);
+  useSSE(sseHandlers);
 
   const healthScoreColor = (score: number) => {
     if (score >= 90) return 'text-emerald-400';

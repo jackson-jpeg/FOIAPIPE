@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StatusOrb } from '@/components/ui/StatusOrb';
 import { formatRelativeTime } from '@/lib/formatters';
+import { useSSE } from '@/hooks/useSSE';
 import {
   getNotifications,
   markAllRead,
@@ -56,9 +57,21 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
 
   useEffect(() => {
     fetchNotifications();
+    // Fallback polling (SSE handles real-time; this catches reconnect gaps)
     const interval = setInterval(fetchNotifications, 60_000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // SSE: refetch notifications immediately on any relevant event
+  const sseHandlers = useMemo(() => ({
+    scan_complete: () => fetchNotifications(),
+    foia_response: () => fetchNotifications(),
+    foia_submitted: () => fetchNotifications(),
+    video_published: () => fetchNotifications(),
+    video_status_changed: () => fetchNotifications(),
+    video_scheduled_publish: () => fetchNotifications(),
+  }), [fetchNotifications]);
+  useSSE(sseHandlers);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.news_article import IncidentType
 
@@ -16,8 +16,8 @@ from app.models.news_article import IncidentType
 
 class NewsArticleResponse(BaseModel):
     id: uuid.UUID
-    url: str
-    headline: str
+    url: str = Field(..., max_length=2000)
+    headline: str = Field(..., max_length=500)
     source: str
     summary: str | None = None
     body: str | None = None

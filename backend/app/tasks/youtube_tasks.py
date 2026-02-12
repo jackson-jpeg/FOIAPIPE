@@ -232,6 +232,11 @@ def upload_video(self, video_id: str):
         result = _run_async(_upload_video_async(video_id))
         if result.get("error") and self.request.retries < self.max_retries:
             raise self.retry(exc=Exception(result["error"]))
+        if result.get("youtube_video_id"):
+            async def _emit():
+                from app.services.cache import publish_sse
+                await publish_sse("video_published", {"video_id": video_id, "youtube_video_id": result["youtube_video_id"]})
+            _run_async(_emit())
         logger.info(f"Upload result for {video_id}: {result}")
         return result
     except Exception as e:

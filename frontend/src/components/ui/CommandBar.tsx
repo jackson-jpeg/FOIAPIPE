@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,147 +10,211 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Command
+  Command,
+  Building2,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { globalSearch, type SearchResults } from '@/api/search';
 
 interface CommandItem {
   id: string;
   label: string;
   icon: React.ReactNode;
   onSelect: () => void;
-  category: 'Navigation' | 'Actions' | 'Settings';
+  category: string;
 }
 
 export function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [searchResults, setSearchResults] = useState<SearchResults['results'] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
 
+  const close = () => {
+    setIsOpen(false);
+    setSearch('');
+    setSelectedIndex(0);
+    setSearchResults(null);
+  };
+
   const commands: CommandItem[] = [
-    // Navigation
     {
       id: 'nav-dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard className="h-4 w-4" />,
       category: 'Navigation',
-      onSelect: () => {
-        navigate('/');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/'); close(); },
     },
     {
       id: 'nav-news',
       label: 'News Scanner',
       icon: <Newspaper className="h-4 w-4" />,
       category: 'Navigation',
-      onSelect: () => {
-        navigate('/news');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/news'); close(); },
     },
     {
       id: 'nav-foia',
       label: 'FOIA Requests',
       icon: <FileText className="h-4 w-4" />,
       category: 'Navigation',
-      onSelect: () => {
-        navigate('/foia');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/foia'); close(); },
     },
     {
       id: 'nav-videos',
       label: 'Videos',
       icon: <Video className="h-4 w-4" />,
       category: 'Navigation',
-      onSelect: () => {
-        navigate('/videos');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/videos'); close(); },
     },
     {
       id: 'nav-analytics',
       label: 'Analytics',
       icon: <BarChart3 className="h-4 w-4" />,
       category: 'Navigation',
-      onSelect: () => {
-        navigate('/analytics');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/analytics'); close(); },
     },
-    // Actions
     {
       id: 'action-new-foia',
       label: 'New FOIA Request',
       icon: <Plus className="h-4 w-4" />,
       category: 'Actions',
-      onSelect: () => {
-        navigate('/foia/editor');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/foia/editor'); close(); },
     },
     {
       id: 'action-scan-news',
       label: 'Scan News Now',
       icon: <RefreshCw className="h-4 w-4" />,
       category: 'Actions',
-      onSelect: async () => {
-        setIsOpen(false);
-      },
+      onSelect: () => { close(); },
     },
-    // Settings
     {
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="h-4 w-4" />,
       category: 'Settings',
-      onSelect: () => {
-        navigate('/settings');
-        setIsOpen(false);
-      },
+      onSelect: () => { navigate('/settings'); close(); },
     },
   ];
 
-  // Fuzzy search filter
-  const filteredCommands = commands.filter(cmd =>
-    cmd.label.toLowerCase().includes(search.toLowerCase()) ||
-    cmd.category.toLowerCase().includes(search.toLowerCase())
-  );
+  // Build combined items: search results (if query >= 2 chars) + filtered commands
+  const buildItems = (): CommandItem[] => {
+    const items: CommandItem[] = [];
+
+    if (searchResults && search.length >= 2) {
+      // FOIA results
+      for (const r of searchResults.foia) {
+        items.push({
+          id: `search-foia-${r.id}`,
+          label: `${r.case_number} (${r.status})`,
+          icon: <FileText className="h-4 w-4" />,
+          category: 'FOIA Requests',
+          onSelect: () => { navigate(`/foia`); close(); },
+        });
+      }
+      // Article results
+      for (const r of searchResults.articles) {
+        items.push({
+          id: `search-article-${r.id}`,
+          label: r.headline,
+          icon: <Newspaper className="h-4 w-4" />,
+          category: 'Articles',
+          onSelect: () => { navigate('/news'); close(); },
+        });
+      }
+      // Video results
+      for (const r of searchResults.videos) {
+        items.push({
+          id: `search-video-${r.id}`,
+          label: r.title || 'Untitled Video',
+          icon: <Video className="h-4 w-4" />,
+          category: 'Videos',
+          onSelect: () => { navigate('/videos'); close(); },
+        });
+      }
+      // Agency results
+      for (const r of searchResults.agencies) {
+        items.push({
+          id: `search-agency-${r.id}`,
+          label: r.name,
+          icon: <Building2 className="h-4 w-4" />,
+          category: 'Agencies',
+          onSelect: () => { navigate('/agencies'); close(); },
+        });
+      }
+    }
+
+    // Always include filtered commands
+    const filtered = commands.filter(cmd =>
+      !search || cmd.label.toLowerCase().includes(search.toLowerCase()) ||
+      cmd.category.toLowerCase().includes(search.toLowerCase())
+    );
+    items.push(...filtered);
+
+    return items;
+  };
+
+  const allItems = buildItems();
+
+  // Debounced search
+  useEffect(() => {
+    if (search.length < 2) {
+      setSearchResults(null);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await globalSearch(search);
+        setSearchResults(data.results);
+      } catch {
+        setSearchResults(null);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
-      setIsOpen(prev => !prev);
-      setSearch('');
-      setSelectedIndex(0);
+      setIsOpen(prev => {
+        if (prev) {
+          close();
+          return false;
+        }
+        return true;
+      });
     }
 
     if (e.key === 'Escape') {
-      setIsOpen(false);
-      setSearch('');
-      setSelectedIndex(0);
+      close();
     }
 
     if (isOpen) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedIndex(prev =>
-          prev < filteredCommands.length - 1 ? prev + 1 : prev
+          prev < allItems.length - 1 ? prev + 1 : prev
         );
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex(prev => prev > 0 ? prev - 1 : 0);
       }
-      if (e.key === 'Enter' && filteredCommands[selectedIndex]) {
+      if (e.key === 'Enter' && allItems[selectedIndex]) {
         e.preventDefault();
-        filteredCommands[selectedIndex].onSelect();
+        allItems[selectedIndex].onSelect();
       }
     }
-  }, [isOpen, filteredCommands, selectedIndex]);
+  }, [isOpen, allItems, selectedIndex]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -159,12 +223,12 @@ export function CommandBar() {
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [search]);
+  }, [search, searchResults]);
 
   if (!isOpen) return null;
 
-  // Group commands by category
-  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
+  // Group items by category
+  const grouped = allItems.reduce((acc, cmd) => {
     if (!acc[cmd.category]) acc[cmd.category] = [];
     acc[cmd.category].push(cmd);
     return acc;
@@ -175,7 +239,7 @@ export function CommandBar() {
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in"
-        onClick={() => setIsOpen(false)}
+        onClick={close}
       />
 
       {/* Command Bar */}
@@ -184,12 +248,16 @@ export function CommandBar() {
           <div className="bg-surface-secondary rounded-xl shadow-overlay border border-surface-border overflow-hidden">
             {/* Search Input */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-border">
-              <Search className="h-4 w-4 text-text-tertiary" />
+              {searching ? (
+                <Loader2 className="h-4 w-4 text-text-tertiary animate-spin" />
+              ) : (
+                <Search className="h-4 w-4 text-text-tertiary" />
+              )}
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search commands..."
+                placeholder="Search commands and data..."
                 className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-quaternary outline-none"
                 autoFocus
               />
@@ -198,20 +266,20 @@ export function CommandBar() {
               </kbd>
             </div>
 
-            {/* Command List */}
+            {/* Results List */}
             <div className="max-h-[400px] overflow-y-auto">
-              {filteredCommands.length === 0 ? (
+              {allItems.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-text-tertiary">
-                  No commands found
+                  No results found
                 </div>
               ) : (
-                Object.entries(groupedCommands).map(([category, items]) => (
+                Object.entries(grouped).map(([category, items]) => (
                   <div key={category}>
                     <div className="px-4 py-2 text-2xs font-medium text-text-tertiary uppercase tracking-wider">
                       {category}
                     </div>
                     {items.map((cmd) => {
-                      const globalIndex = filteredCommands.findIndex(c => c.id === cmd.id);
+                      const globalIndex = allItems.findIndex(c => c.id === cmd.id);
                       return (
                         <button
                           key={cmd.id}
@@ -225,14 +293,14 @@ export function CommandBar() {
                           )}
                         >
                           <span className={cn(
-                            'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
+                            'flex items-center justify-center w-8 h-8 rounded-lg transition-colors flex-shrink-0',
                             globalIndex === selectedIndex
                               ? 'bg-accent-primary text-white'
                               : 'bg-surface-tertiary text-text-tertiary'
                           )}>
                             {cmd.icon}
                           </span>
-                          <span className="text-sm font-medium">{cmd.label}</span>
+                          <span className="text-sm font-medium truncate">{cmd.label}</span>
                         </button>
                       );
                     })}

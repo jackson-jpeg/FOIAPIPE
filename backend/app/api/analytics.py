@@ -10,6 +10,7 @@ from sqlalchemy import select, func, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_current_user
+from app.services.cache import cache_get, cache_set
 from app.models.video import Video, VideoStatus
 from app.models.video_analytics import VideoAnalytics
 from app.models.revenue_transaction import RevenueTransaction, TransactionType
@@ -39,6 +40,11 @@ async def analytics_overview(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
+    cache_key = f"analytics:overview:{range}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     start, end = _get_date_range(range)
     prev_start = start - (end - start)
 
@@ -76,7 +82,7 @@ async def analytics_overview(
     )
     total_costs = float(foia_cost_result.scalar() or 0) + float(expense_result.scalar() or 0)
 
-    return {
+    result = {
         "total_views": total_views,
         "total_revenue": round(total_revenue, 2),
         "total_costs": round(total_costs, 2),
@@ -89,6 +95,8 @@ async def analytics_overview(
             "revenue": _calc_trend(float(revenue), float(prev_revenue)),
         },
     }
+    await cache_set(cache_key, result, ttl=120)
+    return result
 
 
 @router.get("/revenue")

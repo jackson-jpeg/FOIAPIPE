@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
-from app.config import settings
+from app.services.cache import cache_get, cache_set
 from app.models import (
     FoiaRequest,
     FoiaStatus,
@@ -32,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
-DASHBOARD_STATS_CACHE_KEY = "foiaarchive:dashboard:stats"
+DASHBOARD_STATS_CACHE_KEY = "dashboard:stats"
 DASHBOARD_STATS_TTL = 60
 
 
@@ -49,16 +47,9 @@ async def dashboard_stats(
     - top_videos: 5 top-performing videos by views
     - activities: 10 most recent notification activity items
     """
-    try:
-        r = aioredis.from_url(settings.REDIS_URL)
-        try:
-            cached = await r.get(DASHBOARD_STATS_CACHE_KEY)
-            if cached is not None:
-                return json.loads(cached)
-        finally:
-            await r.aclose()
-    except Exception:
-        pass
+    cached = await cache_get(DASHBOARD_STATS_CACHE_KEY)
+    if cached is not None:
+        return cached
 
     now = datetime.now(timezone.utc)
     week_ago = now - timedelta(days=7)
@@ -318,14 +309,7 @@ async def dashboard_stats(
         "activities": activities,
     }
 
-    try:
-        r = aioredis.from_url(settings.REDIS_URL)
-        try:
-            await r.set(DASHBOARD_STATS_CACHE_KEY, json.dumps(result), ex=DASHBOARD_STATS_TTL)
-        finally:
-            await r.aclose()
-    except Exception as e:
-        logger.warning("Failed to cache dashboard stats in Redis: %s", e)
+    await cache_set(DASHBOARD_STATS_CACHE_KEY, result, ttl=DASHBOARD_STATS_TTL)
 
     return result
 
@@ -702,25 +686,23 @@ async def system_metrics(
     # Redis cache metrics
     redis_metrics = {}
     try:
-        r = aioredis.from_url(settings.REDIS_URL)
-        try:
-            info = await r.info("stats")
-            redis_metrics = {
-                "total_connections_received": info.get("total_connections_received", 0),
-                "total_commands_processed": info.get("total_commands_processed", 0),
-                "keyspace_hits": info.get("keyspace_hits", 0),
-                "keyspace_misses": info.get("keyspace_misses", 0),
-                "hit_rate": (
-                    round(
-                        info.get("keyspace_hits", 0)
-                        / max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1)
-                        * 100,
-                        2,
-                    )
-                ),
-            }
-        finally:
-            await r.aclose()
+        from app.services.cache import get_redis
+        r = await get_redis()
+        info = await r.info("stats")
+        redis_metrics = {
+            "total_connections_received": info.get("total_connections_received", 0),
+            "total_commands_processed": info.get("total_commands_processed", 0),
+            "keyspace_hits": info.get("keyspace_hits", 0),
+            "keyspace_misses": info.get("keyspace_misses", 0),
+            "hit_rate": (
+                round(
+                    info.get("keyspace_hits", 0)
+                    / max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1)
+                    * 100,
+                    2,
+                )
+            ),
+        }
     except Exception as e:
         redis_metrics = {"error": str(e)}
 

@@ -124,3 +124,8 @@ export async function getAttachmentUrl(foiaId: string, key: string) {
   const { data } = await client.get(`/foia/${foiaId}/attachment-url`, { params: { key } });
   return data;
 }
+
+export async function getBatchStatus(caseNumbers: string[]) {
+  const { data } = await client.get('/foia/batch-status', { params: { case_numbers: caseNumbers.join(',') } });
+  return data;
+}

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
 from app.models.app_setting import AppSetting
 from app.schemas.settings import AppSettingResponse, AppSettingUpdate
+from app.services.cache import cache_delete, cache_get, cache_set
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -49,6 +50,10 @@ async def get_settings(
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
+    cached = await cache_get("settings:all")
+    if cached is not None:
+        return cached
+
     result = await db.execute(select(AppSetting))
     settings = {
         s.key: AppSettingResponse.model_validate(s) for s in result.scalars().all()
@@ -64,7 +69,9 @@ async def get_settings(
                 description=defaults["description"],
             )
 
-    return {"settings": list(settings.values())}
+    response = {"settings": [s.model_dump(mode="json") for s in settings.values()]}
+    await cache_set("settings:all", response, ttl=300)
+    return response
 
 
 @router.put("")
@@ -91,4 +98,5 @@ async def update_settings(
             db.add(setting)
 
     await db.commit()
+    await cache_delete("settings:all")
     return {"ok": True}

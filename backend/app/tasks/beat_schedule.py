@@ -48,4 +48,9 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=2, minute=0, day_of_week="sunday"),  # Weekly Sunday 2 AM
         "options": {"queue": "default"},
     },
+    "daily-database-backup": {
+        "task": "app.tasks.maintenance_tasks.run_database_backup",
+        "schedule": crontab(hour=3, minute=0),  # 3 AM daily
+        "options": {"queue": "default"},
+    },
 }

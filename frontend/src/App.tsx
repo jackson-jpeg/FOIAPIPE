@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { ToastProvider } from '@/components/ui/Toast';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
-import { SearchOverlay } from '@/components/ui/SearchOverlay';
+import { CommandBar } from '@/components/ui/CommandBar';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -60,51 +59,14 @@ function PublicRoute() {
   return <Outlet />;
 }
 
-const NAV_PATHS = ['/dashboard', '/news', '/foia', '/agencies', '/videos', '/analytics', '/audit', '/settings'];
-
-function KeyboardShortcuts() {
-  const navigate = useNavigate();
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
-
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen((o) => !o);
-        return;
-      }
-
-      if (isInput) return;
-
-      const num = parseInt(e.key, 10);
-      if (num >= 1 && num <= NAV_PATHS.length) {
-        e.preventDefault();
-        navigate(NAV_PATHS[num - 1]);
-      }
-    },
-    [navigate]
-  );
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
-  return <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />;
-}
+// CommandBar handles its own Cmd+K shortcut internally
 
 export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <ToastProvider>
-          <KeyboardShortcuts />
+          <CommandBar />
           <Routes>
             {/* Public routes */}
             <Route element={<PublicRoute />}>

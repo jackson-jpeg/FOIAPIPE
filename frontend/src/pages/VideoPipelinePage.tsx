@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { useVideoStore } from '@/stores/videoStore';
+import { useSSE } from '@/hooks/useSSE';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Plus, Film, Upload, CheckCircle, Eye, Download } from 'lucide-react';
 import * as videosApi from '@/api/videos';
@@ -20,6 +21,14 @@ export function VideoPipelinePage() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => { fetchVideos(); }, [fetchVideos]);
+
+  // SSE: refetch videos on relevant events
+  const sseHandlers = useMemo(() => ({
+    video_status_changed: () => fetchVideos(),
+    video_published: () => fetchVideos(),
+    video_scheduled_publish: () => fetchVideos(),
+  }), [fetchVideos]);
+  useSSE(sseHandlers);
 
   // ── Computed stats ────────────────────────────────────────────────────
 
