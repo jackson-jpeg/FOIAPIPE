@@ -78,6 +78,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("FOIA Archive starting up", version="1.0.0")
+    try:
+        from sqlalchemy import func, select
+
+        from app.database import async_session_factory
+        from app.models.agency import Agency
+        from app.seed import seed_agencies
+
+        async with async_session_factory() as db:
+            count = (await db.execute(select(func.count(Agency.id)))).scalar_one()
+        if count < 5:
+            logger.info("Agency table under-populated, auto-seeding", current_count=count)
+            await seed_agencies()
+    except Exception as e:
+        logger.warning("Auto-seed failed (non-fatal)", error=str(e))
     yield
     logger.info("FOIA Archive shutting down")
     from app.services.cache import close_redis
