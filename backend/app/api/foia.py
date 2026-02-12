@@ -40,6 +40,7 @@ from app.services.appeal_generator import (
     generate_appeal_pdf,
     get_appeal_recommendations,
 )
+from app.services.ai_client import generate_foia_suggestions
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +189,62 @@ async def roi_projection(
         virality_score=virality_score,
     )
     return projection
+
+
+# ── AI Suggestions ────────────────────────────────────────────────────────
+
+
+@router.post("/suggestions/preview")
+async def preview_suggestions(
+    body: dict,
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate AI suggestions for unsaved FOIA request text.
+
+    Body should contain:
+    - request_text: The FOIA request text to analyze
+    - agency_name: Optional agency name for context
+    - incident_type: Optional incident type for context
+    """
+    request_text = body.get("request_text", "")
+    if not request_text or len(request_text.split()) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request text must contain at least 10 words",
+        )
+
+    suggestions = await generate_foia_suggestions(
+        request_text=request_text,
+        agency_name=body.get("agency_name", ""),
+        incident_type=body.get("incident_type", ""),
+    )
+    return {"suggestions": suggestions}
+
+
+@router.post("/{foia_id}/suggestions")
+async def get_suggestions(
+    foia_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate AI suggestions for an existing FOIA request."""
+    foia = await db.get(FoiaRequest, foia_id)
+    if not foia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
+        )
+
+    agency_name = foia.agency.name if foia.agency else ""
+    incident_type = ""
+    if foia.news_article and hasattr(foia.news_article, "incident_type"):
+        incident_type = foia.news_article.incident_type.value if foia.news_article.incident_type else ""
+
+    suggestions = await generate_foia_suggestions(
+        request_text=foia.request_text or "",
+        agency_name=agency_name,
+        incident_type=incident_type,
+    )
+    return {"suggestions": suggestions}
 
 
 # ── List & Detail ────────────────────────────────────────────────────────

@@ -6,11 +6,12 @@ Supports multiple STT providers (OpenAI Whisper, Google, etc.)
 from __future__ import annotations
 
 import logging
-import os
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Optional
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -135,11 +136,10 @@ async def transcribe_audio_whisper(
     try:
         import openai
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
+        if not settings.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY not configured")
 
-        client = openai.OpenAI(api_key=api_key)
+        client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
         # Open audio file
         with open(audio_file_path, "rb") as audio_file:

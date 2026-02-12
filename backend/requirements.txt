@@ -21,6 +21,7 @@ boto3==1.35.19
 google-api-python-client==2.147.0
 google-auth-oauthlib==1.2.1
 anthropic==0.34.2
+openai>=1.0.0
 structlog==24.4.0
 uuid7==0.1.0
 Pillow==10.4.0

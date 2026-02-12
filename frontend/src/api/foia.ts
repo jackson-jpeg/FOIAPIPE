@@ -85,3 +85,17 @@ export async function getRoiProjection(params: { predicted_cost: number; inciden
   const { data } = await client.get('/foia/roi-projection', { params });
   return data;
 }
+
+export async function getFoiaSuggestions(id: string) {
+  const { data } = await client.post(`/foia/${id}/suggestions`);
+  return data;
+}
+
+export async function previewFoiaSuggestions(requestText: string, agencyName?: string, incidentType?: string) {
+  const { data } = await client.post('/foia/suggestions/preview', {
+    request_text: requestText,
+    agency_name: agencyName,
+    incident_type: incidentType,
+  });
+  return data;
+}

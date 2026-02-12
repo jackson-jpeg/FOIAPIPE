@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     # ── Anthropic (Claude AI) ─────────────────────────────────────────────
     ANTHROPIC_API_KEY: str = ""
 
+    # ── OpenAI (Whisper STT) ────────────────────────────────────────────
+    OPENAI_API_KEY: str = ""
+
     # ── Twilio (SMS notifications) ────────────────────────────────────────
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""

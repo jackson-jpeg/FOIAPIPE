@@ -122,6 +122,91 @@ Rules:
         return _fallback_metadata(incident_summary, agency, incident_date)
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+async def generate_foia_suggestions(
+    request_text: str,
+    agency_name: str = "",
+    incident_type: str = "",
+) -> list[str]:
+    """Generate contextual improvement suggestions for a FOIA request using Claude AI.
+
+    Analyzes the request text and returns actionable suggestions to improve
+    legal completeness, specificity, and likelihood of fulfillment.
+
+    Args:
+        request_text: The FOIA request text to analyze
+        agency_name: Name of the target agency (for context)
+        incident_type: Type of incident (for context)
+
+    Returns:
+        List of 3-5 suggestion strings
+    """
+    if not settings.ANTHROPIC_API_KEY:
+        return _fallback_suggestions()
+
+    try:
+        import anthropic
+        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+        context_parts = []
+        if agency_name:
+            context_parts.append(f"Target agency: {agency_name}")
+        if incident_type:
+            context_parts.append(f"Incident type: {incident_type}")
+        context = "\n".join(context_parts)
+
+        prompt = f"""Analyze this Florida public records request and provide 3-5 specific, actionable suggestions to improve it. Focus on:
+- Legal completeness (Chapter 119, Florida Statutes references)
+- Specificity of records requested (dates, document types, personnel)
+- Format preferences (electronic vs. paper)
+- Fee waiver language
+- Timeline clarity
+
+{f"Context:{chr(10)}{context}{chr(10)}" if context else ""}
+Request text:
+{request_text}
+
+Return ONLY a JSON array of suggestion strings, no other text. Example:
+["suggestion 1", "suggestion 2", "suggestion 3"]"""
+
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=512,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        import json
+        text = response.content[0].text
+        start = text.find("[")
+        end = text.rfind("]") + 1
+        if start >= 0 and end > start:
+            suggestions = json.loads(text[start:end])
+            if isinstance(suggestions, list) and all(isinstance(s, str) for s in suggestions):
+                return suggestions[:5]
+
+        return _fallback_suggestions()
+    except Exception as e:
+        logger.error(f"AI FOIA suggestions failed: {e}")
+        return _fallback_suggestions()
+
+
+def _fallback_suggestions() -> list[str]:
+    """Return generic FOIA improvement tips when AI is unavailable."""
+    return [
+        "Reference Chapter 119, Florida Statutes to establish your legal basis",
+        "Specify exact date ranges for the records you are requesting",
+        "Request records in electronic format to reduce duplication costs",
+        "Include fee waiver language or state willingness to pay reasonable fees",
+        "Clearly describe the specific types of records needed (e.g., body camera footage, incident reports, dispatch logs)",
+    ]
+
+
 def _fallback_metadata(summary: str, agency: str, date: str) -> dict:
     """Generate basic metadata without AI using templates.
 
