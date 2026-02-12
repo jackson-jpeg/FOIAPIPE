@@ -7,27 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { FOIA_STATUSES } from '@/lib/constants';
 import { History, ArrowRight, Filter } from 'lucide-react';
-import client from '@/api/client';
-
-interface AuditLogEntry {
-  id: string;
-  foia_request_id: string;
-  case_number: string;
-  from_status: string;
-  to_status: string;
-  changed_by: string;
-  reason: string | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-}
-
-interface AuditLogResponse {
-  items: AuditLogEntry[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-}
+import { getStatusChanges, type AuditLogEntry } from '@/api/audit';
 
 const PAGE_SIZE = 50;
 
@@ -58,10 +38,7 @@ export function AuditLogPage() {
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
 
-      const { data } = await client.get<AuditLogResponse>(
-        '/audit-logs/status-changes',
-        { params }
-      );
+      const data = await getStatusChanges(params);
 
       setItems(data.items);
       setTotal(data.total);

@@ -20,10 +20,13 @@ from app.models.foia_status_change import FoiaStatusChange
 from app.models.news_article import NewsArticle
 from app.schemas.foia import (
     FoiaDeadline,
+    FoiaLinkedVideo,
     FoiaRequestCreate,
+    FoiaRequestDetail,
     FoiaRequestList,
     FoiaRequestResponse,
     FoiaRequestUpdate,
+    FoiaStatusChangeResponse,
     FoiaStatusSummary,
 )
 from app.services.email_sender import send_foia_email
@@ -81,6 +84,29 @@ def _to_response(foia: FoiaRequest) -> FoiaRequestResponse:
         is_auto_submitted=foia.is_auto_submitted,
         created_at=foia.created_at,
         updated_at=foia.updated_at,
+    )
+
+
+def _to_detail_response(foia: FoiaRequest) -> FoiaRequestDetail:
+    """Convert a FoiaRequest ORM instance to the enriched detail response."""
+    base = _to_response(foia)
+    return FoiaRequestDetail(
+        **base.model_dump(),
+        response_emails=foia.response_emails or [],
+        status_changes=[
+            FoiaStatusChangeResponse.model_validate(sc)
+            for sc in (foia.status_changes or [])
+        ],
+        linked_videos=[
+            FoiaLinkedVideo(
+                id=v.id,
+                title=v.title,
+                status=v.status.value if hasattr(v.status, "value") else v.status,
+                youtube_video_id=v.youtube_video_id,
+                youtube_url=v.youtube_url,
+            )
+            for v in (foia.videos or [])
+        ],
     )
 
 
@@ -321,19 +347,19 @@ async def list_foia_requests(
     )
 
 
-@router.get("/{foia_id}", response_model=FoiaRequestResponse)
+@router.get("/{foia_id}", response_model=FoiaRequestDetail)
 async def get_foia_request(
     foia_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
-) -> FoiaRequestResponse:
-    """Return full detail of a single FOIA request."""
+) -> FoiaRequestDetail:
+    """Return full detail of a single FOIA request with related data."""
     foia = await db.get(FoiaRequest, foia_id)
     if not foia:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
         )
-    return _to_response(foia)
+    return _to_detail_response(foia)
 
 
 # ── Create & Update ─────────────────────────────────────────────────────

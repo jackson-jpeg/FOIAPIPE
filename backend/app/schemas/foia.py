@@ -72,6 +72,35 @@ class FoiaStatusSummary(BaseModel):
     counts: dict[str, int]
 
 
+class FoiaStatusChangeResponse(BaseModel):
+    id: uuid.UUID
+    from_status: str
+    to_status: str
+    changed_by: str
+    reason: str | None = None
+    extra_metadata: dict | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class FoiaLinkedVideo(BaseModel):
+    id: uuid.UUID
+    title: str | None = None
+    status: str | None = None
+    youtube_video_id: str | None = None
+    youtube_url: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class FoiaRequestDetail(FoiaRequestResponse):
+    """Extended response for the single-request detail endpoint."""
+    response_emails: list[dict] | None = None
+    status_changes: list[FoiaStatusChangeResponse] = []
+    linked_videos: list[FoiaLinkedVideo] = []
+
+
 class FoiaDeadline(BaseModel):
     id: uuid.UUID
     case_number: str

@@ -99,3 +99,18 @@ export async function previewFoiaSuggestions(requestText: string, agencyName?: s
   });
   return data;
 }
+
+export async function getAppealReasons() {
+  const { data } = await client.get('/foia/appeal-reasons');
+  return data;
+}
+
+export async function generateAppeal(id: string, payload: { denial_reason: string; denial_explanation?: string; incident_description?: string }) {
+  const { data } = await client.post(`/foia/${id}/generate-appeal`, payload);
+  return data;
+}
+
+export async function downloadAppealPdf(id: string, payload: { denial_reason: string; denial_explanation?: string; incident_description?: string }) {
+  const { data } = await client.post(`/foia/${id}/download-appeal-pdf`, payload, { responseType: 'blob' });
+  return data;
+}

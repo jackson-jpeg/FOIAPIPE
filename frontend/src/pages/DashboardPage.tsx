@@ -5,64 +5,21 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusOrb } from '@/components/ui/StatusOrb';
 import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
-import client from '@/api/client';
+import { getDashboardStats, type DashboardStats } from '@/api/dashboard';
 import { formatRelativeTime, formatCompactNumber, formatCurrency } from '@/lib/formatters';
-
-interface DashboardStats {
-  total_articles: number;
-  active_foias: number;
-  videos_in_pipeline: number;
-  total_views: number;
-  revenue_mtd: number;
-  articles_trend: number;
-  foias_trend: number;
-  videos_trend: number;
-  views_trend: number;
-  revenue_trend: number;
-}
-
-interface RecentArticle {
-  id: string;
-  title: string;
-  source: string;
-  severity: 'high' | 'medium' | 'low';
-  created_at: string;
-}
-
-interface TopVideo {
-  id: string;
-  title: string;
-  views: number;
-  status: string;
-  published_at: string | null;
-}
-
-interface ActivityItem {
-  id: string;
-  type: string;
-  message: string;
-  timestamp: string;
-}
-
-interface PipelineStage {
-  stage: string;
-  count: number;
-  color: string;
-}
 
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [articles, setArticles] = useState<RecentArticle[]>([]);
-  const [videos, setVideos] = useState<TopVideo[]>([]);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [pipeline, setPipeline] = useState<PipelineStage[]>([]);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [pipeline, setPipeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const response = await client.get('/dashboard/stats');
-        const data = response.data;
+        const data = await getDashboardStats();
         setStats(data.stats);
         setPipeline(data.pipeline ?? []);
         setArticles(data.recent_articles ?? []);
