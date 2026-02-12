@@ -181,7 +181,8 @@ async def test_submit_foia_request(client: AsyncClient, db_session: AsyncSession
     with patch("app.api.foia.send_foia_email", new_callable=AsyncMock) as mock_send:
         mock_send.return_value = {"success": True, "message": "Sent"}
         # Also mock S3 to avoid real upload
-        with patch("app.services.storage.upload_file", side_effect=Exception("No S3")):
+        with patch("app.services.storage.upload_file") as mock_upload:
+            mock_upload.return_value = None
             response = await client.post(f"/api/foia/{foia.id}/submit")
 
     assert response.status_code == 200
