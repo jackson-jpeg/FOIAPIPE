@@ -39,9 +39,11 @@ export function SettingsPage() {
   const { settings, loading, saving, fetchSettings, updateSettings } = useSettingsStore();
   const { addToast } = useToast();
 
-  const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(false);
+  const [autoSubmitMode, setAutoSubmitMode] = useState<'off' | 'dry_run' | 'live'>('off');
   const [autoSubmitThreshold, setAutoSubmitThreshold] = useState(7);
   const [maxAutoSubmitsPerDay, setMaxAutoSubmitsPerDay] = useState(10);
+  const [maxAutoSubmitsPerAgencyPerWeek, setMaxAutoSubmitsPerAgencyPerWeek] = useState(3);
+  const [autoSubmitCostCap, setAutoSubmitCostCap] = useState(50);
   const [scanInterval, setScanInterval] = useState(30);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
@@ -60,9 +62,18 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (settings && Object.keys(settings).length > 0) {
-      setAutoSubmitEnabled(Boolean(settings.auto_submit_enabled));
+      // Backwards compat: if auto_submit_mode exists use it, else map old boolean
+      if (settings.auto_submit_mode) {
+        setAutoSubmitMode(settings.auto_submit_mode as 'off' | 'dry_run' | 'live');
+      } else if (settings.auto_submit_enabled) {
+        setAutoSubmitMode('live');
+      } else {
+        setAutoSubmitMode('off');
+      }
       setAutoSubmitThreshold(Number(settings.auto_submit_severity_threshold) || 7);
       setMaxAutoSubmitsPerDay(Number(settings.max_auto_submits_per_day) || 10);
+      setMaxAutoSubmitsPerAgencyPerWeek(Number(settings.max_auto_submits_per_agency_per_week) || 3);
+      setAutoSubmitCostCap(Number(settings.auto_submit_cost_cap) || 50);
       setScanInterval(Number(settings.scan_interval_minutes) || 30);
       setEmailNotifications(Boolean(settings.email_notifications_enabled ?? true));
       setSmsNotifications(Boolean(settings.sms_notifications_enabled));
@@ -97,9 +108,11 @@ export function SettingsPage() {
   const handleSave = async () => {
     try {
       await updateSettings({
-        auto_submit_enabled: autoSubmitEnabled,
+        auto_submit_mode: autoSubmitMode,
         auto_submit_severity_threshold: autoSubmitThreshold,
         max_auto_submits_per_day: maxAutoSubmitsPerDay,
+        max_auto_submits_per_agency_per_week: maxAutoSubmitsPerAgencyPerWeek,
+        auto_submit_cost_cap: autoSubmitCostCap,
         scan_interval_minutes: scanInterval,
         email_notifications_enabled: emailNotifications,
         sms_notifications_enabled: smsNotifications,
@@ -334,22 +347,58 @@ export function SettingsPage() {
             {/* Scanner Configuration */}
             <Card title="Scanner Configuration" action={<Scan className="h-4 w-4 text-text-quaternary" />}>
               <div className="space-y-4">
-                <label className="flex items-center justify-between rounded-lg p-2.5 -mx-2.5 transition-colors hover:bg-surface-hover cursor-pointer">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-text-primary">Auto-submit FOIA requests</p>
-                      <Badge variant="warning" size="sm">
-                        <AlertTriangle className="h-2.5 w-2.5 mr-0.5" /> Caution
-                      </Badge>
-                    </div>
-                    <p className="mt-0.5 text-2xs text-text-tertiary">
-                      Automatically file legally binding FOIA requests for high-severity articles
-                    </p>
+                <div>
+                  <p className="text-sm font-medium text-text-primary mb-2">Auto-submit Mode</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAutoSubmitMode('off')}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-center transition-all text-sm',
+                        autoSubmitMode === 'off'
+                          ? 'border-text-tertiary bg-surface-tertiary text-text-primary font-medium'
+                          : 'border-surface-border text-text-tertiary hover:border-text-quaternary hover:bg-surface-hover',
+                      )}
+                    >
+                      Off
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutoSubmitMode('dry_run')}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-center transition-all text-sm flex items-center justify-center gap-1.5',
+                        autoSubmitMode === 'dry_run'
+                          ? 'border-amber-500/60 bg-amber-500/10 text-amber-400 font-medium'
+                          : 'border-surface-border text-text-tertiary hover:border-amber-500/30 hover:bg-surface-hover',
+                      )}
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Dry Run
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutoSubmitMode('live')}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-center transition-all text-sm flex items-center justify-center gap-1.5',
+                        autoSubmitMode === 'live'
+                          ? 'border-red-500/60 bg-red-500/10 text-red-400 font-medium'
+                          : 'border-surface-border text-text-tertiary hover:border-red-500/30 hover:bg-surface-hover',
+                      )}
+                    >
+                      Live
+                      {autoSubmitMode === 'live' && (
+                        <Badge variant="danger" size="sm">Caution</Badge>
+                      )}
+                    </button>
                   </div>
-                  <Toggle checked={autoSubmitEnabled} onChange={() => setAutoSubmitEnabled(!autoSubmitEnabled)} />
-                </label>
+                  <p className="mt-2 text-2xs text-text-tertiary">
+                    {autoSubmitMode === 'off' && 'Auto-submit is disabled. FOIAs must be filed manually.'}
+                    {autoSubmitMode === 'dry_run' && 'Dry run mode: FOIAs will be drafted for review but NOT emailed to agencies.'}
+                    {autoSubmitMode === 'live' && 'Live mode: FOIAs will be automatically emailed to agencies. These are legally binding requests.'}
+                  </p>
+                </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <Input
                     label="Severity Threshold (1-10)"
                     type="number"
@@ -357,26 +406,45 @@ export function SettingsPage() {
                     max={10}
                     value={autoSubmitThreshold}
                     onChange={(e) => setAutoSubmitThreshold(Number(e.target.value))}
-                    disabled={!autoSubmitEnabled}
+                    disabled={autoSubmitMode === 'off'}
                   />
                   <Input
-                    label="Max Auto-Submits / Day"
+                    label="Max / Day"
                     type="number"
                     min={1}
                     max={100}
                     value={maxAutoSubmitsPerDay}
                     onChange={(e) => setMaxAutoSubmitsPerDay(Number(e.target.value))}
-                    disabled={!autoSubmitEnabled}
+                    disabled={autoSubmitMode === 'off'}
                   />
                   <Input
-                    label="Scan Interval (min)"
+                    label="Max / Agency / Week"
                     type="number"
-                    min={5}
-                    max={1440}
-                    value={scanInterval}
-                    onChange={(e) => setScanInterval(Number(e.target.value))}
+                    min={1}
+                    max={50}
+                    value={maxAutoSubmitsPerAgencyPerWeek}
+                    onChange={(e) => setMaxAutoSubmitsPerAgencyPerWeek(Number(e.target.value))}
+                    disabled={autoSubmitMode === 'off'}
+                  />
+                  <Input
+                    label="Cost Cap ($)"
+                    type="number"
+                    min={0}
+                    step={5}
+                    value={autoSubmitCostCap}
+                    onChange={(e) => setAutoSubmitCostCap(Number(e.target.value))}
+                    disabled={autoSubmitMode === 'off'}
                   />
                 </div>
+
+                <Input
+                  label="Scan Interval (min)"
+                  type="number"
+                  min={5}
+                  max={1440}
+                  value={scanInterval}
+                  onChange={(e) => setScanInterval(Number(e.target.value))}
+                />
               </div>
             </Card>
 

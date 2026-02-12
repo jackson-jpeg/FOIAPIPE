@@ -25,6 +25,7 @@ class AuditAction(str, Enum):
     foia_deleted = "foia_deleted"
     foia_batch_submitted = "foia_batch_submitted"
     foia_appeal_generated = "foia_appeal_generated"
+    foia_auto_submit_decision = "foia_auto_submit_decision"
 
     # Agency operations
     agency_created = "agency_created"

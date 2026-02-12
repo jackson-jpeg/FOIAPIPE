@@ -105,3 +105,26 @@ export async function getSystemMetrics(): Promise<SystemMetrics> {
   const { data } = await client.get('/dashboard/system-metrics');
   return data;
 }
+
+export interface AutoSubmitStats {
+  mode: string;
+  daily_quota: number;
+  today: {
+    filed: number;
+    dry_run: number;
+    skipped: number;
+    skip_reasons: Record<string, number>;
+    total_evaluated: number;
+  };
+  week: {
+    filed: number;
+    dry_run: number;
+    skipped: number;
+    total_evaluated: number;
+  };
+}
+
+export async function getAutoSubmitStats(): Promise<AutoSubmitStats> {
+  const { data } = await client.get('/dashboard/auto-submit-stats');
+  return data;
+}

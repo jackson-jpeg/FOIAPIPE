@@ -32,6 +32,21 @@ DEFAULT_SETTINGS = {
         "value_type": "integer",
         "description": "Maximum auto-submissions per day",
     },
+    "auto_submit_mode": {
+        "value": "off",
+        "value_type": "string",
+        "description": "Auto-submit mode: off, dry_run, or live",
+    },
+    "max_auto_submits_per_agency_per_week": {
+        "value": "3",
+        "value_type": "integer",
+        "description": "Maximum auto-submissions per agency per 7 days",
+    },
+    "auto_submit_cost_cap": {
+        "value": "50.00",
+        "value_type": "float",
+        "description": "Skip auto-filing if predicted cost exceeds this amount",
+    },
     "notification_email_enabled": {
         "value": "true",
         "value_type": "boolean",

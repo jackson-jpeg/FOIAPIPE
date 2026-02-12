@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusOrb } from '@/components/ui/StatusOrb';
 import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
+import { AutoSubmitStats } from '@/components/dashboard/AutoSubmitStats';
 import { useToast } from '@/components/ui/Toast';
 import {
   getDashboardStats,
@@ -403,6 +404,9 @@ export function DashboardPage() {
           )}
         </div>
       )}
+
+      {/* Auto-Submit Stats */}
+      <AutoSubmitStats />
 
       {/* Pipeline Funnel */}
       {!loading && (

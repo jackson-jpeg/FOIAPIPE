@@ -24,6 +24,8 @@ from app.models import (
     VideoStatus,
 )
 from app.models.agency import Agency
+from app.models.app_setting import AppSetting
+from app.models.audit_log import AuditLog, AuditAction
 from app.models.news_source_health import NewsSourceHealth
 
 logger = logging.getLogger(__name__)
@@ -821,5 +823,97 @@ async def system_metrics(
         "background_tasks": task_metrics,
         "system_resources": system_metrics,
         "circuit_breakers": circuit_metrics,
+    }
+
+
+@router.get("/auto-submit-stats")
+async def auto_submit_stats(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Return auto-submit decision stats for today and this week."""
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = now - timedelta(days=7)
+
+    # Current mode setting
+    mode_row = (
+        await db.execute(
+            select(AppSetting).where(AppSetting.key == "auto_submit_mode")
+        )
+    ).scalar_one_or_none()
+    mode = mode_row.value if mode_row else "off"
+
+    # Daily quota setting
+    quota_row = (
+        await db.execute(
+            select(AppSetting).where(AppSetting.key == "max_auto_submits_per_day")
+        )
+    ).scalar_one_or_none()
+    daily_quota = int(quota_row.value) if quota_row else 5
+
+    # Fetch all auto-submit decision audit logs for the week
+    week_logs = (
+        await db.execute(
+            select(AuditLog).where(
+                and_(
+                    AuditLog.action == AuditAction.foia_auto_submit_decision,
+                    AuditLog.created_at >= week_start,
+                )
+            )
+        )
+    ).scalars().all()
+
+    # Bucket into today vs week
+    today_filed = 0
+    today_dry_run = 0
+    today_skipped = 0
+    today_skip_reasons: dict[str, int] = {}
+    week_filed = 0
+    week_dry_run = 0
+    week_skipped = 0
+
+    for log in week_logs:
+        details = log.details or {}
+        decision = details.get("decision", "")
+        is_today = log.created_at >= today_start
+
+        if decision == "filed":
+            week_filed += 1
+            if is_today:
+                today_filed += 1
+        elif decision == "dry_run":
+            week_dry_run += 1
+            if is_today:
+                today_dry_run += 1
+        elif decision == "skipped":
+            week_skipped += 1
+            if is_today:
+                today_skipped += 1
+                reason = details.get("reason", "other")
+                reason_bucket = (
+                    reason if reason in ("daily_quota", "agency_cooldown", "cost_cap")
+                    else "other"
+                )
+                today_skip_reasons[reason_bucket] = (
+                    today_skip_reasons.get(reason_bucket, 0) + 1
+                )
+
+    return {
+        "mode": mode,
+        "daily_quota": daily_quota,
+        "today": {
+            "filed": today_filed,
+            "dry_run": today_dry_run,
+            "skipped": today_skipped,
+            "skip_reasons": today_skip_reasons,
+            "total_evaluated": today_filed + today_dry_run + today_skipped,
+        },
+        "week": {
+            "filed": week_filed,
+            "dry_run": week_dry_run,
+            "skipped": week_skipped,
+            "total_evaluated": week_filed + week_dry_run + week_skipped,
+        },
     }
 

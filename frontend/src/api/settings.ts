@@ -9,10 +9,11 @@ export interface AppSetting {
 
 export interface SystemSettings {
   scan_interval_minutes: number;
-  scan_enabled: boolean;
-  auto_submit_enabled: boolean;
+  auto_submit_mode: string;  // "off" | "dry_run" | "live"
   auto_submit_severity_threshold: number;
   max_auto_submits_per_day: number;
+  max_auto_submits_per_agency_per_week: number;
+  auto_submit_cost_cap: number;
   email_notifications_enabled: boolean;
   sms_notifications_enabled: boolean;
 }
