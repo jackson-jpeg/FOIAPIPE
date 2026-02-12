@@ -20,7 +20,7 @@ export function AppShell({ children }: AppShellProps) {
   const sidebarCollapsed = isTablet || collapsed;
 
   const currentNav = NAV_ITEMS.find((item) => location.pathname.startsWith(item.path));
-  const pageTitle = currentNav?.label ?? 'FOIAPIPE';
+  const pageTitle = currentNav?.label ?? 'FOIA Archive';
 
   return (
     <div className="min-h-screen bg-surface-primary">

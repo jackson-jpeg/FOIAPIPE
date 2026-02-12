@@ -20,7 +20,7 @@ from app.models.app_setting import _AppSettingBase
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://jackson@localhost:5432/foiapipe_test",
+    "postgresql+asyncpg://jackson@localhost:5432/foiaarchive_test",
 )
 
 

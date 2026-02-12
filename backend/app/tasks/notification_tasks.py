@@ -60,7 +60,7 @@ async def _daily_summary_async():
         )
 
         await send_notification("daily_summary", {
-            "title": "FOIAPIPE Daily Summary",
+            "title": "FOIA Archive Daily Summary",
             "message": summary,
         })
 

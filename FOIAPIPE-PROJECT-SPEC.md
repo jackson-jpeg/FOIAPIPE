@@ -1,4 +1,4 @@
-# FOIAPIPE Project Specification
+# FOIA Archive Project Specification
 
 **Version:** 1.0
 **Created:** 2026-02-09
@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-FOIAPIPE automates the pipeline from news discovery to public records acquisition for Tampa Bay law enforcement accountability journalism:
+FOIA Archive automates the pipeline from news discovery to public records acquisition for Tampa Bay law enforcement accountability journalism:
 
 1. **Scan** local news for police incidents (RSS feeds + web scraping)
 2. **Classify** articles by incident type and severity

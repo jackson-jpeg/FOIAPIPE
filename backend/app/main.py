@@ -1,6 +1,6 @@
-"""FastAPI application entry point for FOIAPIPE.
+"""FastAPI application entry point for FOIA Archive.
 
-FOIAPIPE is a FOIA (Freedom of Information Act) request pipeline and video publishing
+FOIA Archive is a FOIA (Freedom of Information Act) request pipeline and video publishing
 platform focused on Tampa Bay law enforcement accountability. It automates news scanning,
 FOIA request generation, and bodycam video processing for YouTube.
 
@@ -73,7 +73,7 @@ docs_url = "/api/docs" if settings.DEBUG else None
 redoc_url = "/api/redoc" if settings.DEBUG else None
 
 app = FastAPI(
-    title="FOIAPIPE",
+    title="FOIA Archive",
     description=(
         "FOIA request pipeline and video publishing platform for law enforcement "
         "accountability. Automates news scanning, FOIA requests, video processing, "
@@ -116,7 +116,7 @@ app.include_router(videos_router)
 
 @app.on_event("startup")
 async def on_startup() -> None:
-    logger.info("FOIAPIPE starting", version="1.0.0")
+    logger.info("FOIA Archive starting", version="1.0.0")
 
 
 # ── Root health endpoint ──────────────────────────────────────────────────
@@ -128,7 +128,7 @@ async def root() -> dict[str, str]:
     For comprehensive health checks, use /api/health endpoint.
     """
     return {
-        "app": "FOIAPIPE",
+        "app": "FOIA Archive",
         "version": "1.0.0",
         "description": "FOIA request pipeline and video publishing platform",
         "docs": "/api/docs",

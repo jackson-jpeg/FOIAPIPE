@@ -1,8 +1,8 @@
-# CLAUDE.md — FOIAPIPE Project Conventions
+# CLAUDE.md — FOIA Archive Project Conventions
 
 ## Project Overview
 
-FOIAPIPE is a FOIA (Freedom of Information Act) request pipeline and video publishing platform focused on Tampa Bay law enforcement accountability. It automates news scanning, FOIA request generation, and bodycam video processing for YouTube.
+FOIA Archive is a FOIA (Freedom of Information Act) request pipeline and video publishing platform focused on Tampa Bay law enforcement accountability. It automates news scanning, FOIA request generation, and bodycam video processing for YouTube.
 
 ## Architecture
 

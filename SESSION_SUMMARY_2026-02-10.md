@@ -1,4 +1,4 @@
-# FOIAPIPE Improvement Session Summary
+# FOIA Archive Improvement Session Summary
 **Date**: February 10, 2026
 **Agent**: Claude Code
 **Session Goal**: Review project state and implement critical improvements
@@ -7,7 +7,7 @@
 
 ## 🎯 Mission Accomplished
 
-Deployed 3 comprehensive analysis agents to audit the entire FOIAPIPE project, then systematically fixed all critical issues and implemented key improvements.
+Deployed 3 comprehensive analysis agents to audit the entire FOIA Archive project, then systematically fixed all critical issues and implemented key improvements.
 
 ---
 
@@ -182,8 +182,8 @@ alembic -c alembic/alembic.ini upgrade head
 export DEBUG=false
 
 # 3. Rebuild Docker images (now optimized!)
-docker build -t foiapipe-backend ./backend
-docker build -t foiapipe-frontend ./frontend
+docker build -t foiaarchive-backend ./backend
+docker build -t foiaarchive-frontend ./frontend
 
 # 4. Deploy to Railway
 railway up

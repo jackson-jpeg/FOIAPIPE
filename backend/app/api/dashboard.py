@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
-DASHBOARD_STATS_CACHE_KEY = "foiapipe:dashboard:stats"
+DASHBOARD_STATS_CACHE_KEY = "foiaarchive:dashboard:stats"
 DASHBOARD_STATS_TTL = 60
 
 

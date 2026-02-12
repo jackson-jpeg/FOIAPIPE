@@ -43,9 +43,9 @@ async def test_smtp():
         msg = MIMEMultipart()
         msg["From"] = settings.FROM_EMAIL
         msg["To"] = settings.SMTP_USER  # Send to self for testing
-        msg["Subject"] = f"FOIAPIPE Test Email - {datetime.now().isoformat()}"
+        msg["Subject"] = f"FOIA Archive Test Email - {datetime.now().isoformat()}"
 
-        body = """This is a test email from FOIAPIPE.
+        body = """This is a test email from FOIA Archive.
 
 If you receive this, your SMTP configuration is working correctly!
 
@@ -193,7 +193,7 @@ async def test_email_monitoring():
 async def main():
     """Run all email tests."""
     print("="*80)
-    print("FOIAPIPE EMAIL CREDENTIALS TEST")
+    print("FOIA Archive EMAIL CREDENTIALS TEST")
     print(f"Started: {datetime.now().isoformat()}")
     print("="*80)
 

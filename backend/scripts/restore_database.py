@@ -3,10 +3,10 @@
 
 Usage:
     # Restore from local file
-    python scripts/restore_database.py backups/foiapipe_backup_20260209_120000.dump
+    python scripts/restore_database.py backups/foiaarchive_backup_20260209_120000.dump
 
     # Restore from S3
-    python scripts/restore_database.py --from-s3 backups/foiapipe_backup_20260209_120000.dump
+    python scripts/restore_database.py --from-s3 backups/foiaarchive_backup_20260209_120000.dump
 
     # List available backups
     python scripts/restore_database.py --list
@@ -31,7 +31,7 @@ def list_local_backups(backup_dir: Path):
         print(f"❌ Backup directory does not exist: {backup_dir}")
         return
 
-    backups = sorted(backup_dir.glob("foiapipe_backup_*.dump"), reverse=True)
+    backups = sorted(backup_dir.glob("foiaarchive_backup_*.dump"), reverse=True)
 
     if not backups:
         print(f"No backups found in {backup_dir}")
@@ -106,7 +106,7 @@ def download_from_s3(s3_key: str, local_path: Path) -> bool:
     """Download a backup from S3.
 
     Args:
-        s3_key: S3 object key (e.g., "backups/foiapipe_backup_20260209_120000.dump")
+        s3_key: S3 object key (e.g., "backups/foiaarchive_backup_20260209_120000.dump")
         local_path: Where to save the downloaded file
 
     Returns:
@@ -282,7 +282,7 @@ def restore_backup(backup_path: Path) -> bool:
 
 def main():
     """Run the restore process."""
-    parser = argparse.ArgumentParser(description="Restore FOIAPIPE database from backup")
+    parser = argparse.ArgumentParser(description="Restore FOIA Archive database from backup")
     parser.add_argument(
         "backup_file",
         nargs="?",
@@ -327,7 +327,7 @@ def main():
         return 1
 
     print("=" * 80)
-    print("FOIAPIPE DATABASE RESTORE")
+    print("FOIA ARCHIVE DATABASE RESTORE")
     print("=" * 80)
 
     # Handle S3 download

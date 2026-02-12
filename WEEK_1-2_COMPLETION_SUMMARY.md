@@ -1,4 +1,4 @@
-# FOIAPIPE Week 1-2 Completion Summary
+# FOIA Archive Week 1-2 Completion Summary
 
 **Date:** 2026-02-09
 **Version:** 1.0 Production Hardening + 2.0 Analytics Complete

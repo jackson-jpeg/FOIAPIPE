@@ -1,4 +1,4 @@
-# FOIAPIPE Changelog
+# FOIA Archive Changelog
 
 ## [Unreleased] - 2026-02-10
 
@@ -158,7 +158,7 @@ Before deploying to production:
 
 ## Notes
 
-This release brings FOIAPIPE from ~85% to ~95% production-ready. See `IMPROVEMENT_ROADMAP.md` for remaining enhancements.
+This release brings FOIA Archive from ~85% to ~95% production-ready. See `IMPROVEMENT_ROADMAP.md` for remaining enhancements.
 
 ### Priority After This Release
 

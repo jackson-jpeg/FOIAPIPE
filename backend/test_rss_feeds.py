@@ -43,7 +43,7 @@ async def test_feed(feed_url: str, source_name: str) -> dict:
             response = await client.get(
                 feed_url,
                 follow_redirects=True,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAPipe/1.0)"},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAArchive/1.0)"},
             )
             response.raise_for_status()
 
@@ -79,7 +79,7 @@ async def test_feed(feed_url: str, source_name: str) -> dict:
 async def main():
     """Test all RSS feeds."""
     print("\n" + "="*80)
-    print("FOIAPIPE RSS FEED VALIDATION")
+    print("FOIA Archive RSS FEED VALIDATION")
     print(f"Test started: {datetime.now().isoformat()}")
     print("="*80)
 

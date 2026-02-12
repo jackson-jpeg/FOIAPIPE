@@ -62,7 +62,7 @@ def backup_database(backup_dir: Path) -> Path | None:
         print(result.stdout)
 
         # Find the created backup file (most recent)
-        backups = sorted(backup_dir.glob("foiapipe_backup_*.dump"), reverse=True)
+        backups = sorted(backup_dir.glob("foiaarchive_backup_*.dump"), reverse=True)
         if backups:
             return backups[0]
         else:
@@ -191,7 +191,7 @@ def create_restore_guide(backup_dir: Path, db_backup: Path | None, storage_stats
     timestamp = datetime.now().isoformat()
     db_backup_name = db_backup.name if db_backup else "N/A"
 
-    guide_content = f"""# FOIAPIPE Full System Restore Guide
+    guide_content = f"""# FOIA Archive Full System Restore Guide
 
 **Backup Date:** {timestamp}
 **Database Backup:** {db_backup_name}
@@ -323,7 +323,7 @@ Check `storage/manifest.json` for the complete list of files that should be pres
 ---
 
 *Backup created: {timestamp}*
-*FOIAPIPE v1.0*
+*FOIA Archive v1.0*
 """
 
     with open(guide_path, "w") as f:
@@ -334,7 +334,7 @@ Check `storage/manifest.json` for the complete list of files that should be pres
 
 def main():
     """Run full system backup."""
-    parser = argparse.ArgumentParser(description="Full FOIAPIPE system backup")
+    parser = argparse.ArgumentParser(description="Full FOIA Archive system backup")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -345,11 +345,11 @@ def main():
     args = parser.parse_args()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_dir = args.output_dir / f"foiapipe_full_{timestamp}"
+    backup_dir = args.output_dir / f"foiaarchive_full_{timestamp}"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 80)
-    print("FOIAPIPE FULL SYSTEM BACKUP")
+    print("FOIA ARCHIVE FULL SYSTEM BACKUP")
     print(f"Started: {datetime.now().isoformat()}")
     print(f"Output: {backup_dir}")
     print("=" * 80)

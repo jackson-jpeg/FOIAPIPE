@@ -125,7 +125,7 @@ Please provide responsive records in electronic format where available.
 Thank you for your prompt attention to this request.
 
 Sincerely,
-FOIAPIPE Automated Request System"""
+FOIA Archive Automated Request System"""
 
 
 def generate_pdf(request_text: str, case_number: str) -> bytes:

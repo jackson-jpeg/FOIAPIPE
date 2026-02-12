@@ -1,4 +1,4 @@
-# FOIAPIPE Pre-Deployment Checklist
+# FOIA Archive Pre-Deployment Checklist
 
 **Target:** Railway Production Deployment
 **Date:** 2026-02-09
@@ -123,7 +123,7 @@
 
 ### Storage (S3/R2)
 - [ ] Cloudflare R2 or AWS S3 bucket created
-- [ ] Bucket name: `foiapipe-storage`
+- [ ] Bucket name: `foiaarchive-storage`
 - [ ] CORS configured for uploads
 - [ ] Access keys generated
 - [ ] Test upload/download
@@ -208,14 +208,14 @@ YOUTUBE_REFRESH_TOKEN=<token>
 S3_ENDPOINT=<R2 endpoint>
 S3_ACCESS_KEY=<key>
 S3_SECRET_KEY=<secret>
-S3_BUCKET_NAME=foiapipe-storage
+S3_BUCKET_NAME=foiaarchive-storage
 S3_REGION=auto
 
 # App Settings
 AUTO_SUBMIT_ENABLED=false
 MAX_AUTO_SUBMITS_PER_DAY=5
 SCAN_INTERVAL_MINUTES=30
-CORS_ORIGINS=["https://foiapipe.com"]
+CORS_ORIGINS=["https://foiaarchive.com"]
 ```
 
 ### 2. Deploy to Railway
@@ -419,5 +419,5 @@ curl https://your-app.railway.app/api/health/detailed
 
 ---
 
-*FOIAPIPE v1.0 - Production Deployment*
+*FOIA Archive v1.0 - Production Deployment*
 *Good luck! 🚀*

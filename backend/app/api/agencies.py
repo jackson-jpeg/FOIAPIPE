@@ -134,7 +134,7 @@ Please provide responsive records in electronic format where available.
 Thank you for your prompt attention to this request.
 
 Sincerely,
-FOIAPIPE Automated Request System"""
+FOIA Archive Automated Request System"""
 
     return {
         "agency_id": str(agency.id),

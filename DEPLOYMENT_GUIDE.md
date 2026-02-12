@@ -1,4 +1,4 @@
-# FOIAPIPE Deployment Guide
+# FOIA Archive Deployment Guide
 
 ## Railway Deployment
 
@@ -69,7 +69,7 @@ YOUTUBE_REFRESH_TOKEN=<from OAuth flow>
 S3_ENDPOINT=<R2 endpoint or leave blank for AWS>
 S3_ACCESS_KEY=<your access key>
 S3_SECRET_KEY=<your secret key>
-S3_BUCKET_NAME=foiapipe-storage
+S3_BUCKET_NAME=foiaarchive-storage
 S3_REGION=auto  # for R2, or us-east-1 for AWS
 ```
 
@@ -91,7 +91,7 @@ MAX_AUTO_SUBMITS_PER_DAY=5
 SCAN_INTERVAL_MINUTES=30
 
 # CORS (adjust for your frontend domain)
-CORS_ORIGINS=["http://localhost:3000","https://foiapipe.com"]
+CORS_ORIGINS=["http://localhost:3000","https://foiaarchive.com"]
 ```
 
 ---
@@ -451,4 +451,4 @@ railway run pg_dump $DATABASE_URL > backup_$(date +%Y%m%d).sql
 ---
 
 *Last Updated: 2026-02-09*
-*FOIAPIPE v1.0*
+*FOIA Archive v1.0*

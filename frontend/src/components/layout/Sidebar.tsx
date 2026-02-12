@@ -35,7 +35,7 @@ export function Sidebar({
       >
         {collapsed ? (
           <div className="flex flex-col items-center gap-1">
-            <span className="text-base font-bold text-accent-primary">F</span>
+            <span className="text-base font-bold text-accent-primary">FA</span>
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-pulse-subtle rounded-full bg-accent-primary opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-primary" />
@@ -48,7 +48,7 @@ export function Sidebar({
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-primary" />
             </span>
             <span className="text-sm font-semibold text-text-primary tracking-widest">
-              FOIAPIPE
+              FOIA ARCHIVE
             </span>
           </div>
         )}

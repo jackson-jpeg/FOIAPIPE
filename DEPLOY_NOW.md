@@ -1,4 +1,4 @@
-# 🚀 Deploy FOIAPIPE to Production - Step by Step
+# Deploy FOIA Archive to Production - Step by Step
 
 Follow these instructions exactly to deploy to Railway and Vercel.
 
@@ -21,14 +21,14 @@ railway login
 **Option A: Use Railway Dashboard (Recommended)**
 1. Go to https://railway.app/new
 2. Click "Empty Project"
-3. Name it: `foiapipe-backend`
+3. Name it: `foiaarchive-backend`
 4. Click "Create"
 
 **Option B: Use CLI**
 ```bash
 cd /Users/jackson/FOIAPIPE
 railway init
-# Name: foiapipe-backend
+# Name: foiaarchive-backend
 ```
 
 ### Step 3: Add PostgreSQL Database

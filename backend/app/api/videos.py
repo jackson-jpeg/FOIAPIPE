@@ -259,7 +259,7 @@ async def update_video(
     return _to_response(video)
 
 
-@router.delete("/{video_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{video_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_video(
     video_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

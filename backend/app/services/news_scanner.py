@@ -100,7 +100,7 @@ async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> di
             response = await client.get(
                 feed_url,
                 follow_redirects=True,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAPipe/1.0)"},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAArchive/1.0)"},
             )
             response.raise_for_status()
 
@@ -258,7 +258,7 @@ async def scrape_article(url: str) -> dict:
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         response = await client.get(
             url,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAPipe/1.0)"},
+            headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAArchive/1.0)"},
         )
         response.raise_for_status()
 
@@ -323,7 +323,7 @@ async def scrape_web_source(source: dict, db: AsyncSession) -> dict:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(
                 source["url"],
-                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAPipe/1.0)"},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; FOIAArchive/1.0)"},
             )
             response.raise_for_status()
 

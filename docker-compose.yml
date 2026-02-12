@@ -3,14 +3,14 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16
-    container_name: foiapipe-postgres
+    container_name: foiaarchive-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: foiapipe
+      POSTGRES_DB: foiaarchive
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +21,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: foiapipe-redis
+    container_name: foiaarchive-redis
     restart: unless-stopped
     ports:
       - "6379:6379"

@@ -1,8 +1,8 @@
-# FOIAPIPE Production Deployment Guide
+# FOIA Archive Production Deployment Guide
 
 ## Overview
 
-This guide covers deploying FOIAPIPE to production on **foiaarchive.com**.
+This guide covers deploying FOIA Archive to production on **foiaarchive.com**.
 
 **Architecture:**
 - **Frontend**: Vercel (foiaarchive.com)

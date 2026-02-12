@@ -16,7 +16,7 @@ These are deliberate architectural and product decisions. Do not revisit unless 
 
 4. **No multi-tenant auth.** Single admin user only. No user registration, no role-based access control. If multi-user is needed later, it's a new phase.
 
-5. **No SQLite for tests.** Tests must use PostgreSQL (`foiapipe_test` database) because the app uses Postgres-specific features (UUID, JSONB, pg_trgm, enum types).
+5. **No SQLite for tests.** Tests must use PostgreSQL (`foiaarchive_test` database) because the app uses Postgres-specific features (UUID, JSONB, pg_trgm, enum types).
 
 6. **No ORM model changes without Alembic migration.** Never modify model columns and expect them to auto-apply. Always generate and review a migration.
 

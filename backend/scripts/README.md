@@ -1,4 +1,4 @@
-# FOIAPIPE Backup & Restore Scripts
+# FOIA Archive Backup & Restore Scripts
 
 Comprehensive backup and restore tooling for production disaster recovery.
 
@@ -34,9 +34,9 @@ python scripts/backup_database.py --output-dir=/path/to/backups
 ```
 
 **Output:**
-- File: `backups/foiapipe_backup_YYYYMMDD_HHMMSS.dump`
+- File: `backups/foiaarchive_backup_YYYYMMDD_HHMMSS.dump`
 - Format: PostgreSQL custom format (compressed)
-- S3 key: `backups/foiapipe_backup_YYYYMMDD_HHMMSS.dump`
+- S3 key: `backups/foiaarchive_backup_YYYYMMDD_HHMMSS.dump`
 
 ---
 
@@ -60,10 +60,10 @@ python scripts/restore_database.py --list
 python scripts/restore_database.py --list-s3
 
 # Restore from local file
-python scripts/restore_database.py backups/foiapipe_backup_20260209_120000.dump
+python scripts/restore_database.py backups/foiaarchive_backup_20260209_120000.dump
 
 # Restore from S3
-python scripts/restore_database.py --from-s3 backups/foiapipe_backup_20260209_120000.dump
+python scripts/restore_database.py --from-s3 backups/foiaarchive_backup_20260209_120000.dump
 ```
 
 **Safety:**
@@ -95,8 +95,8 @@ python scripts/backup_full_system.py --output-dir=/path/to/backups
 
 **Output:**
 ```
-backups/full_system/foiapipe_full_YYYYMMDD_HHMMSS/
-├── foiapipe_backup_YYYYMMDD_HHMMSS.dump  # Database
+backups/full_system/foiaarchive_full_YYYYMMDD_HHMMSS/
+├── foiaarchive_backup_YYYYMMDD_HHMMSS.dump  # Database
 ├── storage/                                # S3 mirror
 │   ├── foia/                              # FOIA PDFs
 │   ├── videos/                            # Video files
@@ -198,7 +198,7 @@ pip install boto3
 python scripts/restore_database.py --list
 
 # 2. Restore most recent
-python scripts/restore_database.py backups/foiapipe_backup_20260209_020000.dump
+python scripts/restore_database.py backups/foiaarchive_backup_20260209_020000.dump
 
 # 3. Verify
 psql $DATABASE_URL -c "SELECT COUNT(*) FROM news_articles;"
@@ -212,10 +212,10 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM news_articles;"
 ls -lh backups/full_system/
 
 # 2. Restore database
-python scripts/restore_database.py backups/full_system/foiapipe_full_20260209_030000/foiapipe_backup_20260209_030000.dump
+python scripts/restore_database.py backups/full_system/foiaarchive_full_20260209_030000/foiaarchive_backup_20260209_030000.dump
 
 # 3. Restore storage (use guide)
-cd backups/full_system/foiapipe_full_20260209_030000
+cd backups/full_system/foiaarchive_full_20260209_030000
 cat RESTORE_GUIDE.md
 ```
 
@@ -227,7 +227,7 @@ cat RESTORE_GUIDE.md
 python scripts/restore_database.py --list
 
 # 2. Find backup timestamp before deletion
-python scripts/restore_database.py backups/foiapipe_backup_20260209_010000.dump
+python scripts/restore_database.py backups/foiaarchive_backup_20260209_010000.dump
 ```
 
 ---
@@ -250,11 +250,11 @@ python scripts/restore_database.py backups/foiapipe_backup_20260209_010000.dump
 # test_backup.sh
 
 # Create test database
-createdb foiapipe_test
+createdb foiaarchive_test
 
 # Restore latest backup
-export DATABASE_URL="postgresql://user:pass@localhost/foiapipe_test"
-python scripts/restore_database.py backups/foiapipe_backup_latest.dump
+export DATABASE_URL="postgresql://user:pass@localhost/foiaarchive_test"
+python scripts/restore_database.py backups/foiaarchive_backup_latest.dump
 
 # Verify counts
 psql $DATABASE_URL -c "SELECT
@@ -263,7 +263,7 @@ psql $DATABASE_URL -c "SELECT
     (SELECT COUNT(*) FROM videos) as videos;"
 
 # Cleanup
-dropdb foiapipe_test
+dropdb foiaarchive_test
 ```
 
 ---
@@ -304,7 +304,7 @@ psql postgres -c "ALTER USER your_user CREATEDB;"
 df -h
 
 # Clean up old backups manually
-rm backups/foiapipe_backup_2026*.dump
+rm backups/foiaarchive_backup_2026*.dump
 
 # Or reduce retention
 python scripts/backup_database.py --keep-days=3
@@ -316,7 +316,7 @@ python scripts/backup_database.py --keep-days=3
 python scripts/backup_database.py --local-only
 
 # Then manually upload later
-aws s3 cp backups/foiapipe_backup_20260209_120000.dump \
+aws s3 cp backups/foiaarchive_backup_20260209_120000.dump \
     s3://your-bucket/backups/ \
     --endpoint-url=https://your-endpoint.com
 ```
@@ -345,7 +345,7 @@ ExtraArgs={'ServerSideEncryption': 'AES256'}
 **Local Encryption:**
 ```bash
 # Encrypt backup before storing
-gpg --encrypt --recipient your@email.com foiapipe_backup.dump
+gpg --encrypt --recipient your@email.com foiaarchive_backup.dump
 ```
 
 ### Access Control
@@ -365,4 +365,4 @@ gpg --encrypt --recipient your@email.com foiapipe_backup.dump
 
 ---
 
-*FOIAPIPE v1.0 - Backup & Recovery Documentation*
+*FOIA Archive v1.0 - Backup & Recovery Documentation*

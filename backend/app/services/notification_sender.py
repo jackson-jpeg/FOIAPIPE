@@ -136,7 +136,7 @@ async def _send_email_notification(subject: str, body: str) -> None:
     """Send email notification via SMTP.
 
     Args:
-        subject: Email subject (will be prefixed with "[FOIAPIPE]")
+        subject: Email subject (will be prefixed with "[FOIA Archive]")
         body: Email body text
 
     Note:
@@ -149,7 +149,7 @@ async def _send_email_notification(subject: str, body: str) -> None:
         return
 
     msg = MIMEText(body)
-    msg["Subject"] = f"[FOIAPIPE] {subject}"
+    msg["Subject"] = f"[FOIA Archive] {subject}"
     msg["From"] = settings.FROM_EMAIL
     msg["To"] = settings.SMTP_USER or settings.FROM_EMAIL
 
@@ -168,7 +168,7 @@ async def _send_sms_notification(message: str) -> None:
     """Send SMS notification via Twilio.
 
     Args:
-        message: SMS message text (will be prefixed with "[FOIAPIPE]" and truncated to 140 chars)
+        message: SMS message text (will be prefixed with "[FOIA Archive]" and truncated to 140 chars)
 
     Note:
         Requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER,
@@ -187,7 +187,7 @@ async def _send_sms_notification(message: str) -> None:
         await client.post(
             url,
             data={
-                "Body": f"[FOIAPIPE] {message[:140]}",
+                "Body": f"[FOIA Archive] {message[:140]}",
                 "From": settings.TWILIO_FROM_NUMBER,
                 "To": settings.NOTIFICATION_PHONE,
             },

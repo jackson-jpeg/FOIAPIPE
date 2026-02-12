@@ -1,4 +1,4 @@
-# FOIAPIPE Development Session Summary
+# FOIA Archive Development Session Summary
 
 **Date:** February 9, 2026
 **Focus:** Production readiness features and advanced capabilities
@@ -69,7 +69,7 @@
 python scripts/backup_database.py --keep-days=7
 
 # Database restore
-python scripts/restore_database.py backups/foiapipe_backup_20260209_120000.dump
+python scripts/restore_database.py backups/foiaarchive_backup_20260209_120000.dump
 
 # Full system backup
 python scripts/backup_full_system.py
@@ -329,11 +329,11 @@ Based on pending tasks, future development could include:
 
 **Status:** Production-ready core system with advanced features ✅
 
-The FOIAPIPE system is now a comprehensive, production-ready platform for automating FOIA requests, managing bodycam footage, and publishing to YouTube. The additions in this session significantly enhance its legal capabilities, cost analysis, and operational resilience.
+The FOIA Archive system is now a comprehensive, production-ready platform for automating FOIA requests, managing bodycam footage, and publishing to YouTube. The additions in this session significantly enhance its legal capabilities, cost analysis, and operational resilience.
 
 **Recommendation:** Proceed with Railway deployment and begin Week 1 testing plan from PRE_DEPLOYMENT_CHECKLIST.md.
 
 ---
 
 *Generated: February 9, 2026*
-*FOIAPIPE v1.0 - Production Release Candidate*
+*FOIA Archive v1.0 - Production Release Candidate*

@@ -31,7 +31,7 @@ async def _check_login_rate_limit(request: Request) -> None:
     """
     try:
         client_ip = request.client.host if request.client else "unknown"
-        key = f"foiapipe:ratelimit:login:{client_ip}"
+        key = f"foiaarchive:ratelimit:login:{client_ip}"
         r = aioredis.from_url(settings.REDIS_URL)
         try:
             count = await r.incr(key)

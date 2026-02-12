@@ -30,11 +30,11 @@ export function LoginPage() {
               <span className="relative inline-flex h-3 w-3 rounded-full bg-accent-primary" />
             </span>
             <h1 className="text-2xl font-bold text-text-primary tracking-wider">
-              FOIAPIPE
+              FOIA ARCHIVE
             </h1>
           </div>
           <p className="text-sm text-text-secondary">
-            Bodycam FOIA Pipeline
+            Public Records Request Pipeline
           </p>
         </div>
 

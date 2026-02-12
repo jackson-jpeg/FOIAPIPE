@@ -8,7 +8,7 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('foiapipe_token');
+  const token = localStorage.getItem('foiaarchive_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,7 +19,7 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('foiapipe_token');
+      localStorage.removeItem('foiaarchive_token');
       window.location.href = '/login';
     }
     return Promise.reject(error);

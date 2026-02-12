@@ -12,8 +12,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: localStorage.getItem('foiapipe_token'),
-  isAuthenticated: !!localStorage.getItem('foiapipe_token'),
+  token: localStorage.getItem('foiaarchive_token'),
+  isAuthenticated: !!localStorage.getItem('foiaarchive_token'),
   isLoading: false,
   error: null,
 

@@ -165,7 +165,7 @@ def cleanup_old_backups(backup_dir: Path, keep_days: int):
     print(f"Cleaning up backups older than {keep_days} days ({cutoff.date()})")
 
     deleted = 0
-    for backup_file in backup_dir.glob("foiapipe_backup_*.dump"):
+    for backup_file in backup_dir.glob("foiaarchive_backup_*.dump"):
         # Get file modification time
         mtime = datetime.fromtimestamp(backup_file.stat().st_mtime)
 
@@ -183,7 +183,7 @@ def cleanup_old_backups(backup_dir: Path, keep_days: int):
 
 def main():
     """Run the backup process."""
-    parser = argparse.ArgumentParser(description="Backup FOIAPIPE database")
+    parser = argparse.ArgumentParser(description="Backup FOIA Archive database")
     parser.add_argument(
         "--local-only",
         action="store_true",
@@ -214,13 +214,13 @@ def main():
         return 1
 
     print("=" * 80)
-    print("FOIAPIPE DATABASE BACKUP")
+    print("FOIA ARCHIVE DATABASE BACKUP")
     print(f"Started: {datetime.now().isoformat()}")
     print("=" * 80)
 
     # Generate backup filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_filename = f"foiapipe_backup_{timestamp}.dump"
+    backup_filename = f"foiaarchive_backup_{timestamp}.dump"
     backup_path = args.output_dir / backup_filename
 
     # Create backup

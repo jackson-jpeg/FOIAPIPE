@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False  # Set to True for development (enables API docs, verbose logging)
 
     # ── Database ──────────────────────────────────────────────────────────
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/foiapipe"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/foiaarchive"
 
     # ── Redis / Celery ────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    FROM_EMAIL: str = "noreply@foiapipe.local"
+    FROM_EMAIL: str = "noreply@foiaarchive.local"
 
     # ── IMAP (inbound email) ──────────────────────────────────────────────
     IMAP_HOST: str = ""

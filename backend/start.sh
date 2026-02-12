@@ -1,7 +1,7 @@
 #!/bin/bash
 # Force rebuild to pick up railway.toml changes (no healthcheck for celery services)
 
-echo "=== FOIAPIPE START SCRIPT ==="
+echo "=== FOIA Archive START SCRIPT ==="
 echo "RAILWAY_SERVICE_NAME: $RAILWAY_SERVICE_NAME"
 echo "PORT: $PORT"
 echo "DATABASE_URL: ${DATABASE_URL:0:50}..."

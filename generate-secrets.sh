@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# FOIAPIPE - Generate Secure Secrets for Production Deployment
-echo "🔐 Generating secure secrets for FOIAPIPE deployment..."
+# FOIA Archive - Generate Secure Secrets for Production Deployment
+echo "🔐 Generating secure secrets for FOIA Archive deployment..."
 echo ""
 
 # Generate SECRET_KEY (64 characters)
@@ -40,7 +40,7 @@ echo "📧 EMAIL CONFIGURATION:"
 echo "   For iCloud custom domain (recordsrequest@foiaarchive.com):"
 echo "   1. Go to: https://appleid.apple.com"
 echo "   2. Sign-In & Security → App-Specific Passwords"
-echo "   3. Generate password for 'FOIAPIPE'"
+echo "   3. Generate password for 'FOIA Archive'"
 echo "   4. Use that password for both SMTP_PASSWORD and IMAP_PASSWORD"
 echo ""
 echo "   SMTP_HOST=smtp.mail.me.com"

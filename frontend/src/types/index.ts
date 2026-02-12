@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript types for FOIAPIPE frontend
+ * Shared TypeScript types for FOIA Archive frontend
  * Generated from backend Pydantic schemas
  */
 

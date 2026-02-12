@@ -1,12 +1,12 @@
-# FOIAPIPE
+# FOIA Archive
 
 > **FOIA request pipeline and video publishing platform for law enforcement accountability**
 
 [![Production Ready](https://img.shields.io/badge/production-ready-brightgreen)](https://github.com/jackson-jpeg/FOIAPIPE)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Railway: foiapipe-backend](https://img.shields.io/badge/Railway-foiapipe--backend-blueviolet)](https://railway.app)
+[![Railway: foiaarchive-backend](https://img.shields.io/badge/Railway-foiaarchive--backend-blueviolet)](https://railway.app)
 
-FOIAPIPE automates the discovery, FOIA requesting, editing, publishing, and monetization tracking of police bodycam footage sourced from local Tampa Bay news incidents.
+FOIA Archive automates the discovery, FOIA requesting, editing, publishing, and monetization tracking of police bodycam footage sourced from local Tampa Bay news incidents.
 
 ---
 
@@ -69,7 +69,7 @@ npm run dev  # Visit http://localhost:5173
 
 **Backend:** Python 3.12 / FastAPI / SQLAlchemy (async) / Celery / PostgreSQL / Redis
 **Frontend:** React 18 / TypeScript / Vite / Tailwind / Zustand
-**Deployment:** Railway (foiapipe-backend) / Cloudflare R2
+**Deployment:** Railway (foiaarchive-backend) / Cloudflare R2
 
 ---
 
@@ -118,7 +118,7 @@ npm run test:coverage
 
 ## 🚢 Deployment
 
-Deploy to Railway (\`foiapipe-backend\` project):
+Deploy to Railway (\`foiaarchive-backend\` project):
 
 \`\`\`bash
 railway login

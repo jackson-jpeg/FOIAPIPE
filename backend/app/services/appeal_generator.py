@@ -181,7 +181,7 @@ Thank you for your reconsideration. I remain willing to work with the agency to 
 
 Sincerely,
 
-FOIAPIPE Automated Appeal System
+FOIA Archive Automated Appeal System
 On behalf of: Public Records Requester
 
 ---
