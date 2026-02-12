@@ -8,7 +8,7 @@ import { VIDEO_STATUSES } from '@/lib/constants';
 import {
   X, Upload, Image, Save, ExternalLink, Youtube, Play, Zap, Captions,
   Trash2, Copy, Archive, Scissors, Type, Link2, Unlink, BarChart3,
-  Eye, DollarSign, ThumbsUp, MessageSquare, TrendingUp,
+  Eye, DollarSign, ThumbsUp, MessageSquare, TrendingUp, Calendar, XCircle,
 } from 'lucide-react';
 import * as videosApi from '@/api/videos';
 import * as foiaApi from '@/api/foia';
@@ -54,6 +54,8 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   const [trimEnd, setTrimEnd] = useState('');
   const [introText, setIntroText] = useState('');
   const [introDuration, setIntroDuration] = useState('5');
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleDatetime, setScheduleDatetime] = useState('');
 
   useEffect(() => {
     if (video?.id) {
@@ -171,6 +173,32 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
 
   const handleArchive = () => {
     onUpdate(video.id, { status: 'archived' as any });
+  };
+
+  const handleSchedule = async () => {
+    if (!scheduleDatetime) {
+      addToast({ type: 'error', title: 'Select a date and time' });
+      return;
+    }
+    try {
+      await videosApi.scheduleVideo(video.id, new Date(scheduleDatetime).toISOString());
+      addToast({ type: 'success', title: 'Video scheduled for publish' });
+      setShowScheduleForm(false);
+      setScheduleDatetime('');
+      onRefresh();
+    } catch {
+      addToast({ type: 'error', title: 'Failed to schedule video' });
+    }
+  };
+
+  const handleUnschedule = async () => {
+    try {
+      await videosApi.unscheduleVideo(video.id);
+      addToast({ type: 'success', title: 'Video unscheduled' });
+      onRefresh();
+    } catch {
+      addToast({ type: 'error', title: 'Failed to unschedule video' });
+    }
   };
 
   return (
@@ -400,7 +428,7 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
           )}
 
           {/* Upload to YouTube */}
-          {hasFile && !video.youtube_video_id && (
+          {hasFile && !video.youtube_video_id && video.status !== 'scheduled' && (
             <Button
               variant="primary"
               size="sm"
@@ -412,6 +440,59 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
                video.youtube_upload_status === 'uploading' ? 'Uploading...' :
                'Upload to YouTube'}
             </Button>
+          )}
+
+          {/* Schedule Publish */}
+          {video.status === 'ready' && hasFile && (
+            <div className="space-y-2">
+              {!showScheduleForm ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowScheduleForm(true)}
+                  icon={<Calendar className="h-3.5 w-3.5" />}
+                >
+                  Schedule Publish
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-surface-border p-3 space-y-2">
+                  <p className="text-2xs text-text-tertiary">Schedule publish time</p>
+                  <input
+                    type="datetime-local"
+                    value={scheduleDatetime}
+                    onChange={e => setScheduleDatetime(e.target.value)}
+                    className="w-full rounded-md bg-surface-primary border border-surface-border px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="primary" size="sm" onClick={handleSchedule}>Schedule</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setShowScheduleForm(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Scheduled Info */}
+          {video.status === 'scheduled' && (
+            <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+                  <span className="text-xs font-medium text-text-primary">Scheduled</span>
+                </div>
+                <span className="text-xs text-text-secondary tabular-nums">
+                  {video.scheduled_at ? new Date(video.scheduled_at).toLocaleString() : 'N/A'}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUnschedule}
+                icon={<XCircle className="h-3 w-3" />}
+              >
+                Unschedule
+              </Button>
+            </div>
           )}
 
           {/* YouTube Link */}

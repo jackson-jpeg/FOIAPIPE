@@ -12,7 +12,7 @@ interface SettingsState {
   clearError: () => void;
 }
 
-export const useSettingsStore = create<SettingsState>((set, _get) => ({
+export const useSettingsStore = create<SettingsState>((set) => ({
   settings: {},
   loading: false,
   saving: false,
@@ -22,7 +22,7 @@ export const useSettingsStore = create<SettingsState>((set, _get) => ({
     set({ loading: true, error: null });
     try {
       const data = await getSettings();
-      set({ settings: data as Record<string, unknown>, loading: false });
+      set({ settings: data, loading: false });
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Failed to fetch settings',
@@ -35,7 +35,7 @@ export const useSettingsStore = create<SettingsState>((set, _get) => ({
     set({ saving: true, error: null });
     try {
       const updated = await apiUpdateSettings(updates);
-      set({ settings: updated as Record<string, unknown>, saving: false });
+      set({ settings: updated, saving: false });
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Failed to save settings',

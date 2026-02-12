@@ -28,6 +28,7 @@ class VideoUpdate(BaseModel):
     editing_notes: str | None = None
     priority: int | None = None
     visibility: str | None = None
+    scheduled_at: datetime | None = None
 
 
 # ── Responses ─────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ class VideoResponse(BaseModel):
     editing_notes: str | None = None
     priority: int
     published_at: datetime | None = None
+    scheduled_at: datetime | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

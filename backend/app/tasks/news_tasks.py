@@ -78,6 +78,21 @@ async def _scan_rss_async():
         await db.commit()
         if auto_foia_triggered:
             result["auto_foia_triggered"] = auto_foia_triggered
+
+        new_count = result.get("new", 0)
+        if new_count > 0:
+            try:
+                from app.services.notification_sender import send_notification
+                await send_notification("scan_complete", {
+                    "title": f"Scan: {new_count} New Articles",
+                    "message": f"RSS scan found {new_count} new articles." + (
+                        f" {auto_foia_triggered} auto-FOIA triggered." if auto_foia_triggered else ""
+                    ),
+                    "link": "/news",
+                })
+            except Exception as e:
+                logger.error(f"Scan notification failed: {e}")
+
         return result
 
 

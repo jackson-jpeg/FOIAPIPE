@@ -182,6 +182,16 @@ async def _upload_video_async(video_id: str) -> dict:
             ))
             await db.commit()
 
+            try:
+                from app.services.notification_sender import send_notification
+                await send_notification("video_published", {
+                    "title": f"Published: {video.title or 'Untitled'}",
+                    "message": f"Uploaded to YouTube: {result['url']}",
+                    "link": "/videos",
+                })
+            except Exception as e:
+                logger.error(f"Publish notification failed: {e}")
+
             logger.info(f"Video {video_id} published: {result['url']}")
             return {
                 "success": True,

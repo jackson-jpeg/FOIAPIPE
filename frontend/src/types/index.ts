@@ -72,13 +72,17 @@ export type VideoStatus =
   | 'editing'
   | 'ai_processing'
   | 'ai_review'
+  | 'review'
   | 'manual_review'
+  | 'ready'
   | 'ready_for_upload'
+  | 'scheduled'
   | 'uploading'
   | 'processing_youtube'
   | 'published'
   | 'unlisted'
   | 'private'
+  | 'archived'
   | 'removed';
 
 export interface Video {
@@ -102,6 +106,7 @@ export interface Video {
   editing_notes: string | null;
   priority: number;
   published_at: string | null;
+  scheduled_at: string | null;
   created_at: string;
   updated_at: string | null;
 }

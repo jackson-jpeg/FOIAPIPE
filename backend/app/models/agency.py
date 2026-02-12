@@ -41,14 +41,14 @@ class Agency(Base):
     foia_requests: Mapped[list[FoiaRequest]] = relationship(
         "FoiaRequest",
         back_populates="agency",
-        lazy="selectin",
+        lazy="select",
     )
 
     contacts: Mapped[list[AgencyContact]] = relationship(
         "AgencyContact",
         back_populates="agency",
         cascade="all, delete-orphan",
-        lazy="selectin",
+        lazy="select",
     )
 
     def __repr__(self) -> str:

@@ -114,3 +114,13 @@ export async function downloadAppealPdf(id: string, payload: { denial_reason: st
   const { data } = await client.post(`/foia/${id}/download-appeal-pdf`, payload, { responseType: 'blob' });
   return data;
 }
+
+export async function generateFollowup(id: string) {
+  const { data } = await client.post(`/foia/${id}/generate-followup`);
+  return data;
+}
+
+export async function getAttachmentUrl(foiaId: string, key: string) {
+  const { data } = await client.get(`/foia/${foiaId}/attachment-url`, { params: { key } });
+  return data;
+}

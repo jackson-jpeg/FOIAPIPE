@@ -89,6 +89,21 @@ export async function getPipelineCounts(): Promise<{ counts: Record<string, numb
   return data;
 }
 
+export async function scheduleVideo(id: string, scheduledAt: string): Promise<Video> {
+  const { data } = await client.post(`/videos/${id}/schedule`, { scheduled_at: scheduledAt });
+  return data;
+}
+
+export async function unscheduleVideo(id: string): Promise<Video> {
+  const { data } = await client.post(`/videos/${id}/unschedule`);
+  return data;
+}
+
+export async function getScheduledQueue(): Promise<Video[]> {
+  const { data } = await client.get('/videos/scheduled-queue');
+  return data;
+}
+
 export async function getVideoAnalytics(id: string, days?: number): Promise<any> {
   const params: Record<string, any> = {};
   if (days) params.days = days;

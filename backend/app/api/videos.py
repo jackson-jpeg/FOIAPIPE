@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.models.foia_request import FoiaRequest
 from app.models.video import Video, VideoStatus
+from app.models.video_status_change import VideoStatusChange
 from app.models.video_analytics import VideoAnalytics
 from app.schemas.video import (
     VideoCreate,
@@ -80,6 +81,7 @@ def _to_response(video: Video) -> VideoResponse:
         editing_notes=video.editing_notes,
         priority=video.priority,
         published_at=video.published_at,
+        scheduled_at=video.scheduled_at,
         created_at=video.created_at,
         updated_at=video.updated_at,
     )
@@ -115,6 +117,25 @@ async def pipeline_counts(
     for s in VideoStatus:
         counts.setdefault(s.value, 0)
     return VideoPipelineCounts(counts=counts)
+
+
+# ── Scheduled Queue ──────────────────────────────────────────────────────
+
+
+@router.get("/scheduled-queue", response_model=list[VideoResponse])
+async def scheduled_queue(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> list[VideoResponse]:
+    """Return videos with status=scheduled, ordered by scheduled_at."""
+    stmt = (
+        select(Video)
+        .where(Video.status == VideoStatus.scheduled)
+        .order_by(Video.scheduled_at.asc().nullslast())
+    )
+    result = await db.execute(stmt)
+    videos = result.scalars().all()
+    return [_to_response(v) for v in videos]
 
 
 # ── List & Detail ────────────────────────────────────────────────────────
@@ -723,6 +744,105 @@ async def upload_to_youtube(
         "message": f"Video '{video.title or video.id}' queued for YouTube upload",
         "video_id": str(video.id),
     }
+
+
+# ── Schedule / Unschedule ────────────────────────────────────────────────
+
+
+@router.post("/{video_id}/schedule", response_model=VideoResponse)
+async def schedule_video(
+    video_id: uuid.UUID,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> VideoResponse:
+    """Schedule a video for future auto-publish.
+
+    Body should contain:
+    - scheduled_at: ISO datetime string for when to publish (must be in the future)
+    """
+    from datetime import datetime, timezone
+
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    if video.status != VideoStatus.ready:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot schedule a video with status '{video.status.value}'. Must be 'ready'.",
+        )
+
+    scheduled_at_str = body.get("scheduled_at")
+    if not scheduled_at_str:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="scheduled_at is required.",
+        )
+
+    try:
+        scheduled_at = datetime.fromisoformat(scheduled_at_str.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid datetime format for scheduled_at.",
+        )
+
+    if scheduled_at <= datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="scheduled_at must be in the future.",
+        )
+
+    old_status = video.status.value
+    video.status = VideoStatus.scheduled
+    video.scheduled_at = scheduled_at
+
+    db.add(VideoStatusChange(
+        video_id=video.id,
+        from_status=old_status,
+        to_status=VideoStatus.scheduled.value,
+        changed_by=_user,
+        reason=f"Scheduled for {scheduled_at.isoformat()}",
+    ))
+
+    await db.flush()
+    await db.refresh(video)
+    return _to_response(video)
+
+
+@router.post("/{video_id}/unschedule", response_model=VideoResponse)
+async def unschedule_video(
+    video_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> VideoResponse:
+    """Remove a video from the publish schedule, returning it to 'ready' status."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    if video.status != VideoStatus.scheduled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot unschedule a video with status '{video.status.value}'. Must be 'scheduled'.",
+        )
+
+    old_status = video.status.value
+    video.status = VideoStatus.ready
+    video.scheduled_at = None
+
+    db.add(VideoStatusChange(
+        video_id=video.id,
+        from_status=old_status,
+        to_status=VideoStatus.ready.value,
+        changed_by=_user,
+        reason="Unscheduled by user",
+    ))
+
+    await db.flush()
+    await db.refresh(video)
+    return _to_response(video)
 
 
 # ── Subtitle Generation ──────────────────────────────────────────────────

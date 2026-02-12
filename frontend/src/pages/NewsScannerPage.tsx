@@ -11,10 +11,11 @@ import { StatusOrb } from '@/components/ui/StatusOrb';
 import { useNewsStore } from '@/stores/newsStore';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { RefreshCw, FileText, X, Check, Sparkles } from 'lucide-react';
+import { RefreshCw, FileText, X, Check, Sparkles, Download } from 'lucide-react';
 import { INCIDENT_TYPES } from '@/lib/constants';
 import * as newsApi from '@/api/news';
 import * as agenciesApi from '@/api/agencies';
+import { exportArticles } from '@/api/exports';
 
 type FilterTab = 'all' | 'high_priority' | 'unreviewed' | 'auto_filed';
 
@@ -38,6 +39,7 @@ export function NewsScannerPage() {
   const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState('');
   const [filingFoia, setFilingFoia] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -208,9 +210,29 @@ export function NewsScannerPage() {
             Monitor and classify police accountability news from Tampa Bay sources
           </p>
         </div>
-        <Button variant="primary" onClick={handleScanNow} loading={scanning} icon={<RefreshCw className="h-4 w-4" />}>
-          Scan Now
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                await exportArticles();
+                addToast({ type: 'success', title: 'Articles exported' });
+              } catch {
+                addToast({ type: 'error', title: 'Export failed' });
+              } finally {
+                setExporting(false);
+              }
+            }}
+            loading={exporting}
+            icon={<Download className="h-4 w-4" />}
+          >
+            Export CSV
+          </Button>
+          <Button variant="primary" onClick={handleScanNow} loading={scanning} icon={<RefreshCw className="h-4 w-4" />}>
+            Scan Now
+          </Button>
+        </div>
       </div>
 
       <ScannerStatus

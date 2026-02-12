@@ -38,6 +38,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=9, minute=0),  # Daily 9 AM EST
         "options": {"queue": "default"},
     },
+    "publish-scheduled-videos": {
+        "task": "app.tasks.publish_tasks.publish_scheduled_videos",
+        "schedule": 300.0,  # Every 5 minutes
+        "options": {"queue": "default"},
+    },
     "cleanup-old-scanlogs": {
         "task": "app.tasks.maintenance_tasks.cleanup_old_scanlogs",
         "schedule": crontab(hour=2, minute=0, day_of_week="sunday"),  # Weekly Sunday 2 AM

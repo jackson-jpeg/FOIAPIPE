@@ -129,3 +129,19 @@ export async function updateAgencyContact(agencyId: string, contactId: string, d
 export async function deleteAgencyContact(agencyId: string, contactId: string) {
   await client.delete(`/agencies/${agencyId}/contacts/${contactId}`);
 }
+
+// ── Agency Templates ────────────────────────────────────────────────────
+
+export async function getAgencyTemplate(agencyId: string): Promise<{ template: string; is_custom: boolean }> {
+  const response = await client.get(`/agencies/${agencyId}/template`);
+  return response.data;
+}
+
+export async function updateAgencyTemplate(agencyId: string, template: string): Promise<{ template: string }> {
+  const response = await client.put(`/agencies/${agencyId}/template`, { template });
+  return response.data;
+}
+
+export async function deleteAgencyTemplate(agencyId: string): Promise<void> {
+  await client.delete(`/agencies/${agencyId}/template`);
+}

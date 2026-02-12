@@ -10,6 +10,7 @@ import { FOIA_STATUSES, VIDEO_STATUSES } from '@/lib/constants';
 import {
   X, Send, Save, FileDown, Gavel, Clock, Mail, Video,
   ArrowRight, ExternalLink, ChevronDown, ChevronUp, TrendingUp,
+  Paperclip, RefreshCw,
 } from 'lucide-react';
 import * as foiaApi from '@/api/foia';
 import { cn } from '@/lib/cn';
@@ -36,7 +37,11 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
   const [appealResult, setAppealResult] = useState<any>(null);
   const [appealLoading, setAppealLoading] = useState(false);
   const [expandedEmails, setExpandedEmails] = useState(false);
+  const [expandedEmailIdx, setExpandedEmailIdx] = useState<number | null>(null);
   const [costPrediction, setCostPrediction] = useState<any>(null);
+  const [followupLoading, setFollowupLoading] = useState(false);
+  const [followupResult, setFollowupResult] = useState<any>(null);
+  const [showFollowupModal, setShowFollowupModal] = useState(false);
 
   // Fetch enriched detail when panel opens
   useEffect(() => {
@@ -150,6 +155,40 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
     }
   };
 
+  const handleGenerateFollowup = async () => {
+    setFollowupLoading(true);
+    try {
+      const result = await foiaApi.generateFollowup(request.id);
+      setFollowupResult(result);
+      setShowFollowupModal(true);
+    } catch (error) {
+      console.error('Follow-up generation failed:', error);
+    } finally {
+      setFollowupLoading(false);
+    }
+  };
+
+  const handleOpenAttachment = async (key: string) => {
+    try {
+      const result = await foiaApi.getAttachmentUrl(request.id, key);
+      window.open(result.url, '_blank');
+    } catch (error) {
+      console.error('Attachment URL failed:', error);
+    }
+  };
+
+  const isOverdue = request.due_date && new Date(request.due_date) < new Date() &&
+    ['submitted', 'acknowledged', 'processing'].includes(request.status);
+
+  const emailBorderColor = (type: string) => {
+    switch (type) {
+      case 'fulfilled': return 'border-l-green-500';
+      case 'denied': return 'border-l-red-500';
+      case 'acknowledged': return 'border-l-blue-500';
+      default: return 'border-l-gray-400';
+    }
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] animate-fade-in" onClick={onClose} />
@@ -188,6 +227,17 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               {isDenied && (
                 <Button variant="outline" size="sm" onClick={handleOpenAppeal} icon={<Gavel className="h-3 w-3" />}>
                   Appeal
+                </Button>
+              )}
+              {isOverdue && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateFollowup}
+                  disabled={followupLoading}
+                  icon={followupLoading ? undefined : <RefreshCw className="h-3 w-3" />}
+                >
+                  {followupLoading ? 'Generating...' : 'Follow-up'}
                 </Button>
               )}
             </div>
@@ -290,35 +340,98 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               {expandedEmails && (
                 <div className="border-t border-surface-border/50 divide-y divide-surface-border/30">
                   {responseEmails.map((email: any, i: number) => (
-                    <div key={i} className="px-3.5 py-2.5 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xs font-medium text-text-secondary">
-                          {email.from || email.sender || 'Agency'}
-                        </span>
-                        {email.date && (
-                          <span className="text-2xs text-text-quaternary tabular-nums">
-                            {formatRelativeTime(email.date)}
+                    <div
+                      key={i}
+                      className={cn(
+                        'border-l-2 transition-colors',
+                        emailBorderColor(email.response_type),
+                        expandedEmailIdx === i ? 'bg-surface-tertiary/20' : ''
+                      )}
+                    >
+                      <button
+                        onClick={() => setExpandedEmailIdx(expandedEmailIdx === i ? null : i)}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-surface-hover/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xs font-medium text-text-secondary">
+                            {email.from || email.sender || 'Agency'}
                           </span>
+                          <div className="flex items-center gap-2">
+                            {email.attachment_keys?.length > 0 && (
+                              <span className="flex items-center gap-0.5 text-2xs text-text-quaternary">
+                                <Paperclip className="h-2.5 w-2.5" />
+                                {email.attachment_keys.length}
+                              </span>
+                            )}
+                            {email.date && (
+                              <span className="text-2xs text-text-quaternary tabular-nums">
+                                {formatRelativeTime(email.date)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {email.subject && (
+                            <p className="text-2xs text-text-tertiary truncate flex-1">{email.subject}</p>
+                          )}
+                          {email.response_type && (
+                            <Badge
+                              variant={
+                                email.response_type === 'fulfilled' ? 'success' :
+                                email.response_type === 'denied' ? 'danger' :
+                                email.response_type === 'acknowledged' ? 'info' :
+                                email.response_type === 'cost_estimate' ? 'warning' :
+                                'default'
+                              }
+                              size="sm"
+                            >
+                              {email.response_type}
+                            </Badge>
+                          )}
+                        </div>
+                        {expandedEmailIdx !== i && email.body && (
+                          <p className="text-2xs text-text-quaternary line-clamp-2 mt-0.5">{email.body}</p>
                         )}
-                      </div>
-                      {email.subject && (
-                        <p className="text-2xs text-text-tertiary truncate">{email.subject}</p>
-                      )}
-                      {email.snippet && (
-                        <p className="text-2xs text-text-quaternary line-clamp-2">{email.snippet}</p>
-                      )}
-                      {email.response_type && (
-                        <Badge
-                          variant={
-                            email.response_type === 'fulfillment' ? 'success' :
-                            email.response_type === 'denial' ? 'danger' :
-                            email.response_type === 'acknowledgment' ? 'info' :
-                            'default'
-                          }
-                          size="sm"
-                        >
-                          {email.response_type}
-                        </Badge>
+                      </button>
+                      {expandedEmailIdx === i && (
+                        <div className="px-3.5 pb-3 space-y-2">
+                          {email.body && (
+                            <div className="rounded-md bg-surface-tertiary/30 p-3 text-2xs text-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+                              {email.body}
+                            </div>
+                          )}
+                          {/* Metadata */}
+                          <div className="flex flex-wrap gap-3 text-2xs">
+                            {email.estimated_cost != null && (
+                              <span className="text-text-tertiary">Cost: <span className="text-text-primary font-medium">{formatCurrency(email.estimated_cost)}</span></span>
+                            )}
+                            {email.fee_waiver && (
+                              <span className="text-text-tertiary">Fee waiver: <span className="text-text-primary font-medium capitalize">{email.fee_waiver}</span></span>
+                            )}
+                            {email.extension_days && (
+                              <span className="text-text-tertiary">Extension: <span className="text-text-primary font-medium">+{email.extension_days} days</span></span>
+                            )}
+                          </div>
+                          {/* Attachments */}
+                          {email.attachment_keys?.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-2xs font-medium text-text-tertiary">Attachments</p>
+                              {email.attachment_keys.map((key: string, j: number) => {
+                                const filename = key.split('/').pop() || key;
+                                return (
+                                  <button
+                                    key={j}
+                                    onClick={(e) => { e.stopPropagation(); handleOpenAttachment(key); }}
+                                    className="flex items-center gap-1.5 text-2xs text-accent-primary hover:underline"
+                                  >
+                                    <Paperclip className="h-2.5 w-2.5" />
+                                    {filename}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -449,6 +562,39 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
           </div>
         </div>
       </div>
+
+      {/* Follow-up Modal */}
+      <Modal
+        isOpen={showFollowupModal}
+        onClose={() => setShowFollowupModal(false)}
+        title="Follow-up Letter"
+        size="lg"
+      >
+        {followupResult && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="warning" size="sm">{followupResult.days_overdue} days overdue</Badge>
+              <span className="text-xs text-text-tertiary font-mono">{followupResult.case_number}</span>
+            </div>
+            <div className="rounded-lg border border-surface-border bg-surface-tertiary/30 p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">
+              {followupResult.followup_text}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setShowFollowupModal(false)}>Close</Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(followupResult.followup_text);
+                }}
+                icon={<Save className="h-3 w-3" />}
+              >
+                Copy to Clipboard
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Appeal Modal */}
       <Modal

@@ -196,6 +196,182 @@ Return ONLY a JSON array of suggestion strings, no other text. Example:
         return _fallback_suggestions()
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+async def classify_email_response(
+    subject: str, body: str, case_number: str | None = None,
+) -> dict | None:
+    """Classify an email response using Claude AI.
+
+    Analyzes the subject and body of an agency email response to determine
+    the response type (acknowledged, denied, fulfilled, etc.) and extract
+    structured metadata like cost estimates and extension days.
+
+    Args:
+        subject: Email subject line
+        body: Email body text (truncated to 1500 chars)
+        case_number: Optional FOIA case number for context
+
+    Returns:
+        Dictionary with response_type, confidence, and optional fields,
+        or None on failure or if API key not set.
+    """
+    if not settings.ANTHROPIC_API_KEY:
+        return None
+
+    try:
+        import anthropic
+        import json
+
+        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+        truncated_body = body[:1500] if body else ""
+        case_context = f"\nCase Number: {case_number}" if case_number else ""
+
+        prompt = f"""Classify this FOIA email response. Return ONLY valid JSON.
+{case_context}
+Subject: {subject}
+Body: {truncated_body}
+
+Return this exact JSON structure:
+{{
+  "response_type": "<one of: acknowledged, denied, fulfilled, cost_estimate, fee_waiver, extension, processing, unknown>",
+  "confidence": "<one of: high, medium, low>",
+  "estimated_cost": <float or null>,
+  "fee_waiver": "<one of: granted, denied, null>",
+  "extension_days": <int or null>
+}}
+
+Rules:
+- response_type "acknowledged" = agency confirms receipt
+- response_type "fulfilled" = records are attached or ready for pickup
+- response_type "denied" = request denied with reason
+- response_type "cost_estimate" = agency quotes a price
+- response_type "fee_waiver" = response about fee waiver request
+- response_type "extension" = agency requests more time
+- response_type "processing" = agency says they are working on it
+- response_type "unknown" = cannot determine"""
+
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=256,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start >= 0 and end > start:
+            result = json.loads(text[start:end])
+            return result
+
+        return None
+    except Exception as e:
+        logger.error(f"AI email classification failed: {e}")
+        return None
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+async def generate_followup_letter(
+    original_request_text: str, case_number: str, agency_name: str,
+    days_overdue: int, last_response_type: str | None = None,
+) -> str:
+    """Generate a follow-up letter for an overdue FOIA request using Claude AI.
+
+    Creates a professional follow-up letter citing Florida Statute 119.07,
+    referencing the original case number, and noting days overdue.
+
+    Args:
+        original_request_text: The original FOIA request text
+        case_number: The FOIA case number
+        agency_name: Name of the agency
+        days_overdue: Number of days past the due date
+        last_response_type: Type of last response received, if any
+
+    Returns:
+        Follow-up letter text as a string.
+    """
+    if not settings.ANTHROPIC_API_KEY:
+        return _fallback_followup_letter(case_number, agency_name, days_overdue)
+
+    try:
+        import anthropic
+        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+        last_response_context = ""
+        if last_response_type:
+            last_response_context = f"\nLast response type from agency: {last_response_type}"
+
+        prompt = f"""Write a professional follow-up letter for an overdue Florida public records request.
+
+Case Number: {case_number}
+Agency: {agency_name}
+Days Overdue: {days_overdue}
+{last_response_context}
+
+Original request (abbreviated):
+{original_request_text[:800]}
+
+Requirements:
+- Cite Florida Statute 119.07 (public records act)
+- Reference the case number
+- Note it is {days_overdue} days overdue
+- Request a status update and estimated completion date
+- Be firm but professional
+- Keep it under 300 words
+- Do not include [brackets] or placeholders — write the actual letter text
+- Sign off as "Records Request Department, FOIA Archive"
+
+Return ONLY the letter text, no JSON or markdown formatting."""
+
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=512,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        return response.content[0].text.strip()
+    except Exception as e:
+        logger.error(f"AI follow-up letter generation failed: {e}")
+        return _fallback_followup_letter(case_number, agency_name, days_overdue)
+
+
+def _fallback_followup_letter(case_number: str, agency_name: str, days_overdue: int) -> str:
+    """Generate a template-based follow-up letter when AI is unavailable."""
+    return f"""Re: Public Records Request - {case_number}
+
+Dear Records Custodian,
+
+I am writing to follow up on public records request {case_number}, submitted to {agency_name}, which is now {days_overdue} days overdue.
+
+Under Florida Statute 119.07, public records requests must be fulfilled promptly. The statute does not provide for indefinite delays, and agencies are required to act on requests within a reasonable time frame.
+
+I respectfully request:
+1. A status update on the processing of this request
+2. An estimated date of completion
+3. If there are any fees associated, please provide a cost estimate
+
+If this request has been fulfilled or if additional information is needed from our end, please notify us at your earliest convenience.
+
+Thank you for your attention to this matter.
+
+Sincerely,
+Records Request Department
+FOIA Archive
+recordsrequest@foiaarchive.com"""
+
+
 def _fallback_suggestions() -> list[str]:
     """Return generic FOIA improvement tips when AI is unavailable."""
     return [

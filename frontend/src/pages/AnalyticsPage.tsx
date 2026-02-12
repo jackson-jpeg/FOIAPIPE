@@ -16,12 +16,17 @@ import { PublishingInsightsCard } from '@/components/analytics/PublishingInsight
 import { AgencyResponseCard } from '@/components/analytics/AgencyResponseCard';
 import { StatCard } from '@/components/ui/StatCard';
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
-import { DollarSign, Eye, Users, TrendingUp, Target } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
+import { DollarSign, Eye, Users, TrendingUp, Target, Download } from 'lucide-react';
 import * as analyticsApi from '@/api/analytics';
+import { exportAnalyticsSummary } from '@/api/exports';
 
 export function AnalyticsPage() {
+  const { addToast } = useToast();
   const [range, setRange] = useState('30d');
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [overview, setOverview] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [viewsData, setViewsData] = useState<any[]>([]);
@@ -91,7 +96,28 @@ export function AnalyticsPage() {
             Track YouTube performance metrics and revenue insights
           </p>
         </div>
-        <TimeRangeSelector value={range} onChange={setRange} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                const days = range === '7d' ? 7 : range === '30d' ? 30 : range === '90d' ? 90 : 365;
+                await exportAnalyticsSummary(days);
+                addToast({ type: 'success', title: 'Analytics exported' });
+              } catch {
+                addToast({ type: 'error', title: 'Export failed' });
+              } finally {
+                setExporting(false);
+              }
+            }}
+            loading={exporting}
+            icon={<Download className="h-4 w-4" />}
+          >
+            Export CSV
+          </Button>
+          <TimeRangeSelector value={range} onChange={setRange} />
+        </div>
       </div>
 
       {/* Stat Cards */}

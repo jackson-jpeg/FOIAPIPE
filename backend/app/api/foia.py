@@ -42,7 +42,7 @@ from app.services.appeal_generator import (
     generate_appeal_pdf,
     get_appeal_recommendations,
 )
-from app.services.ai_client import generate_foia_suggestions
+from app.services.ai_client import generate_foia_suggestions, generate_followup_letter
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +270,101 @@ async def get_suggestions(
         incident_type=incident_type,
     )
     return {"suggestions": suggestions}
+
+
+# ── Follow-up Generation ──────────────────────────────────────────────────
+
+
+@router.post("/{foia_id}/generate-followup")
+async def generate_followup(
+    foia_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate a follow-up letter for an overdue FOIA request.
+
+    Only available for submitted/acknowledged/processing requests that are past due.
+    """
+    foia = await db.get(FoiaRequest, foia_id)
+    if not foia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
+        )
+
+    if foia.status not in (FoiaStatus.submitted, FoiaStatus.acknowledged, FoiaStatus.processing):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot generate follow-up for request with status '{foia.status.value}'.",
+        )
+
+    now = datetime.now(timezone.utc)
+    if not foia.due_date or foia.due_date > now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request is not yet overdue.",
+        )
+
+    days_overdue = (now - foia.due_date).days
+    agency_name = foia.agency.name if foia.agency else "Unknown Agency"
+
+    # Get last response type if available
+    last_response_type = None
+    if foia.response_emails and len(foia.response_emails) > 0:
+        last_response_type = foia.response_emails[-1].get("response_type")
+
+    followup_text = await generate_followup_letter(
+        original_request_text=foia.request_text or "",
+        case_number=foia.case_number,
+        agency_name=agency_name,
+        days_overdue=days_overdue,
+        last_response_type=last_response_type,
+    )
+
+    return {
+        "followup_text": followup_text,
+        "days_overdue": days_overdue,
+        "case_number": foia.case_number,
+    }
+
+
+# ── Attachment URL ────────────────────────────────────────────────────────
+
+
+@router.get("/{foia_id}/attachment-url")
+async def get_attachment_url(
+    foia_id: uuid.UUID,
+    key: str = Query(..., description="S3 object key for the attachment"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate a presigned URL for downloading a FOIA email attachment."""
+    foia = await db.get(FoiaRequest, foia_id)
+    if not foia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="FOIA request not found"
+        )
+
+    # Security: only allow attachment keys
+    if not key.startswith("foia/attachments/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid attachment key.",
+        )
+
+    from app.services.storage import generate_presigned_url
+
+    try:
+        url = generate_presigned_url(key, expiry=3600)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate download URL: {str(e)}",
+        )
+
+    # Extract filename from key
+    filename = key.rsplit("/", 1)[-1] if "/" in key else key
+
+    return {"url": url, "filename": filename}
 
 
 # ── List & Detail ────────────────────────────────────────────────────────
@@ -575,6 +670,18 @@ async def submit_foia_request(
     foia.due_date = now + timedelta(days=response_days)
     foia.pdf_storage_key = storage_key
     await db.flush()
+
+    # Create in-app notification for FOIA submission
+    from app.models.notification import Notification, NotificationChannel, NotificationType
+    notif = Notification(
+        type=NotificationType.foia_submitted,
+        channel=NotificationChannel.in_app,
+        title=f"FOIA Submitted: {foia.case_number}",
+        message=f"Submitted to {agency.name}",
+        link="/foia",
+    )
+    db.add(notif)
+
     await db.refresh(foia)
 
     return {

@@ -34,6 +34,7 @@ class VideoStatus(str, enum.Enum):
     ai_processing = "ai_processing"
     review = "review"
     ready = "ready"
+    scheduled = "scheduled"
     uploading = "uploading"
     published = "published"
     archived = "archived"
@@ -77,6 +78,9 @@ class Video(Base):
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
     )
 
     # ── Relationships ─────────────────────────────────────────────────────

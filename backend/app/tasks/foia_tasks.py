@@ -51,6 +51,27 @@ async def _check_inbox_async():
                 continue
 
             response_type = resp.get("response_type", "unknown")
+
+            # AI reclassification for ambiguous results
+            if response_type in ("unknown", "processing"):
+                try:
+                    from app.services.ai_client import classify_email_response
+                    ai_result = await classify_email_response(
+                        subject=resp.get("subject", ""), body=resp.get("body", ""),
+                        case_number=case_number,
+                    )
+                    if ai_result and ai_result.get("response_type") not in (None, "unknown"):
+                        response_type = ai_result["response_type"]
+                        # Supplement regex-missed fields
+                        if ai_result.get("estimated_cost") and not resp.get("estimated_cost"):
+                            resp["estimated_cost"] = ai_result["estimated_cost"]
+                        if ai_result.get("fee_waiver") and not resp.get("fee_waiver"):
+                            resp["fee_waiver"] = ai_result["fee_waiver"]
+                        if ai_result.get("extension_days") and not resp.get("extension_days"):
+                            resp["extension_days"] = ai_result["extension_days"]
+                except Exception as e:
+                    logger.warning(f"AI classification failed, keeping regex result: {e}")
+
             status_map = {
                 "acknowledged": FoiaStatus.acknowledged,
                 "fulfilled": FoiaStatus.fulfilled,

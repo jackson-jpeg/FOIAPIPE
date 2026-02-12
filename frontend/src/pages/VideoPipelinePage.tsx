@@ -1,13 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { KanbanBoard } from '@/components/videos/KanbanBoard';
 import { VideoDetail } from '@/components/videos/VideoDetail';
+import { PublishQueue } from '@/components/videos/PublishQueue';
 import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { useVideoStore } from '@/stores/videoStore';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Plus, Film, Upload, CheckCircle, Eye } from 'lucide-react';
+import { Plus, Film, Upload, CheckCircle, Eye, Download } from 'lucide-react';
 import * as videosApi from '@/api/videos';
+import { exportVideos } from '@/api/exports';
 import type { VideoStatus } from '@/types';
 import { VIDEO_STATUSES } from '@/lib/constants';
 
@@ -15,6 +17,7 @@ export function VideoPipelinePage() {
   const { videos, loading, fetchVideos } = useVideoStore();
   const { addToast } = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { fetchVideos(); }, [fetchVideos]);
 
@@ -141,9 +144,29 @@ export function VideoPipelinePage() {
             Manage bodycam video processing from raw footage to YouTube publication
           </p>
         </div>
-        <Button variant="primary" onClick={handleCreate} icon={<Plus className="h-4 w-4" />}>
-          New Video
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                await exportVideos();
+                addToast({ type: 'success', title: 'Videos exported' });
+              } catch {
+                addToast({ type: 'error', title: 'Export failed' });
+              } finally {
+                setExporting(false);
+              }
+            }}
+            loading={exporting}
+            icon={<Download className="h-4 w-4" />}
+          >
+            Export CSV
+          </Button>
+          <Button variant="primary" onClick={handleCreate} icon={<Plus className="h-4 w-4" />}>
+            New Video
+          </Button>
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -223,6 +246,9 @@ export function VideoPipelinePage() {
           </div>
         </div>
       )}
+
+      {/* Publish Queue */}
+      <PublishQueue onRefresh={fetchVideos} />
 
       {/* Kanban Board */}
       {loading ? (

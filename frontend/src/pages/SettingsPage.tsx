@@ -25,6 +25,9 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
 import client from '@/api/client';
+import { getSystemMetrics, type SystemMetrics } from '@/api/dashboard';
+import { getAuditSummary, type AuditSummary } from '@/api/audit';
+import { getBackupInfo } from '@/api/exports';
 
 interface SystemHealth {
   status: string;
@@ -46,6 +49,10 @@ export function SettingsPage() {
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
   const [refreshingHealth, setRefreshingHealth] = useState(false);
+
+  const [sysMetrics, setSysMetrics] = useState<SystemMetrics | null>(null);
+  const [auditSummary, setAuditSummary] = useState<AuditSummary | null>(null);
+  const [backupInfo, setBackupInfo] = useState<any>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -75,6 +82,9 @@ export function SettingsPage() {
 
   useEffect(() => {
     loadHealth();
+    getSystemMetrics().then(setSysMetrics).catch(() => {});
+    getAuditSummary(30).then(setAuditSummary).catch(() => {});
+    getBackupInfo().then(setBackupInfo).catch(() => {});
   }, []);
 
   const handleRefreshHealth = async () => {
@@ -404,6 +414,111 @@ export function SettingsPage() {
                 </label>
               </div>
             </Card>
+
+            {/* System Metrics */}
+            {sysMetrics && (
+              <Card title="System Performance">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Health Score</span>
+                    <span className={cn(
+                      'text-sm font-bold tabular-nums',
+                      sysMetrics.overall_health_score >= 90 ? 'text-emerald-400' :
+                      sysMetrics.overall_health_score >= 70 ? 'text-amber-400' : 'text-red-400'
+                    )}>
+                      {sysMetrics.overall_health_score}/100
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Scan Success (24h)</span>
+                    <span className="text-sm text-text-primary tabular-nums">
+                      {sysMetrics.background_tasks.past_24h.successful_scans}/{sysMetrics.background_tasks.past_24h.successful_scans + sysMetrics.background_tasks.past_24h.failed_scans}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Redis Hit Rate</span>
+                    <span className="text-sm text-text-primary tabular-nums">
+                      {sysMetrics.redis.error ? 'Offline' : `${sysMetrics.redis.hit_rate ?? 0}%`}
+                    </span>
+                  </div>
+                  {!sysMetrics.system_resources.error && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-text-secondary">Memory</span>
+                        <span className="text-sm text-text-primary tabular-nums">{sysMetrics.system_resources.memory_used_mb} MB</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-text-secondary">CPU</span>
+                        <span className="text-sm text-text-primary tabular-nums">{sysMetrics.system_resources.cpu_percent}%</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Circuit Breakers</span>
+                    <span className="text-sm text-text-primary tabular-nums">
+                      {sysMetrics.circuit_breakers.circuits_open} / {sysMetrics.circuit_breakers.total_sources} open
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Audit Summary */}
+            {auditSummary && (
+              <Card title="Audit Summary (30d)">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Total Events</span>
+                    <span className="text-sm font-medium text-text-primary tabular-nums">{auditSummary.total_events.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Success Rate</span>
+                    <Badge variant={auditSummary.success_rate >= 95 ? 'success' : auditSummary.success_rate >= 80 ? 'warning' : 'danger'} size="sm">
+                      {auditSummary.success_rate}%
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-text-secondary">Failures</span>
+                    <span className={cn('text-sm tabular-nums', auditSummary.failure_count > 0 ? 'text-red-400' : 'text-text-primary')}>
+                      {auditSummary.failure_count}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/audit')}
+                    className="w-full mt-2"
+                    icon={<ArrowRight className="h-3.5 w-3.5" />}
+                  >
+                    View Full Audit Log
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* Data Backup */}
+            {backupInfo && (
+              <Card title="Data Backup">
+                <div className="space-y-2">
+                  {Object.entries(backupInfo.available_exports || {}).map(([key, exp]: [string, any]) => (
+                    <div key={key} className="flex items-center justify-between rounded-lg px-3 py-2 -mx-3 hover:bg-surface-hover transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-surface-tertiary text-text-tertiary">
+                          <HardDrive className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <span className="text-sm text-text-primary capitalize">{key}</span>
+                          {exp.count !== undefined && (
+                            <p className="text-2xs text-text-quaternary">{exp.count} records</p>
+                          )}
+                        </div>
+                      </div>
+                      <Badge variant="default" size="sm">{exp.format}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       )}

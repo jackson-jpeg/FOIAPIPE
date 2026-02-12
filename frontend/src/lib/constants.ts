@@ -42,6 +42,7 @@ export const VIDEO_STATUSES: Record<string, { label: string; color: string; vari
   ai_processing: { label: 'AI Processing', color: '#a855f7', variant: 'purple' },
   review: { label: 'Review', color: '#3b82f6', variant: 'info' },
   ready: { label: 'Ready', color: '#60a5fa', variant: 'info' },
+  scheduled: { label: 'Scheduled', color: '#6366f1', variant: 'info' },
   uploading: { label: 'Uploading', color: '#f59e0b', variant: 'warning' },
   published: { label: 'Published', color: '#22c55e', variant: 'success' },
   archived: { label: 'Archived', color: '#64748b', variant: 'default' },
