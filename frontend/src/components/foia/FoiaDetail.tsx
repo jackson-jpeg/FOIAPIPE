@@ -10,7 +10,7 @@ import { FOIA_STATUSES, VIDEO_STATUSES } from '@/lib/constants';
 import {
   X, Send, Save, FileDown, Gavel, Clock, Mail, Video,
   ArrowRight, ExternalLink, ChevronDown, ChevronUp, TrendingUp,
-  Paperclip, RefreshCw,
+  Paperclip, RefreshCw, Sparkles,
 } from 'lucide-react';
 import * as foiaApi from '@/api/foia';
 import { cn } from '@/lib/cn';
@@ -42,6 +42,9 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
   const [followupLoading, setFollowupLoading] = useState(false);
   const [followupResult, setFollowupResult] = useState<any>(null);
   const [showFollowupModal, setShowFollowupModal] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<any>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Fetch enriched detail when panel opens
   useEffect(() => {
@@ -177,6 +180,19 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
     }
   };
 
+  const handleGetSuggestions = async () => {
+    setSuggestionsLoading(true);
+    try {
+      const result = await foiaApi.getFoiaSuggestions(request.id);
+      setSuggestions(result);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Suggestions generation failed:', error);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
   const isOverdue = request.due_date && new Date(request.due_date) < new Date() &&
     ['submitted', 'acknowledged', 'processing'].includes(request.status);
 
@@ -222,6 +238,17 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               {request.status === 'draft' && (
                 <Button variant="primary" size="sm" onClick={() => onSubmit(request.id)} icon={<Send className="h-3 w-3" />}>
                   Submit
+                </Button>
+              )}
+              {['draft', 'ready'].includes(request.status) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGetSuggestions}
+                  disabled={suggestionsLoading}
+                  icon={suggestionsLoading ? undefined : <Sparkles className="h-3 w-3" />}
+                >
+                  {suggestionsLoading ? 'Analyzing...' : 'AI Suggestions'}
                 </Button>
               )}
               {isDenied && (
@@ -319,6 +346,40 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* AI Suggestions */}
+          {showSuggestions && suggestions && (
+            <div className="rounded-lg border border-accent-primary/30 bg-accent-primary/5 p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-accent-primary" />
+                  <h3 className="text-xs font-medium text-text-primary">AI Suggestions</h3>
+                </div>
+                <button onClick={() => setShowSuggestions(false)} className="p-0.5 hover:bg-surface-tertiary rounded">
+                  <X className="h-3 w-3 text-text-quaternary" />
+                </button>
+              </div>
+              {suggestions.suggestions && suggestions.suggestions.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {suggestions.suggestions.map((s: any, i: number) => (
+                    <li key={i} className="text-2xs text-text-secondary flex items-start gap-1.5">
+                      <span className="text-accent-primary mt-0.5 flex-shrink-0">{i + 1}.</span>
+                      <span>{typeof s === 'string' ? s : s.suggestion || s.text || JSON.stringify(s)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : suggestions.improved_text ? (
+                <div className="space-y-2">
+                  <p className="text-2xs text-text-tertiary">Suggested improved request text:</p>
+                  <div className="rounded-md bg-surface-tertiary/30 p-3 text-2xs text-text-secondary whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed">
+                    {suggestions.improved_text}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-2xs text-text-tertiary">No suggestions available for this request.</p>
+              )}
             </div>
           )}
 

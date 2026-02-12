@@ -13,6 +13,8 @@ interface Article {
   incident_type: string | null;
   severity_score: number | null;
   detected_agency: string | null;
+  detected_officers: string[] | null;
+  detected_location: string | null;
   is_reviewed: boolean;
   is_dismissed: boolean;
   auto_foia_eligible: boolean;

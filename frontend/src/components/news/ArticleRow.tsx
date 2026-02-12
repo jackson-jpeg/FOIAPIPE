@@ -17,6 +17,8 @@ interface Article {
   incident_type: string | null;
   severity_score: number | null;
   detected_agency: string | null;
+  detected_officers: string[] | null;
+  detected_location: string | null;
   is_reviewed: boolean;
   is_dismissed: boolean;
   auto_foia_eligible: boolean;
@@ -113,6 +115,26 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
                   Original <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
+              {/* Classification Details */}
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-2xs">
+                {incidentInfo && (
+                  <span className="text-text-tertiary">Type: <span className="text-text-primary font-medium">{incidentInfo.label}</span></span>
+                )}
+                {article.severity_score != null && (
+                  <span className="text-text-tertiary">Severity: <span className="text-text-primary font-medium">{article.severity_score}/10</span></span>
+                )}
+                {article.detected_location && (
+                  <span className="text-text-tertiary">Location: <span className="text-text-primary">{article.detected_location}</span></span>
+                )}
+                {article.auto_foia_eligible && (
+                  <span className="text-emerald-400 font-medium">FOIA Eligible</span>
+                )}
+              </div>
+              {article.detected_officers && article.detected_officers.length > 0 && (
+                <div className="text-2xs text-text-tertiary">
+                  Officers: <span className="text-text-secondary">{article.detected_officers.join(', ')}</span>
+                </div>
+              )}
               {(article.body || article.summary) && (
                 <p className="text-xs text-text-secondary leading-relaxed max-h-36 overflow-y-auto">
                   {article.body || article.summary}

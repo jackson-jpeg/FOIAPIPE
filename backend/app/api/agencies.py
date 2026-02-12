@@ -26,6 +26,7 @@ from app.schemas.agency_contact import (
     AgencyContactResponse,
     AgencyContactUpdate,
 )
+from app.seed import seed_agencies
 from app.services.cache import cache_delete_pattern, cache_get, cache_set
 
 router = APIRouter(prefix="/api/agencies", tags=["agencies"])
@@ -122,6 +123,18 @@ async def list_agencies(
     )
     await cache_set(cache_key, result_data.model_dump(mode="json"), ttl=600)
     return result_data
+
+
+@router.post("/seed")
+async def seed_all_agencies(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Seed all agencies from agencies.json (admin-only)."""
+    await seed_agencies()
+    total = (await db.execute(select(func.count(Agency.id)))).scalar_one()
+    await cache_delete_pattern("agencies:*")
+    return {"success": True, "total_agencies": total}
 
 
 @router.get("/{agency_id}", response_model=AgencyResponse)
