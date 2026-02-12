@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
-import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,20 +29,18 @@ async def _check_login_rate_limit(request: Request) -> None:
     Uses Redis directly to avoid slowapi decorator breaking Pydantic body parsing.
     """
     try:
+        from app.services.cache import get_redis
         client_ip = request.client.host if request.client else "unknown"
         key = f"foiaarchive:ratelimit:login:{client_ip}"
-        r = aioredis.from_url(settings.REDIS_URL)
-        try:
-            count = await r.incr(key)
-            if count == 1:
-                await r.expire(key, LOGIN_RATE_WINDOW)
-            if count > LOGIN_RATE_LIMIT:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Too many login attempts. Try again in 1 minute.",
-                )
-        finally:
-            await r.aclose()
+        r = await get_redis()
+        count = await r.incr(key)
+        if count == 1:
+            await r.expire(key, LOGIN_RATE_WINDOW)
+        if count > LOGIN_RATE_LIMIT:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many login attempts. Try again in 1 minute.",
+            )
     except HTTPException:
         raise
     except Exception as e:

@@ -28,14 +28,12 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.config import settings
-from app.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/health", tags=["health"])
@@ -114,12 +112,10 @@ async def health_detailed(
 
     # 2. Redis connectivity
     try:
-        r = aioredis.from_url(settings.REDIS_URL)
-        try:
-            await r.ping()
-            checks["redis"] = {"status": "ok"}
-        finally:
-            await r.aclose()
+        from app.services.cache import get_redis
+        r = await get_redis()
+        await r.ping()
+        checks["redis"] = {"status": "ok"}
     except Exception as exc:
         checks["redis"] = {"status": "error", "error": str(exc)}
 
