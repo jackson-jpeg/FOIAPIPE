@@ -5,13 +5,21 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.agency import Agency
 from app.models.agency_contact import AgencyContact
-from app.schemas.agency import AgencyCreate, AgencyList, AgencyResponse, AgencyUpdate
+from app.models.foia_request import FoiaRequest, FoiaStatus
+from app.schemas.agency import (
+    AgencyCreate,
+    AgencyList,
+    AgencyRecentFoia,
+    AgencyResponse,
+    AgencyStats,
+    AgencyUpdate,
+)
 from app.schemas.agency_contact import (
     AgencyContactCreate,
     AgencyContactList,
@@ -22,13 +30,25 @@ from app.schemas.agency_contact import (
 router = APIRouter(prefix="/api/agencies", tags=["agencies"])
 
 
+_JURISDICTION_TYPE_PATTERNS = {
+    "city": "%City of%",
+    "county": "%County%",
+    "state": "%State of Florida%",
+    "special": None,  # handled separately
+}
+
+
 @router.get("", response_model=AgencyList)
 async def list_agencies(
     search: str | None = Query(None, description="Filter by name or abbreviation"),
+    is_active: bool | None = Query(None, description="Filter by active status"),
+    jurisdiction_type: str | None = Query(
+        None, description="Filter by jurisdiction type: city, county, state, special"
+    ),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ) -> AgencyList:
-    """Return all agencies, with optional search filter."""
+    """Return all agencies, with optional search/active/jurisdiction filters."""
     stmt = select(Agency).order_by(Agency.name)
 
     if search:
@@ -36,6 +56,28 @@ async def list_agencies(
         stmt = stmt.where(
             Agency.name.ilike(pattern) | Agency.abbreviation.ilike(pattern)
         )
+
+    if is_active is not None:
+        stmt = stmt.where(Agency.is_active == is_active)
+
+    if jurisdiction_type and jurisdiction_type in _JURISDICTION_TYPE_PATTERNS:
+        if jurisdiction_type == "special":
+            # Special = not city, not county, not state
+            stmt = stmt.where(
+                ~Agency.jurisdiction.ilike("%City of%")
+                & ~Agency.jurisdiction.ilike("%County%")
+                & ~Agency.jurisdiction.ilike("%State of Florida%")
+                & ~Agency.jurisdiction.ilike("%Town of%")
+            )
+        else:
+            like_pattern = _JURISDICTION_TYPE_PATTERNS[jurisdiction_type]
+            if jurisdiction_type == "city":
+                stmt = stmt.where(
+                    Agency.jurisdiction.ilike(like_pattern)
+                    | Agency.jurisdiction.ilike("%Town of%")
+                )
+            else:
+                stmt = stmt.where(Agency.jurisdiction.ilike(like_pattern))
 
     result = await db.execute(stmt)
     agencies = result.scalars().all()
@@ -46,6 +88,26 @@ async def list_agencies(
         count_stmt = count_stmt.where(
             Agency.name.ilike(pattern) | Agency.abbreviation.ilike(pattern)
         )
+    if is_active is not None:
+        count_stmt = count_stmt.where(Agency.is_active == is_active)
+    if jurisdiction_type and jurisdiction_type in _JURISDICTION_TYPE_PATTERNS:
+        if jurisdiction_type == "special":
+            count_stmt = count_stmt.where(
+                ~Agency.jurisdiction.ilike("%City of%")
+                & ~Agency.jurisdiction.ilike("%County%")
+                & ~Agency.jurisdiction.ilike("%State of Florida%")
+                & ~Agency.jurisdiction.ilike("%Town of%")
+            )
+        elif jurisdiction_type == "city":
+            count_stmt = count_stmt.where(
+                Agency.jurisdiction.ilike("%City of%")
+                | Agency.jurisdiction.ilike("%Town of%")
+            )
+        else:
+            count_stmt = count_stmt.where(
+                Agency.jurisdiction.ilike(_JURISDICTION_TYPE_PATTERNS[jurisdiction_type])
+            )
+
     total = (await db.execute(count_stmt)).scalar_one()
 
     return AgencyList(
@@ -67,6 +129,117 @@ async def get_agency(
             status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
         )
     return AgencyResponse.model_validate(agency)
+
+
+@router.get("/{agency_id}/stats", response_model=AgencyStats)
+async def get_agency_stats(
+    agency_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> AgencyStats:
+    """Return FOIA performance metrics for an agency."""
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    # Total requests
+    total_stmt = select(func.count(FoiaRequest.id)).where(
+        FoiaRequest.agency_id == agency_id
+    )
+    total_requests = (await db.execute(total_stmt)).scalar_one()
+
+    if total_requests == 0:
+        return AgencyStats()
+
+    # Requests by status
+    status_stmt = (
+        select(FoiaRequest.status, func.count(FoiaRequest.id))
+        .where(FoiaRequest.agency_id == agency_id)
+        .group_by(FoiaRequest.status)
+    )
+    status_rows = (await db.execute(status_stmt)).all()
+    requests_by_status = {row[0].value: row[1] for row in status_rows}
+
+    # Fulfillment rate
+    fulfilled_count = requests_by_status.get("fulfilled", 0) + requests_by_status.get(
+        "partial", 0
+    )
+    fulfillment_rate = round((fulfilled_count / total_requests) * 100, 1)
+
+    # Cost stats
+    cost_stmt = select(
+        func.avg(FoiaRequest.actual_cost), func.sum(FoiaRequest.actual_cost)
+    ).where(
+        FoiaRequest.agency_id == agency_id,
+        FoiaRequest.actual_cost.is_not(None),
+    )
+    cost_row = (await db.execute(cost_stmt)).one()
+    avg_cost = round(float(cost_row[0]), 2) if cost_row[0] is not None else None
+    total_cost = round(float(cost_row[1]), 2) if cost_row[1] is not None else None
+
+    # Average actual response time (submitted_at → fulfilled_at)
+    response_stmt = select(
+        func.avg(
+            func.extract("epoch", FoiaRequest.fulfilled_at)
+            - func.extract("epoch", FoiaRequest.submitted_at)
+        )
+    ).where(
+        FoiaRequest.agency_id == agency_id,
+        FoiaRequest.submitted_at.is_not(None),
+        FoiaRequest.fulfilled_at.is_not(None),
+    )
+    avg_seconds = (await db.execute(response_stmt)).scalar_one()
+    avg_response_days_actual = (
+        round(float(avg_seconds) / 86400, 1) if avg_seconds is not None else None
+    )
+
+    return AgencyStats(
+        total_requests=total_requests,
+        requests_by_status=requests_by_status,
+        fulfillment_rate=fulfillment_rate,
+        avg_cost=avg_cost,
+        total_cost=total_cost,
+        avg_response_days_actual=avg_response_days_actual,
+    )
+
+
+@router.get("/{agency_id}/recent-foias", response_model=list[AgencyRecentFoia])
+async def get_agency_recent_foias(
+    agency_id: uuid.UUID,
+    limit: int = Query(5, ge=1, le=20, description="Number of recent FOIAs to return"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> list[AgencyRecentFoia]:
+    """Return the most recent FOIA requests for an agency."""
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+
+    stmt = (
+        select(FoiaRequest)
+        .where(FoiaRequest.agency_id == agency_id)
+        .order_by(FoiaRequest.created_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    foias = result.scalars().all()
+
+    return [
+        AgencyRecentFoia(
+            id=f.id,
+            case_number=f.case_number,
+            status=f.status.value,
+            priority=f.priority.value,
+            submitted_at=f.submitted_at,
+            created_at=f.created_at,
+            request_text_preview=f.request_text[:150] + ("..." if len(f.request_text) > 150 else ""),
+        )
+        for f in foias
+    ]
 
 
 @router.post("", response_model=AgencyResponse, status_code=status.HTTP_201_CREATED)

@@ -238,5 +238,155 @@
     "is_active": true,
     "website": "https://www.mywinterhaven.com/police",
     "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Oldsmar Police Department",
+    "abbreviation": "OPD",
+    "foia_email": "records@myoldsmar.com",
+    "jurisdiction": "City of Oldsmar",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.myoldsmar.com/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Safety Harbor Police Department",
+    "abbreviation": "SHPD",
+    "foia_email": "records@cityofsafetyharbor.com",
+    "jurisdiction": "City of Safety Harbor",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.cityofsafetyharbor.com/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Gulfport Police Department",
+    "abbreviation": "GPD",
+    "foia_email": "records@mygulfport.us",
+    "jurisdiction": "City of Gulfport",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.mygulfport.us/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Treasure Island Police Department",
+    "abbreviation": "TIPD",
+    "foia_email": "records@mytreasureisland.org",
+    "jurisdiction": "City of Treasure Island",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.mytreasureisland.org/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Palmetto Police Department",
+    "abbreviation": "PaPD",
+    "foia_email": "records@palmettofl.org",
+    "jurisdiction": "City of Palmetto",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.palmettofl.org/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Haines City Police Department",
+    "abbreviation": "HCPD",
+    "foia_email": "records@hainescity.com",
+    "jurisdiction": "City of Haines City",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.hainescity.com/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Bartow Police Department",
+    "abbreviation": "BaPD",
+    "foia_email": "records@cityofbartow.net",
+    "jurisdiction": "City of Bartow",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.cityofbartow.net/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Auburndale Police Department",
+    "abbreviation": "APD",
+    "foia_email": "records@auburndalefl.com",
+    "jurisdiction": "City of Auburndale",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.auburndalefl.com/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Kenneth City Police Department",
+    "abbreviation": "KCPD",
+    "foia_email": "records@kennethcityfl.org",
+    "jurisdiction": "Town of Kenneth City",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.kennethcityfl.org/police",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Tampa International Airport Police",
+    "abbreviation": "TIAPD",
+    "foia_email": "records@tampaairport.com",
+    "jurisdiction": "Tampa International Airport",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.tampaairport.com",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All surveillance camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Port Tampa Bay Police",
+    "abbreviation": "PTBP",
+    "foia_email": "records@porttb.com",
+    "jurisdiction": "Port Tampa Bay",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.porttb.com",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All surveillance camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Citrus County Sheriff's Office",
+    "abbreviation": "CCSO",
+    "foia_email": "records@sheriffcitrus.org",
+    "jurisdiction": "Citrus County",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.sheriffcitrus.org",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Sumter County Sheriff's Office",
+    "abbreviation": "SuCSO",
+    "foia_email": "records@sumtercountysheriff.org",
+    "jurisdiction": "Sumter County",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.sumtercountysheriff.org",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "Hardee County Sheriff's Office",
+    "abbreviation": "HdCSO",
+    "foia_email": "records@hardeeso.com",
+    "jurisdiction": "Hardee County",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.hardeeso.com",
+    "foia_template": "Dear Records Custodian,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am requesting copies of the following records from {agency_name}:\n\n1. All body-worn camera (BWC) footage related to {incident_description}\n2. All dashboard camera footage related to the same incident\n3. All Computer-Aided Dispatch (CAD) records and call logs\n4. All incident reports, supplemental reports, and use-of-force reports\n5. Any internal affairs complaints or investigations related to this incident\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available. Per Section 119.07(1)(a), F.S., the custodian shall provide copies in the medium requested if the agency maintains the records in that medium.\n\nIf any records are withheld, please cite the specific statutory exemption and provide a redacted version where possible.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
+  },
+  {
+    "name": "State Attorney's Office - 13th Judicial Circuit",
+    "abbreviation": "SAO13",
+    "foia_email": "publicrecords@sao13th.com",
+    "jurisdiction": "13th Judicial Circuit (Hillsborough County)",
+    "state": "FL",
+    "is_active": true,
+    "website": "https://www.sao13th.com",
+    "foia_template": "Dear Public Records Coordinator,\n\nPursuant to Chapter 119, Florida Statutes (Florida Public Records Act), I am submitting this request to the {agency_name} for copies of the following records:\n\n1. All case files, charging documents, and disposition records related to {incident_description}\n2. All deposition transcripts and witness statements\n3. All evidence logs and chain of custody records\n4. All correspondence between the State Attorney's Office and law enforcement agencies regarding this case\n5. All plea agreements and sentencing recommendations\n\nIncident Date: {incident_date}\nIncident Location: {incident_location}\n\nI understand that certain records may be exempt under active investigation or prosecution exemptions per Section 119.071(2)(c), F.S. If any records are currently exempt, please provide an estimated date of availability and cite the specific statutory exemption.\n\nI am willing to pay reasonable duplication costs as provided by law. Please notify me in advance if costs will exceed $25.00.\n\nPlease provide responsive records in electronic format where available.\n\nThank you for your prompt attention to this request.\n\nSincerely,\nFOIA Archive Records Request System\nrecordsrequest@foiaarchive.com"
   }
 ]

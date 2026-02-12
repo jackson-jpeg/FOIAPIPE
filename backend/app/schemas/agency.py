@@ -70,3 +70,24 @@ class AgencyResponse(BaseModel):
 class AgencyList(BaseModel):
     items: list[AgencyResponse]
     total: int
+
+
+class AgencyStats(BaseModel):
+    total_requests: int = 0
+    requests_by_status: dict[str, int] = {}
+    fulfillment_rate: float = 0.0
+    avg_cost: float | None = None
+    total_cost: float | None = None
+    avg_response_days_actual: float | None = None
+
+
+class AgencyRecentFoia(BaseModel):
+    id: uuid.UUID
+    case_number: str
+    status: str
+    priority: str
+    submitted_at: datetime | None = None
+    created_at: datetime
+    request_text_preview: str
+
+    model_config = {"from_attributes": True}

@@ -1,37 +1,28 @@
-import { useEffect, useState, useCallback, useRef, type KeyboardEvent } from 'react';
-import { Plus, Building2, ChevronDown, ChevronRight, Pencil, Check } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  Plus,
+  Building2,
+  CheckCircle,
+  Clock,
+  Mail,
+  Search,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { StatCard } from '@/components/ui/StatCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/cn';
+import { AgencyDetail } from '@/components/agencies/AgencyDetail';
 import * as agenciesApi from '@/api/agencies';
+import type { Agency } from '@/api/agencies';
 
-// ── Extended Agency type matching backend AgencyResponse ────────────────
-
-interface Agency {
-  id: string;
-  name: string;
-  abbreviation: string | null;
-  foia_email: string | null;
-  foia_phone: string | null;
-  foia_address: string | null;
-  website: string | null;
-  state: string;
-  jurisdiction: string | null;
-  is_active: boolean;
-  avg_response_days: number | null;
-  notes: string | null;
-  foia_template: string | null;
-  typical_cost_per_hour: number | null;
-  created_at: string;
-  updated_at: string | null;
-}
+// ── Types ────────────────────────────────────────────────────────────────
 
 interface NewAgencyForm {
   name: string;
@@ -41,281 +32,10 @@ interface NewAgencyForm {
   state: string;
 }
 
-type SortField = 'name' | 'abbreviation' | 'jurisdiction' | 'foia_email' | 'avg_response_days' | 'is_active';
+type SortField = 'name' | 'jurisdiction' | 'foia_email' | 'avg_response_days' | 'is_active';
 type SortDir = 'asc' | 'desc';
 
-// ── Inline editable cell ───────────────────────────────────────────────
-
-function InlineEditCell({
-  value,
-  agencyId,
-  field,
-  type = 'text',
-  onSave,
-}: {
-  value: string | number | null;
-  agencyId: string;
-  field: string;
-  type?: 'text' | 'number';
-  onSave: (id: string, field: string, value: string | number | null) => Promise<void>;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState(String(value ?? ''));
-  const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [editing]);
-
-  const handleStartEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditValue(String(value ?? ''));
-    setEditing(true);
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-    setEditValue(String(value ?? ''));
-  };
-
-  const handleSave = async () => {
-    const parsed = type === 'number'
-      ? (editValue === '' ? null : Number(editValue))
-      : (editValue || null);
-    setSaving(true);
-    try {
-      await onSave(agencyId, field, parsed);
-      setEditing(false);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
-    }
-  };
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-        <input
-          ref={inputRef}
-          type={type}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleSave}
-          disabled={saving}
-          className={cn(
-            'h-7 w-full rounded border border-accent-primary/50 bg-surface-primary px-2 text-sm text-text-primary',
-            'focus:outline-none focus:ring-2 focus:ring-accent-primary/20',
-            type === 'number' && 'w-20'
-          )}
-        />
-        {saving && <Spinner size="sm" />}
-      </div>
-    );
-  }
-
-  return (
-    <div className="group/cell flex items-center gap-1.5">
-      <span className={cn(!value && 'text-text-quaternary italic')}>
-        {value ?? 'None'}
-      </span>
-      <button
-        onClick={handleStartEdit}
-        className="shrink-0 opacity-0 group-hover/cell:opacity-100 transition-opacity text-text-tertiary hover:text-text-primary"
-        title="Edit"
-      >
-        <Pencil className="h-3 w-3" />
-      </button>
-    </div>
-  );
-}
-
-// ── Expanded row detail ────────────────────────────────────────────────
-
-function AgencyExpandedRow({
-  agency,
-  onUpdate,
-}: {
-  agency: Agency;
-  onUpdate: (id: string, data: Partial<Agency>) => Promise<void>;
-}) {
-  const [template, setTemplate] = useState(agency.foia_template ?? '');
-  const [notes, setNotes] = useState(agency.notes ?? '');
-  const [isActive, setIsActive] = useState(agency.is_active);
-  const [savingTemplate, setSavingTemplate] = useState(false);
-  const [savingNotes, setSavingNotes] = useState(false);
-  const [savingActive, setSavingActive] = useState(false);
-  const { addToast } = useToast();
-
-  const handleSaveTemplate = async () => {
-    setSavingTemplate(true);
-    try {
-      await onUpdate(agency.id, { foia_template: template || null } as Partial<Agency>);
-      addToast({ type: 'success', title: 'Template saved' });
-    } catch {
-      addToast({ type: 'error', title: 'Failed to save template' });
-    } finally {
-      setSavingTemplate(false);
-    }
-  };
-
-  const handleSaveNotes = async () => {
-    setSavingNotes(true);
-    try {
-      await onUpdate(agency.id, { notes: notes || null } as Partial<Agency>);
-      addToast({ type: 'success', title: 'Notes saved' });
-    } catch {
-      addToast({ type: 'error', title: 'Failed to save notes' });
-    } finally {
-      setSavingNotes(false);
-    }
-  };
-
-  const handleToggleActive = async () => {
-    const newValue = !isActive;
-    setSavingActive(true);
-    try {
-      await onUpdate(agency.id, { is_active: newValue } as Partial<Agency>);
-      setIsActive(newValue);
-      addToast({ type: 'success', title: `Agency ${newValue ? 'activated' : 'deactivated'}` });
-    } catch {
-      addToast({ type: 'error', title: 'Failed to update status' });
-    } finally {
-      setSavingActive(false);
-    }
-  };
-
-  return (
-    <tr>
-      <td colSpan={7} className="px-4 py-4 bg-surface-tertiary/30 border-b border-surface-border/50">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
-          {/* FOIA Template */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-text-secondary uppercase tracking-wider">
-              FOIA Template
-            </label>
-            <textarea
-              value={template}
-              onChange={(e) => setTemplate(e.target.value)}
-              rows={6}
-              placeholder="Custom FOIA request template for this agency..."
-              className={cn(
-                'w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
-                'transition-all duration-150 resize-y',
-                'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20'
-              )}
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleSaveTemplate}
-              loading={savingTemplate}
-              icon={<Check className="h-3.5 w-3.5" />}
-            >
-              Save Template
-            </Button>
-          </div>
-
-          {/* Right column: Active toggle + Notes */}
-          <div className="space-y-4">
-            {/* Active toggle */}
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-text-secondary uppercase tracking-wider">
-                Status
-              </label>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleToggleActive}
-                  disabled={savingActive}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 focus-visible:ring-offset-2',
-                    'disabled:pointer-events-none disabled:opacity-40',
-                    isActive ? 'bg-accent-primary' : 'bg-surface-border-light'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'pointer-events-none inline-block h-5 w-5 rounded-full bg-text-primary shadow-sm ring-0 transition-transform duration-200 ease-in-out',
-                      isActive ? 'translate-x-5' : 'translate-x-0'
-                    )}
-                  />
-                </button>
-                <span className="text-sm text-text-primary">
-                  {isActive ? 'Active' : 'Inactive'}
-                </span>
-                {savingActive && <Spinner size="sm" />}
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-text-secondary uppercase tracking-wider">
-                Notes
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                placeholder="Internal notes about this agency..."
-                className={cn(
-                  'w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
-                  'transition-all duration-150 resize-y',
-                  'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20'
-                )}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleSaveNotes}
-                loading={savingNotes}
-                icon={<Check className="h-3.5 w-3.5" />}
-              >
-                Save Notes
-              </Button>
-            </div>
-
-            {/* Extra metadata */}
-            <div className="space-y-1 text-xs text-text-tertiary">
-              {agency.foia_phone && <p>Phone: {agency.foia_phone}</p>}
-              {agency.foia_address && <p>Address: {agency.foia_address}</p>}
-              {agency.website && (
-                <p>
-                  Website:{' '}
-                  <a
-                    href={agency.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent-primary hover:underline"
-                  >
-                    {agency.website}
-                  </a>
-                </p>
-              )}
-              {agency.typical_cost_per_hour != null && (
-                <p>Typical cost: ${Number(agency.typical_cost_per_hour).toFixed(2)}/hr</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-// ── Sort header helper ─────────────────────────────────────────────────
+// ── Sort header helper ──────────────────────────────────────────────────
 
 function SortableHeader({
   label,
@@ -348,7 +68,20 @@ function SortableHeader({
   );
 }
 
-// ── Main page component ────────────────────────────────────────────────
+// ── Response time dot ───────────────────────────────────────────────────
+
+function ResponseDot({ days }: { days: number | null }) {
+  if (days == null) return <span className="text-text-quaternary">&mdash;</span>;
+  const color = days < 14 ? 'bg-emerald-400' : days <= 30 ? 'bg-amber-400' : 'bg-red-400';
+  return (
+    <span className="inline-flex items-center gap-1.5 tabular-nums">
+      <span className={cn('h-1.5 w-1.5 rounded-full', color)} />
+      <span className="text-sm text-text-primary">{days}d</span>
+    </span>
+  );
+}
+
+// ── Main page component ─────────────────────────────────────────────────
 
 export function AgenciesPage() {
   const { addToast } = useToast();
@@ -358,16 +91,18 @@ export function AgenciesPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
-  // Search
+  // Search / Filters
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  const [jurisdictionType, setJurisdictionType] = useState('');
+  const [activeFilter, setActiveFilter] = useState('');
 
   // Sorting
   const [sortBy, setSortBy] = useState<SortField>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  // Expand
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Detail slide-over
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string | null>(null);
 
   // Add modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -381,14 +116,19 @@ export function AgenciesPage() {
   });
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof NewAgencyForm, string>>>({});
 
-  // ── Data fetching ──────────────────────────────────────────────────
+  // ── Data fetching ─────────────────────────────────────────────────────
 
   const loadAgencies = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await agenciesApi.getAgencies({
+      const params: agenciesApi.AgencyListParams = {
         search: debouncedSearch || undefined,
-      });
+      };
+      if (jurisdictionType) params.jurisdiction_type = jurisdictionType;
+      if (activeFilter === 'active') params.is_active = true;
+      else if (activeFilter === 'inactive') params.is_active = false;
+
+      const data = await agenciesApi.getAgencies(params);
       setAgencies(data.items ?? []);
       setTotal(data.total ?? 0);
     } catch {
@@ -396,13 +136,24 @@ export function AgenciesPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, addToast]);
+  }, [debouncedSearch, jurisdictionType, activeFilter, addToast]);
 
   useEffect(() => {
     loadAgencies();
   }, [loadAgencies]);
 
-  // ── Sorting ────────────────────────────────────────────────────────
+  // ── Computed stats ────────────────────────────────────────────────────
+
+  const activeCount = agencies.filter((a) => a.is_active).length;
+  const withEmailCount = agencies.filter((a) => a.foia_email).length;
+  const avgResponseDays = (() => {
+    const withDays = agencies.filter((a) => a.avg_response_days != null);
+    if (withDays.length === 0) return null;
+    const sum = withDays.reduce((acc, a) => acc + (a.avg_response_days ?? 0), 0);
+    return Math.round(sum / withDays.length);
+  })();
+
+  // ── Sorting ───────────────────────────────────────────────────────────
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
@@ -431,38 +182,20 @@ export function AgenciesPage() {
     return String(aVal).localeCompare(String(bVal)) * dir;
   });
 
-  // ── Row expand toggle ─────────────────────────────────────────────
+  // ── Selected agency ──────────────────────────────────────────────────
 
-  const handleRowClick = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
+  const selectedAgency = agencies.find((a) => a.id === selectedAgencyId) ?? null;
 
-  // ── Inline field save ─────────────────────────────────────────────
-
-  const handleInlineSave = async (id: string, field: string, value: string | number | null) => {
-    try {
-      await agenciesApi.updateAgency(id, { [field]: value });
-      setAgencies((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
-      );
-      addToast({ type: 'success', title: 'Saved' });
-    } catch (error: any) {
-      const detail = error.response?.data?.detail || 'Failed to save';
-      addToast({ type: 'error', title: 'Save failed', message: detail });
-      throw error; // re-throw so InlineEditCell knows it failed
-    }
-  };
-
-  // ── Expanded row update ───────────────────────────────────────────
+  // ── Agency update handler ────────────────────────────────────────────
 
   const handleUpdate = async (id: string, data: Partial<Agency>) => {
-    await agenciesApi.updateAgency(id, data as Partial<agenciesApi.Agency>);
+    await agenciesApi.updateAgency(id, data);
     setAgencies((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...data } : a))
     );
   };
 
-  // ── Create agency ─────────────────────────────────────────────────
+  // ── Create agency ────────────────────────────────────────────────────
 
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof NewAgencyForm, string>> = {};
@@ -507,7 +240,7 @@ export function AgenciesPage() {
     setFormErrors({});
   };
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -528,15 +261,64 @@ export function AgenciesPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-md">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Agencies"
+          value={String(total)}
+          icon={<Building2 className="h-5 w-5" />}
+          gradient="blue"
+        />
+        <StatCard
+          label="Active Agencies"
+          value={String(activeCount)}
+          icon={<CheckCircle className="h-5 w-5" />}
+          gradient="emerald"
+        />
+        <StatCard
+          label="Avg Response Time"
+          value={avgResponseDays != null ? `${avgResponseDays}d` : '--'}
+          icon={<Clock className="h-5 w-5" />}
+          gradient="amber"
+        />
+        <StatCard
+          label="With FOIA Email"
+          value={String(withEmailCount)}
+          icon={<Mail className="h-5 w-5" />}
+          gradient="cyan"
+        />
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[200px] max-w-md">
           <Input
-            placeholder="Search agencies by name or abbreviation..."
+            placeholder="Search agencies..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            icon={<Search className="h-4 w-4" />}
           />
         </div>
+        <Select
+          options={[
+            { value: '', label: 'All Types' },
+            { value: 'city', label: 'City PD' },
+            { value: 'county', label: 'County Sheriff' },
+            { value: 'state', label: 'State Agency' },
+            { value: 'special', label: 'Special' },
+          ]}
+          value={jurisdictionType}
+          onChange={(value) => setJurisdictionType(value)}
+        />
+        <Select
+          options={[
+            { value: '', label: 'All Status' },
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' },
+          ]}
+          value={activeFilter}
+          onChange={(value) => setActiveFilter(value)}
+        />
         <span className="text-xs text-text-tertiary tabular-nums">
           {total} {total === 1 ? 'agency' : 'agencies'}
         </span>
@@ -567,32 +349,69 @@ export function AgenciesPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-surface-border/50 bg-surface-tertiary/30">
-                <th className="w-8 px-4 py-3" />
-                <SortableHeader label="Name" field="name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                <SortableHeader label="Abbrev" field="abbreviation" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                <SortableHeader label="Agency" field="name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="Jurisdiction" field="jurisdiction" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="FOIA Email" field="foia_email" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                <SortableHeader label="Avg Days" field="avg_response_days" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                <SortableHeader label="Avg Response" field="avg_response_days" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="Status" field="is_active" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border/30">
-              {sortedAgencies.map((agency) => {
-                const isExpanded = expandedId === agency.id;
-                return (
-                  <AgencyRow
-                    key={agency.id}
-                    agency={agency}
-                    isExpanded={isExpanded}
-                    onRowClick={handleRowClick}
-                    onInlineSave={handleInlineSave}
-                    onUpdate={handleUpdate}
-                  />
-                );
-              })}
+              {sortedAgencies.map((agency) => (
+                <tr
+                  key={agency.id}
+                  className={cn(
+                    'hover:bg-surface-hover transition-colors cursor-pointer',
+                    selectedAgencyId === agency.id && 'bg-accent-primary/5'
+                  )}
+                  onClick={() => setSelectedAgencyId(agency.id)}
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary">{agency.name}</span>
+                      {agency.abbreviation && (
+                        <span className="text-xs text-text-quaternary">({agency.abbreviation})</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">
+                    {agency.jurisdiction || <span className="text-text-quaternary">&mdash;</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {agency.foia_email ? (
+                      <a
+                        href={`mailto:${agency.foia_email}`}
+                        className="text-accent-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {agency.foia_email}
+                      </a>
+                    ) : (
+                      <span className="text-text-quaternary">&mdash;</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <ResponseDot days={agency.avg_response_days} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={agency.is_active ? 'success' : 'default'} dot>
+                      {agency.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Agency Detail Slide-over */}
+      {selectedAgency && (
+        <AgencyDetail
+          agency={selectedAgency}
+          onClose={() => setSelectedAgencyId(null)}
+          onUpdate={handleUpdate}
+        />
       )}
 
       {/* Add Agency Modal */}
@@ -655,70 +474,5 @@ export function AgenciesPage() {
         </div>
       </Modal>
     </div>
-  );
-}
-
-// ── Agency table row (extracted for fragment return) ────────────────────
-
-function AgencyRow({
-  agency,
-  isExpanded,
-  onRowClick,
-  onInlineSave,
-  onUpdate,
-}: {
-  agency: Agency;
-  isExpanded: boolean;
-  onRowClick: (id: string) => void;
-  onInlineSave: (id: string, field: string, value: string | number | null) => Promise<void>;
-  onUpdate: (id: string, data: Partial<Agency>) => Promise<void>;
-}) {
-  return (
-    <>
-      <tr
-        className="hover:bg-surface-hover transition-colors cursor-pointer"
-        onClick={() => onRowClick(agency.id)}
-      >
-        <td className="px-4 py-3 text-text-tertiary">
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </td>
-        <td className="px-4 py-3 text-sm text-text-primary font-medium">
-          {agency.name}
-        </td>
-        <td className="px-4 py-3 text-sm text-text-secondary">
-          {agency.abbreviation || <span className="text-text-quaternary">&mdash;</span>}
-        </td>
-        <td className="px-4 py-3 text-sm text-text-secondary">
-          {agency.jurisdiction || <span className="text-text-quaternary">&mdash;</span>}
-        </td>
-        <td className="px-4 py-3 text-sm text-text-primary">
-          <InlineEditCell
-            value={agency.foia_email}
-            agencyId={agency.id}
-            field="foia_email"
-            onSave={onInlineSave}
-          />
-        </td>
-        <td className="px-4 py-3 text-sm text-text-primary">
-          <InlineEditCell
-            value={agency.avg_response_days}
-            agencyId={agency.id}
-            field="avg_response_days"
-            type="number"
-            onSave={onInlineSave}
-          />
-        </td>
-        <td className="px-4 py-3">
-          <Badge variant={agency.is_active ? 'success' : 'default'} dot>
-            {agency.is_active ? 'Active' : 'Inactive'}
-          </Badge>
-        </td>
-      </tr>
-      {isExpanded && <AgencyExpandedRow agency={agency} onUpdate={onUpdate} />}
-    </>
   );
 }
