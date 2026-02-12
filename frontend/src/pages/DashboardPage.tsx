@@ -224,7 +224,7 @@ export function DashboardPage() {
 
       {/* Today's Snapshot + System Health (from summary & metrics) */}
       {(summary || metrics) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {/* Today's Numbers */}
           {summary && (
             <Card title="Today's Activity">
@@ -402,11 +402,10 @@ export function DashboardPage() {
               )}
             </Card>
           )}
+          {/* Auto-Submit Decisions */}
+          <AutoSubmitStats />
         </div>
       )}
-
-      {/* Auto-Submit Stats */}
-      <AutoSubmitStats />
 
       {/* Pipeline Funnel */}
       {!loading && (

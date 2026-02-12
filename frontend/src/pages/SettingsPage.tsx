@@ -354,10 +354,10 @@ export function SettingsPage() {
                       type="button"
                       onClick={() => setAutoSubmitMode('off')}
                       className={cn(
-                        'rounded-lg border px-3 py-2.5 text-center transition-all text-sm',
+                        'rounded-lg border px-3 py-2.5 text-center text-sm transition-colors duration-150',
                         autoSubmitMode === 'off'
-                          ? 'border-text-tertiary bg-surface-tertiary text-text-primary font-medium'
-                          : 'border-surface-border text-text-tertiary hover:border-text-quaternary hover:bg-surface-hover',
+                          ? 'border-surface-border-light bg-surface-tertiary text-text-primary font-medium'
+                          : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
                       )}
                     >
                       Off
@@ -366,10 +366,10 @@ export function SettingsPage() {
                       type="button"
                       onClick={() => setAutoSubmitMode('dry_run')}
                       className={cn(
-                        'rounded-lg border px-3 py-2.5 text-center transition-all text-sm flex items-center justify-center gap-1.5',
+                        'rounded-lg border px-3 py-2.5 text-center text-sm flex items-center justify-center gap-1.5 transition-colors duration-150',
                         autoSubmitMode === 'dry_run'
-                          ? 'border-amber-500/60 bg-amber-500/10 text-amber-400 font-medium'
-                          : 'border-surface-border text-text-tertiary hover:border-amber-500/30 hover:bg-surface-hover',
+                          ? 'border-accent-amber/50 bg-accent-amber-subtle text-accent-amber font-medium'
+                          : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
                       )}
                     >
                       <AlertTriangle className="h-3.5 w-3.5" />
@@ -379,28 +379,25 @@ export function SettingsPage() {
                       type="button"
                       onClick={() => setAutoSubmitMode('live')}
                       className={cn(
-                        'rounded-lg border px-3 py-2.5 text-center transition-all text-sm flex items-center justify-center gap-1.5',
+                        'rounded-lg border px-3 py-2.5 text-center text-sm flex items-center justify-center gap-1.5 transition-colors duration-150',
                         autoSubmitMode === 'live'
-                          ? 'border-red-500/60 bg-red-500/10 text-red-400 font-medium'
-                          : 'border-surface-border text-text-tertiary hover:border-red-500/30 hover:bg-surface-hover',
+                          ? 'border-accent-red/50 bg-accent-red-subtle text-accent-red font-medium'
+                          : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
                       )}
                     >
                       Live
-                      {autoSubmitMode === 'live' && (
-                        <Badge variant="danger" size="sm">Caution</Badge>
-                      )}
                     </button>
                   </div>
-                  <p className="mt-2 text-2xs text-text-tertiary">
+                  <p className="mt-2 text-xs text-text-tertiary">
                     {autoSubmitMode === 'off' && 'Auto-submit is disabled. FOIAs must be filed manually.'}
-                    {autoSubmitMode === 'dry_run' && 'Dry run mode: FOIAs will be drafted for review but NOT emailed to agencies.'}
-                    {autoSubmitMode === 'live' && 'Live mode: FOIAs will be automatically emailed to agencies. These are legally binding requests.'}
+                    {autoSubmitMode === 'dry_run' && 'Dry run: FOIAs will be drafted for review but NOT emailed to agencies.'}
+                    {autoSubmitMode === 'live' && 'Live: FOIAs will be automatically emailed to agencies. These are legally binding.'}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3">
                   <Input
-                    label="Severity Threshold (1-10)"
+                    label="Min. Severity (1-10)"
                     type="number"
                     min={1}
                     max={10}
@@ -437,14 +434,16 @@ export function SettingsPage() {
                   />
                 </div>
 
-                <Input
-                  label="Scan Interval (min)"
-                  type="number"
-                  min={5}
-                  max={1440}
-                  value={scanInterval}
-                  onChange={(e) => setScanInterval(Number(e.target.value))}
-                />
+                <div className="border-t border-surface-border/30 pt-4">
+                  <Input
+                    label="Scan Interval (min)"
+                    type="number"
+                    min={5}
+                    max={1440}
+                    value={scanInterval}
+                    onChange={(e) => setScanInterval(Number(e.target.value))}
+                  />
+                </div>
               </div>
             </Card>
 
