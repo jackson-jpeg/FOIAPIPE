@@ -60,12 +60,12 @@ jobs:
       - name: Run migrations
         run: |
           cd backend
-          alembic -c alembic/alembic.ini upgrade head
+          python -m alembic -c alembic/alembic.ini upgrade head
 
       - name: Run tests
         run: |
           cd backend
-          pytest tests/ -v
+          python -m pytest tests/ -v
 
   frontend-lint:
     name: Frontend Lint
