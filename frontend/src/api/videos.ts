@@ -88,3 +88,10 @@ export async function getPipelineCounts(): Promise<{ counts: Record<string, numb
   const { data } = await client.get('/videos/pipeline-counts');
   return data;
 }
+
+export async function getVideoAnalytics(id: string, days?: number): Promise<any> {
+  const params: Record<string, any> = {};
+  if (days) params.days = days;
+  const { data } = await client.get(`/videos/${id}/analytics`, { params });
+  return data;
+}

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.models.foia_request import FoiaRequest
 from app.models.video import Video, VideoStatus
+from app.models.video_analytics import VideoAnalytics
 from app.schemas.video import (
     VideoCreate,
     VideoList,
@@ -1037,3 +1038,75 @@ async def upload_subtitle_to_youtube(
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
+# ── Per-Video Analytics ─────────────────────────────────────────────────
+
+
+@router.get("/{video_id}/analytics")
+async def get_video_analytics(
+    video_id: uuid.UUID,
+    days: int = Query(30, ge=7, le=365, description="Number of days of analytics"),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Return daily YouTube analytics for a specific video."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    from datetime import date as date_type, timedelta
+
+    cutoff = date_type.today() - timedelta(days=days)
+    result = await db.execute(
+        select(VideoAnalytics)
+        .where(VideoAnalytics.video_id == video_id, VideoAnalytics.date >= cutoff)
+        .order_by(VideoAnalytics.date.asc())
+    )
+    rows = result.scalars().all()
+
+    # Aggregate totals
+    total_views = sum(r.views for r in rows)
+    total_revenue = float(sum(r.estimated_revenue for r in rows))
+    total_watch_time = sum(r.watch_time_minutes for r in rows)
+    total_likes = sum(r.likes for r in rows)
+    total_comments = sum(r.comments for r in rows)
+    total_shares = sum(r.shares for r in rows)
+    total_impressions = sum(r.impressions for r in rows)
+    net_subscribers = sum(r.subscribers_gained - r.subscribers_lost for r in rows)
+    avg_ctr = (sum(r.ctr for r in rows) / len(rows)) if rows else 0.0
+
+    daily = [
+        {
+            "date": r.date.isoformat(),
+            "views": r.views,
+            "revenue": float(r.estimated_revenue),
+            "watch_time_minutes": r.watch_time_minutes,
+            "impressions": r.impressions,
+            "ctr": r.ctr,
+            "likes": r.likes,
+            "comments": r.comments,
+            "shares": r.shares,
+        }
+        for r in rows
+    ]
+
+    rpm = (total_revenue / total_views * 1000) if total_views > 0 else 0.0
+
+    return {
+        "video_id": str(video_id),
+        "period_days": days,
+        "totals": {
+            "views": total_views,
+            "revenue": round(total_revenue, 2),
+            "watch_time_hours": round(total_watch_time / 60, 1),
+            "likes": total_likes,
+            "comments": total_comments,
+            "shares": total_shares,
+            "impressions": total_impressions,
+            "net_subscribers": net_subscribers,
+            "avg_ctr": round(avg_ctr, 2),
+            "rpm": round(rpm, 2),
+        },
+        "daily": daily,
+    }

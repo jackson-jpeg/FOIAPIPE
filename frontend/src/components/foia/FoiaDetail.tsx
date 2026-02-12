@@ -9,7 +9,7 @@ import { formatDate, formatRelativeTime, formatCurrency } from '@/lib/formatters
 import { FOIA_STATUSES, VIDEO_STATUSES } from '@/lib/constants';
 import {
   X, Send, Save, FileDown, Gavel, Clock, Mail, Video,
-  ArrowRight, ExternalLink, ChevronDown, ChevronUp,
+  ArrowRight, ExternalLink, ChevronDown, ChevronUp, TrendingUp,
 } from 'lucide-react';
 import * as foiaApi from '@/api/foia';
 import { cn } from '@/lib/cn';
@@ -36,6 +36,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
   const [appealResult, setAppealResult] = useState<any>(null);
   const [appealLoading, setAppealLoading] = useState(false);
   const [expandedEmails, setExpandedEmails] = useState(false);
+  const [costPrediction, setCostPrediction] = useState<any>(null);
 
   // Fetch enriched detail when panel opens
   useEffect(() => {
@@ -45,7 +46,15 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
     }
     setLoadingDetail(true);
     foiaApi.getFoiaRequest(request.id)
-      .then(setDetail)
+      .then((data) => {
+        setDetail(data);
+        // Fetch cost prediction if we have an agency_id and request isn't fulfilled/closed
+        if (data.agency_id && !['fulfilled', 'closed', 'denied'].includes(data.status)) {
+          foiaApi.getCostPrediction({ agency_id: data.agency_id })
+            .then(setCostPrediction)
+            .catch(() => setCostPrediction(null));
+        }
+      })
       .catch(() => setDetail(null))
       .finally(() => setLoadingDetail(false));
   }, [isOpen, request?.id]);
@@ -230,6 +239,36 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
                   </Badge>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Cost Prediction */}
+          {costPrediction && (
+            <div className="rounded-lg border border-surface-border p-3.5 space-y-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5 text-text-tertiary" />
+                <h3 className="text-xs font-medium text-text-primary">Cost Prediction</h3>
+                <Badge
+                  variant={costPrediction.confidence === 'high' ? 'success' : costPrediction.confidence === 'medium' ? 'warning' : 'default'}
+                  size="sm"
+                >
+                  {costPrediction.confidence || 'est'}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-text-tertiary">Predicted:</span>
+                  <span className="tabular-nums text-text-primary font-medium">{formatCurrency(costPrediction.predicted_cost || 0)}</span>
+                </div>
+                {costPrediction.cost_range && (
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">Range:</span>
+                    <span className="tabular-nums text-text-secondary">
+                      {formatCurrency(costPrediction.cost_range.low)}–{formatCurrency(costPrediction.cost_range.high)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

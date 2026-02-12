@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
-import { formatDate, formatDuration } from '@/lib/formatters';
+import { formatDate, formatDuration, formatCurrency, formatCompactNumber } from '@/lib/formatters';
+import { Sparkline } from '@/components/ui/Sparkline';
 import { VIDEO_STATUSES } from '@/lib/constants';
 import {
   X, Upload, Image, Save, ExternalLink, Youtube, Play, Zap, Captions,
-  Trash2, Copy, Archive, Scissors, Type, Link2, Unlink,
+  Trash2, Copy, Archive, Scissors, Type, Link2, Unlink, BarChart3,
+  Eye, DollarSign, ThumbsUp, MessageSquare, TrendingUp,
 } from 'lucide-react';
 import * as videosApi from '@/api/videos';
 import * as foiaApi from '@/api/foia';
@@ -47,6 +49,7 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   const [showTrimForm, setShowTrimForm] = useState(false);
   const [showIntroForm, setShowIntroForm] = useState(false);
   const [foiaOptions, setFoiaOptions] = useState<{ value: string; label: string }[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [trimStart, setTrimStart] = useState('0');
   const [trimEnd, setTrimEnd] = useState('');
   const [introText, setIntroText] = useState('');
@@ -66,6 +69,11 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
           })));
         })
         .catch(() => setFoiaOptions([]));
+      if (video.youtube_video_id) {
+        videosApi.getVideoAnalytics(video.id)
+          .then(setAnalytics)
+          .catch(() => setAnalytics(null));
+      }
     }
   }, [video?.id]);
 
@@ -413,6 +421,67 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
               <a href={video.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-accent-primary hover:underline">
                 View <ExternalLink className="h-3 w-3" />
               </a>
+            </div>
+          )}
+
+          {/* Per-Video Analytics */}
+          {analytics?.totals && (
+            <div className="rounded-lg border border-surface-border p-3.5 space-y-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-3.5 w-3.5 text-text-tertiary" />
+                <h3 className="text-xs font-medium text-text-primary">YouTube Analytics</h3>
+                <span className="text-2xs text-text-quaternary ml-auto">{analytics.period_days}d</span>
+              </div>
+
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-md bg-surface-tertiary/30 px-2.5 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <Eye className="h-2.5 w-2.5 text-text-quaternary" />
+                  </div>
+                  <p className="text-sm font-semibold text-text-primary tabular-nums">{formatCompactNumber(analytics.totals.views)}</p>
+                  <p className="text-2xs text-text-quaternary">Views</p>
+                </div>
+                <div className="rounded-md bg-surface-tertiary/30 px-2.5 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <DollarSign className="h-2.5 w-2.5 text-text-quaternary" />
+                  </div>
+                  <p className="text-sm font-semibold text-text-primary tabular-nums">{formatCurrency(analytics.totals.revenue)}</p>
+                  <p className="text-2xs text-text-quaternary">Revenue</p>
+                </div>
+                <div className="rounded-md bg-surface-tertiary/30 px-2.5 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-0.5">
+                    <TrendingUp className="h-2.5 w-2.5 text-text-quaternary" />
+                  </div>
+                  <p className="text-sm font-semibold text-text-primary tabular-nums">${analytics.totals.rpm}</p>
+                  <p className="text-2xs text-text-quaternary">RPM</p>
+                </div>
+              </div>
+
+              {/* Views Sparkline */}
+              {analytics.daily?.length > 1 && (
+                <div>
+                  <p className="text-2xs text-text-quaternary mb-1">Views trend</p>
+                  <Sparkline data={analytics.daily.map((d: any) => d.views)} height={32} className="w-full" />
+                </div>
+              )}
+
+              {/* Engagement Row */}
+              <div className="flex items-center justify-between text-2xs">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-text-tertiary">
+                    <ThumbsUp className="h-2.5 w-2.5" />
+                    {formatCompactNumber(analytics.totals.likes)}
+                  </span>
+                  <span className="flex items-center gap-1 text-text-tertiary">
+                    <MessageSquare className="h-2.5 w-2.5" />
+                    {formatCompactNumber(analytics.totals.comments)}
+                  </span>
+                </div>
+                <span className="text-text-quaternary tabular-nums">
+                  CTR {analytics.totals.avg_ctr}% · {analytics.totals.watch_time_hours}h watched
+                </span>
+              </div>
             </div>
           )}
 
