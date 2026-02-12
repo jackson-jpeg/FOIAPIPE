@@ -61,7 +61,7 @@ AGENCY_PATTERNS: dict[str, list[str]] = {
         "plant city pd",
         "pcpd",
     ],
-    "Florida Highway Patrol - Troop C": [
+    "Florida Highway Patrol": [
         "florida highway patrol",
         "fhp",
         "highway patrol",

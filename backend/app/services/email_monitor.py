@@ -204,13 +204,13 @@ def _detect_response_type(combined: str) -> str:
         "additional 10", "need more time",
     ]):
         return "extension"
-    if any(w in combined for w in ["processing", "being processed", "in progress"]):
-        return "processing"
     if any(w in combined for w in [
         "acknowledge", "received", "receipt", "confirm",
         "we have received your request",
     ]):
         return "acknowledged"
+    if any(w in combined for w in ["processing", "being processed", "in progress"]):
+        return "processing"
     return "unknown"
 
 

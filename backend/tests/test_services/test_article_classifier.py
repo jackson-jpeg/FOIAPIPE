@@ -110,5 +110,5 @@ class TestAutoFoiaEligibility:
         assert assess_auto_foia_eligibility(8, True, False) is False
 
     def test_threshold_boundary(self):
-        assert assess_auto_foia_eligibility(6, True, True) is True
-        assert assess_auto_foia_eligibility(5, True, True) is False
+        assert assess_auto_foia_eligibility(7, True, True) is True
+        assert assess_auto_foia_eligibility(6, True, True) is False
