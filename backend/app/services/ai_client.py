@@ -196,6 +196,51 @@ Return ONLY a JSON array of suggestion strings, no other text. Example:
         return _fallback_suggestions()
 
 
+async def apply_foia_suggestion(
+    request_text: str,
+    suggestion: str,
+) -> str:
+    """Apply a single suggestion to a FOIA request, returning the improved text.
+
+    Uses Claude to intelligently rewrite the request incorporating the suggestion
+    while preserving the overall structure and intent.
+
+    Args:
+        request_text: The current FOIA request text
+        suggestion: The suggestion to apply
+
+    Returns:
+        The improved request text with the suggestion incorporated
+    """
+    if not settings.ANTHROPIC_API_KEY:
+        return request_text
+
+    try:
+        import anthropic
+        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": f"""Apply this specific improvement suggestion to the FOIA request below. Return ONLY the complete improved request text, nothing else — no preamble, no explanation, no markdown.
+
+Suggestion to apply:
+{suggestion}
+
+Current request text:
+{request_text}"""}],
+        )
+
+        improved = response.content[0].text.strip()
+        # Sanity check: result should be at least 50% the length of original
+        if len(improved) >= len(request_text) * 0.5:
+            return improved
+        return request_text
+    except Exception as e:
+        logger.error(f"AI apply suggestion failed: {e}")
+        return request_text
+
+
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),

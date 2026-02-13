@@ -42,7 +42,7 @@ from app.services.appeal_generator import (
     generate_appeal_pdf,
     get_appeal_recommendations,
 )
-from app.services.ai_client import generate_foia_suggestions, generate_followup_letter
+from app.services.ai_client import generate_foia_suggestions, generate_followup_letter, apply_foia_suggestion
 from app.services.cache import LockError, distributed_lock, publish_sse
 
 logger = logging.getLogger(__name__)
@@ -271,6 +271,32 @@ async def get_suggestions(
         incident_type=incident_type,
     )
     return {"suggestions": suggestions}
+
+
+@router.post("/suggestions/apply")
+async def apply_suggestion(
+    body: dict,
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Apply a single AI suggestion to FOIA request text.
+
+    Body should contain:
+    - request_text: The current FOIA request text
+    - suggestion: The suggestion to apply
+    """
+    request_text = body.get("request_text", "")
+    suggestion = body.get("suggestion", "")
+    if not request_text or not suggestion:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Both request_text and suggestion are required",
+        )
+
+    improved_text = await apply_foia_suggestion(
+        request_text=request_text,
+        suggestion=suggestion,
+    )
+    return {"request_text": improved_text}
 
 
 # ── Follow-up Generation ──────────────────────────────────────────────────

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Send, X, Sparkles, RefreshCw } from 'lucide-react';
+import { Save, Send, X, Sparkles, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
-import { getFoiaRequest, createFoiaRequest, updateFoiaRequest, submitFoiaRequest, getFoiaSuggestions, previewFoiaSuggestions } from '@/api/foia';
+import { getFoiaRequest, createFoiaRequest, updateFoiaRequest, submitFoiaRequest, getFoiaSuggestions, previewFoiaSuggestions, applySuggestion } from '@/api/foia';
 
 export function FoiaEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +17,8 @@ export function FoiaEditorPage() {
   const [foiaId, setFoiaId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [applyingIndex, setApplyingIndex] = useState<number | null>(null);
+  const [appliedIndices, setAppliedIndices] = useState<Set<number>>(new Set());
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isNewRequest = id === 'new';
@@ -56,10 +58,26 @@ export function FoiaEditorPage() {
   }, []);
 
   const handleRefreshSuggestions = () => {
+    setAppliedIndices(new Set());
     if (foiaId) {
       fetchSuggestionsForId(foiaId);
     } else if (wordCount >= 50) {
       fetchPreviewSuggestions(content);
+    }
+  };
+
+  const handleApplySuggestion = async (suggestion: string, index: number) => {
+    if (applyingIndex !== null) return;
+    setApplyingIndex(index);
+    try {
+      const result = await applySuggestion(content, suggestion);
+      setContent(result.request_text);
+      setAppliedIndices(prev => new Set(prev).add(index));
+      addToast({ type: 'success', title: 'Suggestion applied' });
+    } catch {
+      addToast({ type: 'error', title: 'Failed to apply suggestion' });
+    } finally {
+      setApplyingIndex(null);
     }
   };
 
@@ -318,16 +336,45 @@ export function FoiaEditorPage() {
                   ))}
                 </div>
               ) : (
-                <ul className="space-y-3">
-                  {aiSuggestions.map((suggestion, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-3 text-sm text-text-secondary"
-                    >
-                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-primary" />
-                      <span>{suggestion}</span>
-                    </li>
-                  ))}
+                <ul className="space-y-2">
+                  {aiSuggestions.map((suggestion, index) => {
+                    const isApplying = applyingIndex === index;
+                    const isApplied = appliedIndices.has(index);
+                    return (
+                      <li
+                        key={index}
+                        className={cn(
+                          'group flex items-start gap-3 rounded-lg p-2.5 -mx-2.5 transition-colors',
+                          isApplied
+                            ? 'bg-accent-green/5'
+                            : 'hover:bg-glass-highlight cursor-pointer'
+                        )}
+                        onClick={() => !isApplied && handleApplySuggestion(suggestion, index)}
+                      >
+                        <span className={cn(
+                          'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full transition-colors',
+                          isApplied ? 'bg-accent-green' : 'bg-accent-primary'
+                        )} />
+                        <span className={cn(
+                          'flex-1 text-sm',
+                          isApplied ? 'text-text-quaternary line-through' : 'text-text-secondary'
+                        )}>
+                          {suggestion}
+                        </span>
+                        <span className="shrink-0 mt-0.5">
+                          {isApplying ? (
+                            <Loader2 className="h-3.5 w-3.5 text-accent-primary animate-spin" />
+                          ) : isApplied ? (
+                            <Check className="h-3.5 w-3.5 text-accent-green" />
+                          ) : (
+                            <span className="text-2xs text-text-quaternary opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                              Apply
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

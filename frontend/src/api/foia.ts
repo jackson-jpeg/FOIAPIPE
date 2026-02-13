@@ -100,6 +100,14 @@ export async function previewFoiaSuggestions(requestText: string, agencyName?: s
   return data;
 }
 
+export async function applySuggestion(requestText: string, suggestion: string): Promise<{ request_text: string }> {
+  const { data } = await client.post('/foia/suggestions/apply', {
+    request_text: requestText,
+    suggestion,
+  });
+  return data;
+}
+
 export async function getAppealReasons() {
   const { data } = await client.get('/foia/appeal-reasons');
   return data;
