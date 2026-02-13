@@ -4,7 +4,7 @@ import { StatusOrb } from '@/components/ui/StatusOrb';
 import { Button } from '@/components/ui/Button';
 import { formatDateTime } from '@/lib/formatters';
 import { INCIDENT_TYPES } from '@/lib/constants';
-import { ChevronDown, ChevronRight, ExternalLink, FileText, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, FileText, X, Sparkles } from 'lucide-react';
 
 interface Article {
   id: string;
@@ -23,6 +23,7 @@ interface Article {
   is_dismissed: boolean;
   auto_foia_eligible: boolean;
   auto_foia_filed: boolean;
+  predicted_revenue?: number | null;
 }
 
 interface ArticleRowProps {
@@ -32,9 +33,10 @@ interface ArticleRowProps {
   onFileFoia: (id: string) => void;
   onDismiss: (id: string) => void;
   onMarkReviewed: (id: string) => void;
+  onPrioritize?: (id: string) => void;
 }
 
-export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDismiss, onMarkReviewed }: ArticleRowProps) {
+export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDismiss, onMarkReviewed, onPrioritize }: ArticleRowProps) {
   const [expanded, setExpanded] = useState(false);
   const incidentInfo = article.incident_type
     ? INCIDENT_TYPES[article.incident_type as keyof typeof INCIDENT_TYPES]
@@ -43,28 +45,28 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
   return (
     <>
       <tr
-        className="border-b border-surface-border/30 hover:bg-surface-hover cursor-pointer transition-colors"
+        className="border-t border-glass-border hover:bg-glass-highlight cursor-pointer transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+        <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={selected}
             onChange={onToggleSelect}
           />
         </td>
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-1.5">
           <SeverityDot score={article.severity_score ?? 0} />
         </td>
-        <td className="px-3 py-2.5 max-w-md">
+        <td className="px-3 py-1.5 max-w-md">
           <div className="flex items-center gap-1.5">
             {expanded ? <ChevronDown className="h-3.5 w-3.5 text-text-quaternary flex-shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-text-quaternary flex-shrink-0" />}
             <span className="text-sm text-text-primary truncate">{article.headline}</span>
           </div>
         </td>
-        <td className="px-3 py-2.5 text-xs text-text-secondary hidden sm:table-cell">{article.source}</td>
-        <td className="px-3 py-2.5 text-xs text-text-secondary hidden md:table-cell">{article.detected_agency || '\u2014'}</td>
-        <td className="px-3 py-2.5 hidden lg:table-cell">
+        <td className="px-3 py-1.5 text-xs text-text-secondary hidden sm:table-cell">{article.source}</td>
+        <td className="px-3 py-1.5 text-xs text-text-secondary hidden md:table-cell">{article.detected_agency || '\u2014'}</td>
+        <td className="px-3 py-1.5 hidden lg:table-cell">
           {incidentInfo && (
             <StatusOrb
               color={incidentInfo.variant as 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default'}
@@ -72,10 +74,10 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
             />
           )}
         </td>
-        <td className="px-3 py-2.5 text-xs text-text-tertiary tabular-nums">
+        <td className="px-3 py-1.5 text-xs text-text-tertiary font-mono tabular-nums">
           {article.published_at ? formatDateTime(article.published_at) : '\u2014'}
         </td>
-        <td className="px-3 py-2.5 hidden sm:table-cell">
+        <td className="px-3 py-1.5 hidden sm:table-cell">
           <div className="flex items-center gap-2">
             {article.is_reviewed && <StatusOrb color="success" size="sm" label="Reviewed" />}
             {article.is_dismissed && <StatusOrb color="default" size="sm" label="Dismissed" />}
@@ -83,7 +85,7 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
             {article.auto_foia_eligible && !article.auto_foia_filed && <StatusOrb color="purple" size="sm" label="Eligible" />}
           </div>
         </td>
-        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+        <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             {!article.auto_foia_filed && !article.is_dismissed && (
               <Button variant="primary" size="sm" onClick={() => onFileFoia(article.id)}>
@@ -99,8 +101,8 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
         </td>
       </tr>
       {expanded && (
-        <tr className="border-b border-surface-border/30 bg-surface-tertiary/20">
-          <td colSpan={9} className="px-6 py-4 animate-fade-in-fast">
+        <tr className="border-t border-glass-border">
+          <td colSpan={9} className="px-4 py-3 glass-1 animate-fade-in-fast">
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -126,6 +128,9 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
                 {article.detected_location && (
                   <span className="text-text-tertiary">Location: <span className="text-text-primary">{article.detected_location}</span></span>
                 )}
+                {article.predicted_revenue != null && (
+                  <span className="text-text-tertiary">Predicted Rev: <span className="text-amber-400 font-medium">${article.predicted_revenue.toFixed(2)}</span></span>
+                )}
                 {article.auto_foia_eligible && (
                   <span className="text-emerald-400 font-medium">FOIA Eligible</span>
                 )}
@@ -149,6 +154,11 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
                 )}
                 {!article.is_dismissed && (
                   <Button variant="ghost" size="sm" onClick={() => onDismiss(article.id)}>Dismiss</Button>
+                )}
+                {onPrioritize && (
+                  <Button variant="outline" size="sm" onClick={() => onPrioritize(article.id)} icon={<Sparkles className="h-3 w-3" />}>
+                    Predict Revenue
+                  </Button>
                 )}
               </div>
             </div>

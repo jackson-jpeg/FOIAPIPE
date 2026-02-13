@@ -57,12 +57,10 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
 
   useEffect(() => {
     fetchNotifications();
-    // Fallback polling (SSE handles real-time; this catches reconnect gaps)
     const interval = setInterval(fetchNotifications, 60_000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // SSE: refetch notifications immediately on any relevant event
   const sseHandlers = useMemo(() => ({
     scan_complete: () => fetchNotifications(),
     foia_response: () => fetchNotifications(),
@@ -129,38 +127,36 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
   return (
     <header
       className={cn(
-        'sticky top-0 z-20 flex h-14 items-center justify-between bg-surface-secondary/80 backdrop-blur-xl border-b border-surface-border/50 px-6',
+        'sticky top-0 z-20 flex h-11 items-center justify-between glass-1 border-b border-glass-border px-6',
         !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={onMenuToggle}
-          className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary md:hidden"
+          className="rounded-md p-1 text-text-quaternary transition-colors hover:text-text-secondary md:hidden"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-3.5 w-3.5" />
         </button>
-        <h1 className="text-sm font-medium text-text-secondary">{title}</h1>
+        <h1 className="text-2xs font-medium uppercase tracking-wider text-text-quaternary">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Global Search Trigger */}
         <button
           onClick={() => {
-            // Dispatch Cmd+K to open CommandBar
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
           }}
-          className="hidden sm:flex items-center gap-2 rounded-lg border border-surface-border bg-surface-primary/50 px-3 py-1.5 text-sm text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
+          className="hidden sm:flex items-center gap-1.5 rounded-md px-2 py-1 text-text-quaternary hover:text-text-tertiary transition-colors"
         >
           <Search className="h-3 w-3" />
-          <span className="text-2xs">Search...</span>
-          <kbd className="ml-2 flex items-center gap-0.5 rounded bg-surface-tertiary px-1.5 py-0.5 text-2xs font-mono text-text-quaternary">
+          <kbd className="flex items-center gap-0.5 text-3xs font-mono">
             <Command className="h-2.5 w-2.5" />K
           </kbd>
         </button>
 
-        {/* Scanner status with StatusOrb */}
-        <div className="mr-1 hidden items-center sm:flex">
+        {/* Scanner status */}
+        <div className="mr-0.5 hidden items-center sm:flex">
           <StatusOrb color="success" label="Scanner active" size="sm" />
         </div>
 
@@ -168,11 +164,11 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={handleToggle}
-            className="relative rounded-lg p-1.5 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            className="relative rounded-md p-1 text-text-quaternary transition-colors hover:text-text-secondary"
           >
             <Bell className="h-3.5 w-3.5" />
             {unreadCount > 0 && (
-              <span className="absolute right-0.5 top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-accent-primary text-[8px] font-bold text-white">
+              <span className="absolute right-0 top-0 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-accent-primary text-[7px] font-bold text-white">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -180,33 +176,33 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
 
           {/* Notification Dropdown */}
           {open && (
-            <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-surface-secondary border border-surface-border shadow-overlay animate-slide-down">
-              <div className="flex items-center justify-between border-b border-surface-border/50 px-6 py-4">
-                <h3 className="text-sm font-semibold text-text-primary">Notifications</h3>
+            <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg glass-3 shadow-overlay animate-slide-down">
+              <div className="flex items-center justify-between border-b glass-border px-3 py-2">
+                <h3 className="text-2xs font-medium uppercase tracking-wider text-text-tertiary">Notifications</h3>
                 {unreadCount > 0 && (
-                  <span className="text-xs text-text-tertiary">
+                  <span className="text-3xs text-text-quaternary">
                     {unreadCount} unread
                   </span>
                 )}
               </div>
 
-              <div className="max-h-64 overflow-y-auto">
+              <div className="max-h-56 overflow-y-auto">
                 {loading && notifications.length === 0 ? (
-                  <div className="space-y-3 p-3.5">
+                  <div className="space-y-2 p-3">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="flex items-start gap-2.5">
-                        <div className="h-3.5 w-10 rounded shimmer" />
-                        <div className="flex-1 space-y-1.5">
-                          <div className="h-3 w-full rounded shimmer" />
-                          <div className="h-2.5 w-14 rounded shimmer" />
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="h-3 w-8 rounded shimmer" />
+                        <div className="flex-1 space-y-1">
+                          <div className="h-2.5 w-full rounded shimmer" />
+                          <div className="h-2 w-12 rounded shimmer" />
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Bell className="mb-1.5 h-4 w-4 text-text-quaternary" />
-                    <p className="text-2xs text-text-quaternary">No notifications</p>
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <Bell className="mb-1 h-3.5 w-3.5 text-text-quaternary" />
+                    <p className="text-3xs text-text-quaternary">No notifications</p>
                   </div>
                 ) : (
                   <div>
@@ -217,7 +213,7 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
                           key={notification.id}
                           onClick={() => handleNotificationClick(notification)}
                           className={cn(
-                            'flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-hover',
+                            'flex items-start gap-2 px-3 py-2 transition-colors hover:bg-glass-highlight',
                             !notification.is_read && 'bg-accent-primary-subtle',
                             notification.link && 'cursor-pointer'
                           )}
@@ -227,26 +223,26 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
                           </Badge>
                           <div className="min-w-0 flex-1">
                             {notification.title && (
-                              <p className="text-2xs font-semibold text-text-primary leading-snug">
+                              <p className="text-2xs font-medium text-text-primary leading-snug">
                                 {notification.title}
                               </p>
                             )}
                             <p
                               className={cn(
-                                'text-2xs leading-relaxed',
+                                'text-3xs leading-relaxed',
                                 notification.is_read
-                                  ? 'text-text-secondary'
-                                  : 'text-text-primary'
+                                  ? 'text-text-tertiary'
+                                  : 'text-text-secondary'
                               )}
                             >
                               {notification.message}
                             </p>
-                            <p className="mt-0.5 text-2xs text-text-quaternary">
+                            <p className="mt-0.5 text-3xs text-text-quaternary">
                               {formatRelativeTime(notification.created_at)}
                             </p>
                           </div>
                           {!notification.is_read && (
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-primary" />
+                            <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-accent-primary" />
                           )}
                         </div>
                       );
@@ -255,13 +251,13 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
                 )}
               </div>
 
-              <div className="border-t border-surface-border/50 px-3 py-2 space-y-1">
+              <div className="border-t glass-border px-2 py-1.5 space-y-0.5">
                 {notifications.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleMarkAllRead}
-                    icon={<CheckCheck className="h-3.5 w-3.5" />}
+                    icon={<CheckCheck className="h-3 w-3" />}
                     className="w-full"
                     disabled={unreadCount === 0}
                   >

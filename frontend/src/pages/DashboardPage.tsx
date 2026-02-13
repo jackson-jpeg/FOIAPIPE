@@ -2,10 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Newspaper,
-  FileText,
   Video,
-  Eye,
-  DollarSign,
   ArrowRight,
   ExternalLink,
   Clock,
@@ -126,17 +123,12 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="heading-3 mb-2">Dashboard</h1>
-          <p className="text-sm text-text-secondary">
-            Monitor your accountability journalism workflow
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Export action */}
+      <div className="flex justify-end">
         <Button
           variant="outline"
+          size="sm"
           onClick={async () => {
             try {
               await exportFoias();
@@ -145,33 +137,37 @@ export function DashboardPage() {
               addToast({ type: 'error', title: 'Export failed' });
             }
           }}
-          icon={<Download className="h-4 w-4" />}
+          icon={<Download className="h-3 w-3" />}
         >
           Export FOIAs
         </Button>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 stagger-children">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-surface-secondary border border-surface-border/50 p-6 space-y-3">
-              <Skeleton variant="text" className="h-3 w-16" />
+            <div key={i} className="glass-2 rounded-lg px-3 py-2.5 space-y-2">
+              <Skeleton variant="text" className="h-2.5 w-16" />
               <Skeleton variant="text" className="h-5 w-12" />
-              <Skeleton variant="text" className="h-2.5 w-10" />
             </div>
           ))
         ) : (
           <>
+            <div onClick={() => navigate('/analytics')} className="cursor-pointer col-span-2 lg:col-span-1">
+              <StatCard
+                label="Revenue MTD"
+                value={stats ? formatCurrency(stats.revenue_mtd) : '$0.00'}
+                trend={stats ? { value: stats.revenue_trend, isPositive: stats.revenue_trend >= 0 } : undefined}
+                variant="hero"
+              />
+            </div>
             <div onClick={() => navigate('/news')} className="cursor-pointer">
               <StatCard
-                label="Total Articles"
+                label="Articles"
                 value={stats ? formatCompactNumber(stats.total_articles) : '0'}
                 trend={stats ? { value: stats.articles_trend, isPositive: stats.articles_trend >= 0 } : undefined}
-                icon={<Newspaper size={22} />}
-                gradient="amber"
-                className="animate-fade-in"
-                style={{ animationDelay: '0ms' } as React.CSSProperties}
+                variant="metric"
               />
             </div>
             <div onClick={() => navigate('/foia')} className="cursor-pointer">
@@ -179,43 +175,23 @@ export function DashboardPage() {
                 label="Active FOIAs"
                 value={stats ? formatCompactNumber(stats.active_foias) : '0'}
                 trend={stats ? { value: stats.foias_trend, isPositive: stats.foias_trend >= 0 } : undefined}
-                icon={<FileText size={22} />}
-                gradient="blue"
-                className="animate-fade-in"
-                style={{ animationDelay: '50ms' } as React.CSSProperties}
+                variant="metric"
               />
             </div>
             <div onClick={() => navigate('/videos')} className="cursor-pointer">
               <StatCard
-                label="Videos in Pipeline"
+                label="Pipeline"
                 value={stats ? formatCompactNumber(stats.videos_in_pipeline) : '0'}
                 trend={stats ? { value: stats.videos_trend, isPositive: stats.videos_trend >= 0 } : undefined}
-                icon={<Video size={22} />}
-                gradient="purple"
-                className="animate-fade-in"
-                style={{ animationDelay: '100ms' } as React.CSSProperties}
+                variant="metric"
               />
             </div>
             <div onClick={() => navigate('/analytics')} className="cursor-pointer">
               <StatCard
-                label="Total Views"
+                label="Views"
                 value={stats ? formatCompactNumber(stats.total_views) : '0'}
                 trend={stats ? { value: stats.views_trend, isPositive: stats.views_trend >= 0 } : undefined}
-                icon={<Eye size={22} />}
-                gradient="emerald"
-                className="animate-fade-in"
-                style={{ animationDelay: '150ms' } as React.CSSProperties}
-              />
-            </div>
-            <div onClick={() => navigate('/analytics')} className="cursor-pointer">
-              <StatCard
-                label="Revenue MTD"
-                value={stats ? formatCurrency(stats.revenue_mtd) : '$0.00'}
-                trend={stats ? { value: stats.revenue_trend, isPositive: stats.revenue_trend >= 0 } : undefined}
-                icon={<DollarSign size={22} />}
-                gradient="rose"
-                className="animate-fade-in"
-                style={{ animationDelay: '200ms' } as React.CSSProperties}
+                variant="metric"
               />
             </div>
           </>
@@ -224,32 +200,32 @@ export function DashboardPage() {
 
       {/* Today's Snapshot + System Health (from summary & metrics) */}
       {(summary || metrics) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Today's Numbers */}
           {summary && (
             <Card title="Today's Activity">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-text-primary tabular-nums">{summary.today.articles}</p>
-                  <p className="text-xs text-text-tertiary">Articles</p>
+                  <p className="text-lg font-mono text-text-primary tabular-nums">{summary.today.articles}</p>
+                  <p className="text-3xs uppercase tracking-wider text-text-quaternary">Articles</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-400 tabular-nums">{summary.today.high_severity_articles}</p>
-                  <p className="text-xs text-text-tertiary">High Severity</p>
+                  <p className="text-lg font-mono text-red-400 tabular-nums">{summary.today.high_severity_articles}</p>
+                  <p className="text-3xs uppercase tracking-wider text-text-quaternary">High Sev</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-400 tabular-nums">{summary.today.foias_submitted}</p>
-                  <p className="text-xs text-text-tertiary">FOIAs Filed</p>
+                  <p className="text-lg font-mono text-blue-400 tabular-nums">{summary.today.foias_submitted}</p>
+                  <p className="text-3xs uppercase tracking-wider text-text-quaternary">Filed</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-emerald-400 tabular-nums">{summary.today.videos_published}</p>
-                  <p className="text-xs text-text-tertiary">Published</p>
+                  <p className="text-lg font-mono text-emerald-400 tabular-nums">{summary.today.videos_published}</p>
+                  <p className="text-3xs uppercase tracking-wider text-text-quaternary">Published</p>
                 </div>
               </div>
 
               {/* Alerts */}
               {(summary.system_health.overdue_foias > 0 || summary.system_health.videos_ready_for_upload > 0) && (
-                <div className="mt-4 pt-4 border-t border-surface-border/30 space-y-2">
+                <div className="mt-4 pt-4 border-t border-glass-border space-y-2">
                   {summary.system_health.overdue_foias > 0 && (
                     <div className="flex items-center gap-2 text-amber-400">
                       <AlertTriangle className="h-3.5 w-3.5" />
@@ -357,7 +333,7 @@ export function DashboardPage() {
                     -${summary.revenue.month_costs.toLocaleString()}
                   </span>
                 </div>
-                <div className="border-t border-surface-border/30 pt-3">
+                <div className="border-t border-glass-border pt-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-text-primary">Net Profit</span>
                     <span className={cn(
@@ -378,7 +354,7 @@ export function DashboardPage() {
 
               {/* Agency Performance */}
               {summary.agency_performance.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-surface-border/30">
+                <div className="mt-4 pt-4 border-t border-glass-border">
                   <p className="text-xs text-text-tertiary uppercase tracking-wider mb-2">Top Agencies</p>
                   <div className="space-y-1.5">
                     {summary.agency_performance.slice(0, 3).map((agency) => (
@@ -438,9 +414,9 @@ export function DashboardPage() {
         >
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {Object.entries(summary.foia_status).map(([status, count]) => (
-              <div key={status} className="rounded-lg bg-surface-tertiary/30 border border-surface-border/30 px-3 py-2.5 text-center">
-                <p className="text-lg font-bold text-text-primary tabular-nums">{count}</p>
-                <p className="text-xs text-text-tertiary capitalize">{status.replace(/_/g, ' ')}</p>
+              <div key={status} className="glass-1 rounded-md px-3 py-2 text-center">
+                <p className="text-base font-mono text-text-primary tabular-nums">{count}</p>
+                <p className="text-3xs uppercase tracking-wider text-text-quaternary">{status.replace(/_/g, ' ')}</p>
               </div>
             ))}
           </div>
@@ -448,7 +424,7 @@ export function DashboardPage() {
       )}
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Recent Articles */}
         <Card
           title="Recent Articles"

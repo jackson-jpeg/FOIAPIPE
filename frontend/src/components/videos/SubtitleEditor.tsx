@@ -3,7 +3,6 @@ import { Save, Trash2, Plus, Loader2, Type } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
-import { cn } from '@/lib/cn';
 import client from '@/api/client';
 
 interface Segment {
@@ -111,7 +110,7 @@ export function SubtitleEditor({ videoId, subtitleId, language, format }: Subtit
         </Button>
       </div>
 
-      <div className="max-h-96 overflow-y-auto space-y-1 rounded-lg border border-surface-border p-2">
+      <div className="max-h-96 overflow-y-auto space-y-1 rounded-lg border border-glass-border p-2">
         {segments.length === 0 ? (
           <div className="text-center py-8 text-sm text-text-tertiary">
             No segments found.
@@ -123,24 +122,24 @@ export function SubtitleEditor({ videoId, subtitleId, language, format }: Subtit
           segments.map((seg, i) => (
             <div
               key={i}
-              className="group flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-hover transition-colors"
+              className="group flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-glass-highlight transition-colors"
             >
               <div className="flex flex-col gap-1 flex-shrink-0 w-28">
                 <input
-                  className="w-full rounded border border-surface-border bg-surface-primary px-1.5 py-0.5 text-2xs font-mono text-text-secondary focus:border-accent-primary focus:outline-none"
+                  className="w-full rounded border border-glass-border bg-surface-primary px-1.5 py-0.5 text-2xs font-mono text-text-secondary focus:border-accent-primary focus:outline-none"
                   value={seg.start}
                   onChange={(e) => updateSegment(i, 'start', e.target.value)}
                   placeholder="00:00:00,000"
                 />
                 <input
-                  className="w-full rounded border border-surface-border bg-surface-primary px-1.5 py-0.5 text-2xs font-mono text-text-secondary focus:border-accent-primary focus:outline-none"
+                  className="w-full rounded border border-glass-border bg-surface-primary px-1.5 py-0.5 text-2xs font-mono text-text-secondary focus:border-accent-primary focus:outline-none"
                   value={seg.end}
                   onChange={(e) => updateSegment(i, 'end', e.target.value)}
                   placeholder="00:00:00,000"
                 />
               </div>
               <textarea
-                className="flex-1 rounded border border-surface-border bg-surface-primary px-2 py-1 text-sm text-text-primary resize-none focus:border-accent-primary focus:outline-none min-h-[40px]"
+                className="flex-1 rounded border border-glass-border bg-surface-primary px-2 py-1 text-sm text-text-primary resize-none focus:border-accent-primary focus:outline-none min-h-[40px]"
                 value={seg.text}
                 onChange={(e) => updateSegment(i, 'text', e.target.value)}
                 rows={2}

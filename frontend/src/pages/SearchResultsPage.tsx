@@ -52,9 +52,9 @@ export function SearchResultsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="heading-3 mb-2">Search</h1>
+        <h1 className="heading-3">Search</h1>
         <form onSubmit={handleSearch} className="max-w-xl">
           <Input
             icon={<Search className="h-4 w-4" />}
@@ -96,7 +96,7 @@ export function SearchResultsPage() {
             </div>
           ) : totalCount === 0 ? (
             <EmptyState
-              icon={Search}
+              icon={<Search className="h-7 w-7" />}
               title="No results found"
               message={`No matches for "${query}". Try a different search term.`}
             />

@@ -13,6 +13,7 @@ import {
 import * as videosApi from '@/api/videos';
 import * as foiaApi from '@/api/foia';
 import { useToast } from '@/components/ui/Toast';
+import { SubtitleEditor } from '@/components/videos/SubtitleEditor';
 import type { Video } from '@/types';
 
 interface VideoDetailProps {
@@ -56,6 +57,7 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   const [introDuration, setIntroDuration] = useState('5');
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [scheduleDatetime, setScheduleDatetime] = useState('');
+  const [editingSubtitleId, setEditingSubtitleId] = useState<string | null>(null);
 
   useEffect(() => {
     if (video?.id) {
@@ -203,9 +205,9 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] animate-fade-in" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full sm:max-w-lg bg-surface-secondary border-l border-surface-border shadow-overlay z-50 overflow-y-auto animate-slide-in-right">
-        <div className="sticky top-0 bg-surface-secondary/95 backdrop-blur-sm border-b border-surface-border px-5 py-3.5 flex items-center justify-between z-10">
+      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[6px] animate-fade-in" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 w-full sm:max-w-lg glass-3 shadow-overlay z-50 overflow-y-auto animate-slide-in-right">
+        <div className="sticky top-0 glass-3 border-b border-glass-border px-4 py-3 flex items-center justify-between z-10">
           <div>
             <h2 className="text-sm font-medium text-text-primary">{video.title || 'Untitled Video'}</h2>
             <div className="flex items-center gap-2 mt-0.5">
@@ -413,33 +415,50 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
             <div className="rounded-lg border border-surface-border p-3.5 space-y-2">
               <h3 className="text-xs font-medium text-text-primary">Subtitles</h3>
               {subtitles.map(sub => (
-                <div key={sub.id} className="flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-text-primary font-mono">{sub.language}</span>
-                    <span className="text-text-quaternary ml-1.5">{sub.format}</span>
-                    {sub.segment_count && <span className="text-text-quaternary ml-1.5">{sub.segment_count} segments</span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {video.youtube_video_id && (
+                <div key={sub.id} className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-text-primary font-mono">{sub.language}</span>
+                      <span className="text-text-quaternary ml-1.5">{sub.format}</span>
+                      {sub.segment_count && <span className="text-text-quaternary ml-1.5">{sub.segment_count} segments</span>}
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={async () => {
-                          try {
-                            await videosApi.uploadSubtitleToYoutube(video.id, sub.id);
-                            addToast({ type: 'success', title: 'Subtitle uploaded to YouTube' });
-                          } catch {
-                            addToast({ type: 'error', title: 'Failed to upload subtitle' });
-                          }
-                        }}
+                        onClick={() => setEditingSubtitleId(editingSubtitleId === sub.id ? null : sub.id)}
                         className="text-text-tertiary hover:text-accent-primary transition-colors"
-                        title="Upload to YouTube"
+                        title="Edit subtitles"
                       >
-                        <Youtube className="h-3 w-3" />
+                        <Type className="h-3 w-3" />
                       </button>
-                    )}
-                    <button onClick={() => handleDeleteSubtitle(sub.id)} className="text-text-tertiary hover:text-accent-red transition-colors">
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                      {video.youtube_video_id && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await videosApi.uploadSubtitleToYoutube(video.id, sub.id);
+                              addToast({ type: 'success', title: 'Subtitle uploaded to YouTube' });
+                            } catch {
+                              addToast({ type: 'error', title: 'Failed to upload subtitle' });
+                            }
+                          }}
+                          className="text-text-tertiary hover:text-accent-primary transition-colors"
+                          title="Upload to YouTube"
+                        >
+                          <Youtube className="h-3 w-3" />
+                        </button>
+                      )}
+                      <button onClick={() => handleDeleteSubtitle(sub.id)} className="text-text-tertiary hover:text-accent-red transition-colors">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
+                  {editingSubtitleId === sub.id && (
+                    <SubtitleEditor
+                      videoId={video.id}
+                      subtitleId={sub.id}
+                      language={sub.language}
+                      format={sub.format}
+                    />
+                  )}
                 </div>
               ))}
             </div>

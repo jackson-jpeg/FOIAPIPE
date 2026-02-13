@@ -291,7 +291,7 @@ export function FoiaEditorPage() {
 
           {/* AI Suggestions Panel */}
           {(aiSuggestions.length > 0 || isLoadingSuggestions) && (
-            <div className="mt-12 rounded-xl border border-surface-border bg-surface-secondary/50 p-6">
+            <div className="mt-12 glass-2 rounded-lg p-6">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-accent-primary" />

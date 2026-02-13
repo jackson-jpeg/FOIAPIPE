@@ -16,9 +16,9 @@ interface FoiaTableProps {
 export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit, onUpdateStatus, onViewDetail }: FoiaTableProps) {
   if (loading) {
     return (
-      <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+      <div className="overflow-x-auto glass-2 rounded-lg">
         <table className="w-full">
-          <thead className="bg-surface-tertiary/50 sticky top-0 z-10">
+          <thead className="bg-transparent sticky top-0 z-10">
             <tr>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Case #</th>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">Agency</th>
@@ -33,7 +33,7 @@ export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit
           </thead>
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
-              <tr key={i} className="border-b border-surface-border/30">
+              <tr key={i} className="border-b border-glass-border">
                 <td className="px-4 py-4"><div className="shimmer h-3.5 w-24 rounded font-mono" /></td>
                 <td className="px-4 py-4 hidden sm:table-cell"><div className="shimmer h-3.5 w-32 rounded" /></td>
                 <td className="px-4 py-4 hidden lg:table-cell"><div className="shimmer h-3.5 w-40 rounded" /></td>
@@ -74,9 +74,9 @@ export function FoiaTable({ requests, loading, sortBy, sortDir, onSort, onSubmit
   );
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+    <div className="overflow-x-auto glass-2 rounded-lg">
       <table className="w-full">
-        <thead className="bg-surface-tertiary/50 sticky top-0 z-10">
+        <thead className="bg-transparent sticky top-0 z-10">
           <tr>
             <SortHeader label="Case #" field="case_number" />
             <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden sm:table-cell">Agency</th>

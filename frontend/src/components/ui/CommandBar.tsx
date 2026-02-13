@@ -45,56 +45,56 @@ export function CommandBar() {
     {
       id: 'nav-dashboard',
       label: 'Dashboard',
-      icon: <LayoutDashboard className="h-4 w-4" />,
+      icon: <LayoutDashboard className="h-3.5 w-3.5" />,
       category: 'Navigation',
       onSelect: () => { navigate('/'); close(); },
     },
     {
       id: 'nav-news',
       label: 'News Scanner',
-      icon: <Newspaper className="h-4 w-4" />,
+      icon: <Newspaper className="h-3.5 w-3.5" />,
       category: 'Navigation',
       onSelect: () => { navigate('/news'); close(); },
     },
     {
       id: 'nav-foia',
       label: 'FOIA Requests',
-      icon: <FileText className="h-4 w-4" />,
+      icon: <FileText className="h-3.5 w-3.5" />,
       category: 'Navigation',
       onSelect: () => { navigate('/foia'); close(); },
     },
     {
       id: 'nav-videos',
       label: 'Videos',
-      icon: <Video className="h-4 w-4" />,
+      icon: <Video className="h-3.5 w-3.5" />,
       category: 'Navigation',
       onSelect: () => { navigate('/videos'); close(); },
     },
     {
       id: 'nav-analytics',
       label: 'Analytics',
-      icon: <BarChart3 className="h-4 w-4" />,
+      icon: <BarChart3 className="h-3.5 w-3.5" />,
       category: 'Navigation',
       onSelect: () => { navigate('/analytics'); close(); },
     },
     {
       id: 'action-new-foia',
       label: 'New FOIA Request',
-      icon: <Plus className="h-4 w-4" />,
+      icon: <Plus className="h-3.5 w-3.5" />,
       category: 'Actions',
       onSelect: () => { navigate('/foia/editor'); close(); },
     },
     {
       id: 'action-scan-news',
       label: 'Scan News Now',
-      icon: <RefreshCw className="h-4 w-4" />,
+      icon: <RefreshCw className="h-3.5 w-3.5" />,
       category: 'Actions',
       onSelect: () => { close(); },
     },
     {
       id: 'settings',
       label: 'Settings',
-      icon: <Settings className="h-4 w-4" />,
+      icon: <Settings className="h-3.5 w-3.5" />,
       category: 'Settings',
       onSelect: () => { navigate('/settings'); close(); },
     },
@@ -105,49 +105,44 @@ export function CommandBar() {
     const items: CommandItem[] = [];
 
     if (searchResults && search.length >= 2) {
-      // FOIA results
       for (const r of searchResults.foia) {
         items.push({
           id: `search-foia-${r.id}`,
           label: `${r.case_number} (${r.status})`,
-          icon: <FileText className="h-4 w-4" />,
+          icon: <FileText className="h-3.5 w-3.5" />,
           category: 'FOIA Requests',
           onSelect: () => { navigate(`/foia`); close(); },
         });
       }
-      // Article results
       for (const r of searchResults.articles) {
         items.push({
           id: `search-article-${r.id}`,
           label: r.headline,
-          icon: <Newspaper className="h-4 w-4" />,
+          icon: <Newspaper className="h-3.5 w-3.5" />,
           category: 'Articles',
           onSelect: () => { navigate('/news'); close(); },
         });
       }
-      // Video results
       for (const r of searchResults.videos) {
         items.push({
           id: `search-video-${r.id}`,
           label: r.title || 'Untitled Video',
-          icon: <Video className="h-4 w-4" />,
+          icon: <Video className="h-3.5 w-3.5" />,
           category: 'Videos',
           onSelect: () => { navigate('/videos'); close(); },
         });
       }
-      // Agency results
       for (const r of searchResults.agencies) {
         items.push({
           id: `search-agency-${r.id}`,
           label: r.name,
-          icon: <Building2 className="h-4 w-4" />,
+          icon: <Building2 className="h-3.5 w-3.5" />,
           category: 'Agencies',
           onSelect: () => { navigate('/agencies'); close(); },
         });
       }
     }
 
-    // Always include filtered commands
     const filtered = commands.filter(cmd =>
       !search || cmd.label.toLowerCase().includes(search.toLowerCase()) ||
       cmd.category.toLowerCase().includes(search.toLowerCase())
@@ -238,20 +233,20 @@ export function CommandBar() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in"
+        className="fixed inset-0 bg-black/40 backdrop-blur-[6px] z-50 animate-fade-in"
         onClick={close}
       />
 
       {/* Command Bar */}
       <div className="fixed inset-x-0 top-0 pt-[20vh] px-4 z-50 pointer-events-none">
         <div className="max-w-xl mx-auto pointer-events-auto animate-slide-down">
-          <div className="bg-surface-secondary rounded-xl shadow-overlay border border-surface-border overflow-hidden">
+          <div className="glass-3 rounded-xl shadow-overlay overflow-hidden">
             {/* Search Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-border">
+            <div className="flex items-center gap-3 px-3 py-2.5 border-b glass-border">
               {searching ? (
-                <Loader2 className="h-4 w-4 text-text-tertiary animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 text-text-tertiary animate-spin" />
               ) : (
-                <Search className="h-4 w-4 text-text-tertiary" />
+                <Search className="h-3.5 w-3.5 text-text-tertiary" />
               )}
               <input
                 type="text"
@@ -261,7 +256,7 @@ export function CommandBar() {
                 className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-quaternary outline-none"
                 autoFocus
               />
-              <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded bg-surface-tertiary text-2xs text-text-tertiary font-mono">
+              <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-glass-highlight text-3xs text-text-tertiary font-mono">
                 ESC
               </kbd>
             </div>
@@ -269,13 +264,13 @@ export function CommandBar() {
             {/* Results List */}
             <div className="max-h-[400px] overflow-y-auto">
               {allItems.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-text-tertiary">
+                <div className="px-3 py-6 text-center text-2xs text-text-tertiary">
                   No results found
                 </div>
               ) : (
                 Object.entries(grouped).map(([category, items]) => (
                   <div key={category}>
-                    <div className="px-4 py-2 text-2xs font-medium text-text-tertiary uppercase tracking-wider">
+                    <div className="px-3 py-1.5 text-3xs font-medium text-text-quaternary uppercase tracking-wider">
                       {category}
                     </div>
                     {items.map((cmd) => {
@@ -286,17 +281,17 @@ export function CommandBar() {
                           onClick={cmd.onSelect}
                           onMouseEnter={() => setSelectedIndex(globalIndex)}
                           className={cn(
-                            'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
+                            'w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors',
                             globalIndex === selectedIndex
-                              ? 'bg-accent-primary-subtle text-text-primary'
-                              : 'text-text-secondary hover:bg-surface-hover'
+                              ? 'bg-glass-highlight text-text-primary'
+                              : 'text-text-secondary'
                           )}
                         >
                           <span className={cn(
-                            'flex items-center justify-center w-8 h-8 rounded-lg transition-colors flex-shrink-0',
+                            'flex items-center justify-center w-6 h-6 rounded-md transition-colors flex-shrink-0',
                             globalIndex === selectedIndex
                               ? 'bg-accent-primary text-white'
-                              : 'bg-surface-tertiary text-text-tertiary'
+                              : 'text-text-tertiary'
                           )}>
                             {cmd.icon}
                           </span>
@@ -310,21 +305,21 @@ export function CommandBar() {
             </div>
 
             {/* Footer Hint */}
-            <div className="flex items-center justify-between px-4 py-2 border-t border-surface-border bg-surface-tertiary/30">
-              <div className="flex items-center gap-4 text-2xs text-text-tertiary">
+            <div className="flex items-center justify-between px-3 py-1.5 border-t glass-border">
+              <div className="flex items-center gap-3 text-3xs text-text-quaternary">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded bg-surface-primary border border-surface-border font-mono">
+                  <kbd className="px-1 py-px rounded bg-glass-highlight font-mono">
                     </kbd>
                   Navigate
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded bg-surface-primary border border-surface-border font-mono">
+                  <kbd className="px-1 py-px rounded bg-glass-highlight font-mono">
 
                   </kbd>
                   Select
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-2xs text-text-tertiary">
+              <div className="flex items-center gap-2 text-3xs text-text-quaternary">
                 {search.length >= 2 && (
                   <button
                     onClick={() => { navigate(`/search?q=${encodeURIComponent(search)}`); close(); }}
@@ -333,7 +328,7 @@ export function CommandBar() {
                     View all results
                   </button>
                 )}
-                <Command className="h-3 w-3" />
+                <Command className="h-2.5 w-2.5" />
                 <span className="font-mono">K</span>
               </div>
             </div>

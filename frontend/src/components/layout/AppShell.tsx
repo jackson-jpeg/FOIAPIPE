@@ -24,7 +24,6 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-surface-primary">
-      {/* Command Bar (Cmd+K) */}
       <CommandBar />
 
       <Sidebar
@@ -43,11 +42,11 @@ export function AppShell({ children }: AppShellProps) {
 
       <main
         className={cn(
-          'px-10 py-8 transition-all duration-200 ease-out-expo',
+          'px-6 py-5 transition-all duration-200 ease-out-expo',
           !isMobile && (sidebarCollapsed ? 'ml-16' : 'ml-64')
         )}
       >
-        <div className="max-w-[1800px] mx-auto animate-fade-in-fast">
+        <div className="max-w-[1800px] mx-auto">
           {children}
         </div>
       </main>

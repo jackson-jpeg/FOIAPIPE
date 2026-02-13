@@ -15,11 +15,11 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Focus ring defaults - Cyan accent for dark theme */
+  /* Focus ring defaults */
   :focus-visible {
     @apply outline-none ring-2 ring-offset-2;
     --tw-ring-color: rgba(6, 182, 212, 0.4);
-    --tw-ring-offset-color: #0a0f1a;
+    --tw-ring-offset-color: #080c14;
   }
 
   /* Selection */
@@ -28,13 +28,13 @@
     color: #f1f5f9;
   }
 
-  /* Scrollbar - Dark theme */
+  /* Scrollbar - near-invisible */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #1e293b transparent;
+    scrollbar-color: rgba(148,163,184,0.08) transparent;
   }
   *:hover {
-    scrollbar-color: #334155 transparent;
+    scrollbar-color: rgba(148,163,184,0.15) transparent;
   }
 
   /* Number input spinners */
@@ -47,9 +47,11 @@
     -moz-appearance: textfield;
   }
 
-  /* Custom checkbox - Dark theme */
+  /* Custom checkbox */
   input[type="checkbox"] {
-    @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-surface-border bg-surface-secondary;
+    @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm;
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    background-color: transparent;
     transition: all 100ms ease;
   }
   input[type="checkbox"]:checked {
@@ -62,19 +64,25 @@
   input[type="checkbox"]:focus-visible {
     @apply ring-2 ring-offset-1;
     --tw-ring-color: rgba(6, 182, 212, 0.4);
-    --tw-ring-offset-color: #0a0f1a;
+    --tw-ring-offset-color: #080c14;
   }
 
   /* Textarea */
   textarea {
     @apply resize-y;
   }
+
+  /* Tighten heading scale */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tighter;
+  }
 }
 
 @layer components {
-  /* Shimmer skeleton - Dark theme */
+  /* Shimmer skeleton - dimmer */
   .shimmer {
-    @apply bg-surface-tertiary relative overflow-hidden;
+    @apply relative overflow-hidden;
+    background-color: rgba(148, 163, 184, 0.04);
   }
   .shimmer::after {
     content: '';
@@ -82,64 +90,42 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0.02) 50%,
       transparent 100%
     );
     animation: shimmerFlow 2.5s ease-in-out infinite;
   }
 
-  /* Gradient utilities - Dark command center variants */
-  .gradient-soft {
-    background: linear-gradient(135deg, #0f1724 0%, #151d2e 100%);
-  }
-
-  .gradient-cyan {
-    background: linear-gradient(135deg, #083344 0%, #0f1724 100%);
-  }
-
-  .gradient-amber {
-    background: linear-gradient(135deg, #451a03 0%, #0f1724 100%);
-  }
-
-  .gradient-emerald {
-    background: linear-gradient(135deg, #052e16 0%, #0f1724 100%);
-  }
-
-  .gradient-blue {
-    background: linear-gradient(135deg, #172554 0%, #0f1724 100%);
-  }
-
-  .gradient-purple {
-    background: linear-gradient(135deg, #2e1065 0%, #0f1724 100%);
-  }
-
-  .gradient-rose {
-    background: linear-gradient(135deg, #4c0519 0%, #0f1724 100%);
-  }
-
   /* Heading utility classes */
   .heading-1 {
-    @apply text-display-2xl font-bold tracking-tight;
+    @apply text-display-2xl font-semibold tracking-tighter;
   }
   .heading-2 {
-    @apply text-display-xl font-bold tracking-tight;
+    @apply text-display-xl font-semibold tracking-tighter;
   }
   .heading-3 {
-    @apply text-display-lg font-semibold tracking-tight;
+    @apply text-display-lg font-semibold tracking-tighter;
   }
   .heading-4 {
-    @apply text-display-md font-semibold tracking-tight;
+    @apply text-display-md font-semibold tracking-tighter;
   }
   .heading-5 {
-    @apply text-display-sm font-semibold tracking-tight;
+    @apply text-display-sm font-semibold tracking-tighter;
   }
   .heading-6 {
-    @apply text-display-xs font-semibold tracking-tight;
+    @apply text-display-xs font-semibold tracking-tighter;
   }
 
   /* Focus ring utility */
   .focus-ring {
     @apply outline-none ring-2 ring-offset-2 ring-accent-primary/30 ring-offset-surface-primary;
+  }
+
+  /* Data value utility */
+  .data-value {
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -153,18 +139,49 @@
     display: none;
   }
 
-  /* Glass effect - Dark theme */
-  .glass {
-    @apply backdrop-blur-lg;
-    background-color: rgba(10, 15, 26, 0.8);
+  /* Glass tiered system */
+  .glass-1 {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(15, 23, 42, 0.40);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
-  .glass-surface {
-    @apply backdrop-blur-xl;
-    background-color: rgba(15, 23, 36, 0.95);
+  .glass-2 {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
-  /* Text gradient - Cyan to blue */
+  .glass-3 {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background-color: rgba(15, 23, 42, 0.70);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* Glass border utilities */
+  .glass-border {
+    border-color: rgba(148, 163, 184, 0.08);
+  }
+
+  .glass-border-hover:hover {
+    border-color: rgba(148, 163, 184, 0.15);
+  }
+
+  /* Stagger children animation */
+  .stagger-children > *:nth-child(1) { animation: fadeIn 200ms ease-out both; animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation: fadeIn 200ms ease-out both; animation-delay: 40ms; }
+  .stagger-children > *:nth-child(3) { animation: fadeIn 200ms ease-out both; animation-delay: 80ms; }
+  .stagger-children > *:nth-child(4) { animation: fadeIn 200ms ease-out both; animation-delay: 120ms; }
+  .stagger-children > *:nth-child(5) { animation: fadeIn 200ms ease-out both; animation-delay: 160ms; }
+  .stagger-children > *:nth-child(6) { animation: fadeIn 200ms ease-out both; animation-delay: 200ms; }
+
+  /* Text gradient */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(to right, #06b6d4, #3b82f6);

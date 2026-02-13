@@ -114,7 +114,7 @@ export function PublishQueue({ onRefresh }: PublishQueueProps) {
   if (queue.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-surface-border bg-surface-secondary p-4 space-y-3">
+    <div className="glass-2 rounded-lg p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-indigo-400" />
         <h3 className="text-sm font-medium text-text-primary">Publish Queue</h3>

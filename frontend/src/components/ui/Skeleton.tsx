@@ -16,8 +16,8 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'rounded bg-surface-tertiary/60 shimmer',
-        variant === 'text' && 'h-3.5',
+        'rounded shimmer',
+        variant === 'text' && 'h-3',
         variant === 'circular' && 'rounded-full',
         variant === 'rectangular' && 'rounded-lg',
         className

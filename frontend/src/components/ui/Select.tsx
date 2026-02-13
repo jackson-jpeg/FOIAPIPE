@@ -29,7 +29,7 @@ export function Select({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-xs font-medium text-text-secondary">
+        <label className="block text-3xs font-medium uppercase tracking-wider text-text-quaternary">
           {label}
         </label>
       )}
@@ -38,13 +38,13 @@ export function Select({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           className={cn(
-            'h-10 w-full appearance-none rounded-lg border bg-surface-primary pl-4 pr-10 text-sm text-text-primary',
-            'transition-all duration-150',
-            'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20',
-            'disabled:pointer-events-none disabled:opacity-40 disabled:bg-surface-tertiary',
+            'h-8 w-full appearance-none rounded-lg bg-transparent pl-3 pr-8 text-sm text-text-primary',
+            'border glass-border transition-colors duration-150',
+            'focus:border-accent-primary/40 focus:outline-none',
+            'disabled:pointer-events-none disabled:opacity-40',
             error
-              ? 'border-accent-red focus:border-accent-red focus:ring-accent-red/20'
-              : 'border-surface-border hover:border-accent-primary/50',
+              ? 'border-accent-red focus:border-accent-red'
+              : 'hover:border-glass-border-hover',
             className
           )}
           disabled={disabled}
@@ -61,9 +61,9 @@ export function Select({
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-text-tertiary" />
       </div>
-      {error && <p className="text-xs text-accent-red">{error}</p>}
+      {error && <p className="text-3xs text-accent-red">{error}</p>}
     </div>
   );
 }

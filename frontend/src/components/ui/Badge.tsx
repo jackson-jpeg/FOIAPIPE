@@ -9,12 +9,12 @@ interface BadgeProps {
 }
 
 const variantStyles = {
-  success: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/20',
-  warning: 'bg-amber-500/10 text-amber-400 ring-1 ring-inset ring-amber-500/20',
-  danger: 'bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20',
-  info: 'bg-cyan-500/10 text-cyan-400 ring-1 ring-inset ring-cyan-500/20',
-  purple: 'bg-purple-500/10 text-purple-400 ring-1 ring-inset ring-purple-500/20',
-  default: 'bg-slate-500/10 text-slate-400 ring-1 ring-inset ring-slate-500/20',
+  success: 'bg-emerald-500/6 text-emerald-400',
+  warning: 'bg-amber-500/6 text-amber-400',
+  danger: 'bg-red-500/6 text-red-400',
+  info: 'bg-cyan-500/6 text-cyan-400',
+  purple: 'bg-purple-500/6 text-purple-400',
+  default: 'bg-slate-500/6 text-slate-400',
 };
 
 const dotColorStyles = {
@@ -27,8 +27,8 @@ const dotColorStyles = {
 };
 
 const sizeStyles = {
-  sm: 'px-1.5 py-0.5 text-2xs gap-1',
-  md: 'px-2 py-0.5 text-xs gap-1.5',
+  sm: 'px-1 py-px text-3xs gap-1',
+  md: 'px-1.5 py-0.5 text-2xs gap-1.5',
 };
 
 export function Badge({ variant = 'default', children, size = 'md', dot = false }: BadgeProps) {

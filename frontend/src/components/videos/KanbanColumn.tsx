@@ -18,28 +18,28 @@ export function KanbanColumn({ status, videoIds, count, children }: KanbanColumn
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col min-w-[260px] max-w-[300px] rounded-xl border-2 bg-surface-primary shadow-card transition-all duration-200',
+        'flex flex-col min-w-[240px] max-w-[280px] rounded-lg glass-1 transition-all duration-200',
         isOver
-          ? 'border-accent-primary shadow-glow ring-2 ring-accent-primary/20'
-          : 'border-dashed border-surface-border'
+          ? 'border-accent-primary/40 shadow-glass-hover'
+          : 'border-dashed'
       )}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-surface-border">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-glass-border">
+        <div className="flex items-center gap-1.5">
           <span
-            className="h-2 w-2 rounded-full"
+            className="h-1.5 w-1.5 rounded-full"
             style={{ backgroundColor: statusInfo?.color || '#64748b' }}
           />
-          <span className="text-xs font-medium text-text-primary">
+          <span className="text-2xs font-medium text-text-primary">
             {statusInfo?.label || status}
           </span>
         </div>
-        <span className="text-2xs tabular-nums text-text-quaternary bg-surface-tertiary/60 px-1.5 py-0.5 rounded-md">
+        <span className="text-3xs font-mono tabular-nums text-text-quaternary bg-glass-highlight px-1 py-px rounded">
           {count}
         </span>
       </div>
       <SortableContext items={videoIds} strategy={verticalListSortingStrategy}>
-        <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto max-h-[calc(100vh-240px)]">
+        <div className="flex-1 p-1.5 space-y-1 overflow-y-auto max-h-[calc(100vh-240px)]">
           {children}
         </div>
       </SortableContext>

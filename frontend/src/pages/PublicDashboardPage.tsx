@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, Building2, Clock, TrendingUp, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
+import { FileText, Building2, Clock, TrendingUp, CheckCircle2, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import client from '@/api/client';
 
@@ -119,7 +119,7 @@ export function PublicDashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Agency Report Cards */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
@@ -173,7 +173,7 @@ export function PublicDashboardPage() {
           </div>
 
           {/* Recent Filings & Monthly Trends */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Monthly Trends */}
             {stats && stats.monthly_trends.length > 0 && (
               <div>

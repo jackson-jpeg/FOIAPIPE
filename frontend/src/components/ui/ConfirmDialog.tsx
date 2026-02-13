@@ -50,7 +50,7 @@ export function ConfirmDialog({
       <div className="flex items-start gap-3">
         {variant !== 'default' && (
           <div className={`shrink-0 mt-0.5 ${variant === 'danger' ? 'text-red-400' : 'text-amber-400'}`}>
-            <AlertTriangle className="h-5 w-5" />
+            <AlertTriangle className="h-4 w-4" />
           </div>
         )}
         <div className="text-sm text-text-secondary leading-relaxed">

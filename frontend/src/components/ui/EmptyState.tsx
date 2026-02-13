@@ -10,17 +10,17 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
   return (
-    <div className="rounded-xl bg-surface-secondary border border-surface-border/50 p-12 text-center">
+    <div className="glass-1 rounded-lg p-8 text-center">
       {icon && (
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-primary/10 text-accent-primary mb-4">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-accent-primary/10 text-accent-primary mb-3">
           {icon}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>
-      <p className="max-w-md mx-auto text-sm text-text-secondary leading-relaxed">{message}</p>
+      <h3 className="text-sm font-semibold text-text-primary mb-1">{title}</h3>
+      <p className="max-w-md mx-auto text-2xs text-text-secondary leading-relaxed">{message}</p>
       {action && (
-        <div className="mt-6">
-          <Button variant="primary" size="md" onClick={action.onClick}>
+        <div className="mt-4">
+          <Button variant="primary" size="sm" onClick={action.onClick}>
             {action.label}
           </Button>
         </div>

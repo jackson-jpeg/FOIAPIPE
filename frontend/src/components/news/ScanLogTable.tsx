@@ -47,7 +47,7 @@ export function ScanLogTable() {
 
   if (loading && logs.length === 0) {
     return (
-      <div className="rounded-xl border border-surface-border bg-surface-secondary p-6">
+      <div className="glass-2 rounded-lg p-6">
         <h3 className="text-sm font-semibold text-text-primary mb-4">Scan History</h3>
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -59,8 +59,8 @@ export function ScanLogTable() {
   }
 
   return (
-    <div className="rounded-xl border border-surface-border bg-surface-secondary overflow-hidden">
-      <div className="px-5 py-4 border-b border-surface-border/30">
+    <div className="glass-2 rounded-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-glass-border">
         <h3 className="text-sm font-semibold text-text-primary">Scan History</h3>
       </div>
       <div className="overflow-x-auto">

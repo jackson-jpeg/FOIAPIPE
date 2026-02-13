@@ -274,14 +274,11 @@ export function AuditLogPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">Audit Log</h1>
-          <p className="text-sm text-text-secondary">
-            Complete audit trail for compliance and security monitoring
-          </p>
+          <h1 className="heading-3">Audit Log</h1>
         </div>
         {activeTab === 'status_changes' && (
           <Button
@@ -296,7 +293,7 @@ export function AuditLogPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-surface-border/50">
+      <div className="flex items-center gap-1 border-b border-glass-border">
         {tabs.map(tab => (
           <button
             key={tab.key}
@@ -390,10 +387,10 @@ export function AuditLogPage() {
               }
             />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-surface-border/50 bg-surface-secondary">
+            <div className="overflow-x-auto glass-2 rounded-lg">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-surface-border/50 bg-surface-tertiary/30">
+                  <tr className="border-b border-glass-border">
                     <SortableHeader label="Timestamp" field="created_at" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                     <SortableHeader label="Case Number" field="case_number" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                     <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">
@@ -405,7 +402,7 @@ export function AuditLogPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-surface-border/30">
+                <tbody className="divide-y divide-glass-border">
                   {sortedItems.map((entry) => (
                     <tr
                       key={entry.id}
@@ -464,24 +461,24 @@ export function AuditLogPage() {
             </div>
           ) : summary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+              <div className="glass-2 rounded-lg p-4">
                 <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Total Events</p>
                 <p className="text-2xl font-bold text-text-primary tabular-nums">{summary.total_events.toLocaleString()}</p>
                 <p className="text-xs text-text-quaternary mt-1">Last {summary.period_days} days</p>
               </div>
-              <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+              <div className="glass-2 rounded-lg p-4">
                 <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Success Rate</p>
                 <p className="text-2xl font-bold text-emerald-400 tabular-nums">{summary.success_rate}%</p>
                 <p className="text-xs text-text-quaternary mt-1">
                   {summary.success_count.toLocaleString()} / {summary.total_events.toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+              <div className="glass-2 rounded-lg p-4">
                 <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Failures</p>
                 <p className="text-2xl font-bold text-red-400 tabular-nums">{summary.failure_count.toLocaleString()}</p>
                 <p className="text-xs text-text-quaternary mt-1">Last {summary.period_days} days</p>
               </div>
-              <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+              <div className="glass-2 rounded-lg p-4">
                 <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Top Action</p>
                 <p className="text-lg font-bold text-text-primary truncate">
                   {Object.keys(summary.top_actions)[0]?.replace(/_/g, ' ') || 'N/A'}
@@ -545,10 +542,10 @@ export function AuditLogPage() {
               message="System events will appear here as actions are performed."
             />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-surface-border/50 bg-surface-secondary">
+            <div className="overflow-x-auto glass-2 rounded-lg">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-surface-border/50 bg-surface-tertiary/30">
+                  <tr className="border-b border-glass-border">
                     <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Timestamp</th>
                     <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Action</th>
                     <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">User</th>
@@ -557,7 +554,7 @@ export function AuditLogPage() {
                     <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">IP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-surface-border/30">
+                <tbody className="divide-y divide-glass-border">
                   {allEvents.map((event) => (
                     <tr key={event.id} className="hover:bg-surface-hover transition-colors">
                       <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap tabular-nums">
@@ -620,12 +617,12 @@ export function AuditLogPage() {
             <>
               {/* Security Summary Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+                <div className="glass-2 rounded-lg p-4">
                   <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Login Events</p>
                   <p className="text-2xl font-bold text-text-primary tabular-nums">{security.login_events.length}</p>
                   <p className="text-xs text-text-quaternary mt-1">Last {security.period_days} days</p>
                 </div>
-                <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+                <div className="glass-2 rounded-lg p-4">
                   <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Failed Logins</p>
                   <p className="text-2xl font-bold text-red-400 tabular-nums">{security.total_failed_logins}</p>
                   <p className="text-xs text-text-quaternary mt-1">
@@ -634,7 +631,7 @@ export function AuditLogPage() {
                       : 'No suspicious activity'}
                   </p>
                 </div>
-                <div className="rounded-xl border border-surface-border bg-surface-secondary p-4">
+                <div className="glass-2 rounded-lg p-4">
                   <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">Sensitive Operations</p>
                   <p className="text-2xl font-bold text-amber-400 tabular-nums">{security.sensitive_operations.length}</p>
                   <p className="text-xs text-text-quaternary mt-1">Deletions, config changes</p>
@@ -664,14 +661,14 @@ export function AuditLogPage() {
                   <div className="overflow-x-auto -mx-5">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-surface-border/50">
+                        <tr className="border-b border-glass-border">
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">Time</th>
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">User</th>
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">IP</th>
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">Result</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-surface-border/30">
+                      <tbody className="divide-y divide-glass-border">
                         {security.login_events.map((event, i) => (
                           <tr key={i} className="hover:bg-surface-hover transition-colors">
                             <td className="px-5 py-2.5 text-sm text-text-primary whitespace-nowrap tabular-nums">
@@ -700,7 +697,7 @@ export function AuditLogPage() {
                   <div className="overflow-x-auto -mx-5">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-surface-border/50">
+                        <tr className="border-b border-glass-border">
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">Time</th>
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">Action</th>
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">User</th>
@@ -708,7 +705,7 @@ export function AuditLogPage() {
                           <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-5 py-2">IP</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-surface-border/30">
+                      <tbody className="divide-y divide-glass-border">
                         {security.sensitive_operations.map((op, i) => (
                           <tr key={i} className="hover:bg-surface-hover transition-colors">
                             <td className="px-5 py-2.5 text-sm text-text-primary whitespace-nowrap tabular-nums">

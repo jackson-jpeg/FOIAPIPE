@@ -22,24 +22,18 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-primary p-4">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inset-0 rounded-full bg-accent-primary/30 blur-sm" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-accent-primary" />
-            </span>
-            <h1 className="text-2xl font-bold text-text-primary tracking-wider">
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="mb-6 text-center">
+          <div className="flex items-center justify-center gap-2.5 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-primary" />
+            <h1 className="text-sm font-semibold text-text-primary tracking-[0.25em]">
               FOIA ARCHIVE
             </h1>
           </div>
-          <p className="text-sm text-text-secondary">
-            Public Records Request Pipeline
-          </p>
         </div>
 
-        <div className="rounded-2xl bg-surface-secondary border border-surface-border p-8 shadow-overlay">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="glass-3 rounded-xl p-6">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <Input
               label="Username"
               type="text"
@@ -65,7 +59,7 @@ export function LoginPage() {
             />
 
             {error && (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+              <div className="rounded-md bg-red-500/6 px-3 py-2 text-2xs text-red-400">
                 {error}
               </div>
             )}
@@ -81,7 +75,7 @@ export function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-text-tertiary">
+        <p className="mt-4 text-center text-3xs text-text-quaternary">
           Internal tool &middot; Authorized access only
         </p>
       </div>

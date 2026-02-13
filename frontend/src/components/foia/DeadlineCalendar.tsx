@@ -42,7 +42,7 @@ export function DeadlineCalendar({ deadlines, onDateClick }: DeadlineCalendarPro
   const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="rounded-xl border border-surface-border bg-surface-secondary p-4 shadow-card animate-slide-up">
+    <div className="glass-2 rounded-lg p-4 animate-slide-up">
       <div className="flex items-center justify-between mb-3">
         <Button variant="ghost" size="sm" onClick={prevMonth}><ChevronLeft className="h-3.5 w-3.5" /></Button>
         <h3 className="text-xs font-medium text-text-primary">{monthName}</h3>

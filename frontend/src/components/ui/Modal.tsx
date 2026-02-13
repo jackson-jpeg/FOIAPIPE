@@ -61,29 +61,29 @@ export function Modal({
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-[8px]" />
       <div
         className={cn(
-          'relative bg-surface-secondary border border-surface-border shadow-overlay',
+          'relative glass-3 shadow-overlay',
           isSlideOver
             ? 'h-full w-full max-w-2xl animate-slide-in-right rounded-none'
-            : cn('w-full rounded-2xl animate-scale-in', sizeStyles[size])
+            : cn('w-full rounded-xl animate-scale-in', sizeStyles[size])
         )}
       >
-        <div className="flex items-center justify-between border-b border-surface-border/50 px-6 py-5">
-          <h2 className="text-lg font-semibold text-text-primary tracking-tight">{title}</h2>
+        <div className="flex items-center justify-between border-b glass-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-text-primary tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            className="rounded-md p-1.5 text-text-tertiary transition-colors hover:text-text-primary"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
-        <div className={cn(isSlideOver ? 'h-[calc(100%-5rem)] overflow-y-auto p-6' : 'p-6')}>
+        <div className={cn(isSlideOver ? 'h-[calc(100%-3.5rem)] overflow-y-auto p-4' : 'p-4')}>
           {children}
         </div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-surface-border/50 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t glass-border px-4 py-3">
             {footer}
           </div>
         )}

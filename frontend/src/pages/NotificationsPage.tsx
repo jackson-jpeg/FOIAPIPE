@@ -134,14 +134,11 @@ export function NotificationsPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">Notifications</h1>
-          <p className="text-sm text-text-secondary">
-            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : 'All caught up'}
-          </p>
+          <h1 className="heading-3">Notifications</h1>
         </div>
         <Button
           variant="secondary"
@@ -200,7 +197,7 @@ export function NotificationsPage() {
           message={unreadOnly ? 'No unread notifications. Try removing the filter.' : 'You\'re all caught up.'}
         />
       ) : (
-        <div className="rounded-xl border border-surface-border/50 bg-surface-secondary divide-y divide-surface-border/30">
+        <div className="glass-2 rounded-lg divide-y divide-glass-border">
           {notifications.map(notification => {
             const Icon = TYPE_ICONS[notification.type] || Bell;
             const iconColor = TYPE_COLORS[notification.type] || 'text-text-quaternary';

@@ -57,7 +57,7 @@ function ToastItem({
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => onRemove(toast.id), 200);
-    }, 3000); // Auto-dismiss after 3s
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
@@ -67,7 +67,7 @@ function ToastItem({
   return (
     <div
       className={cn(
-        'flex w-full max-w-md min-w-[20rem] items-start gap-3 rounded-lg bg-text-primary p-4 shadow-overlay transition-all duration-200 ease-out-expo',
+        'flex w-full max-w-md min-w-[20rem] items-start gap-3 rounded-lg glass-3 p-3 shadow-overlay transition-all duration-200 ease-out-expo',
         isVisible
           ? 'translate-y-0 opacity-100'
           : 'translate-y-2 opacity-0'
@@ -75,9 +75,9 @@ function ToastItem({
     >
       <div className="shrink-0 mt-0.5">{config.icon}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-surface-primary">{toast.title}</p>
+        <p className="text-sm font-medium text-text-primary">{toast.title}</p>
         {toast.message && (
-          <p className="mt-1 text-xs text-surface-primary/80 leading-relaxed">{toast.message}</p>
+          <p className="mt-0.5 text-2xs text-text-secondary leading-relaxed">{toast.message}</p>
         )}
       </div>
       <button
@@ -85,7 +85,7 @@ function ToastItem({
           setIsVisible(false);
           setTimeout(() => onRemove(toast.id), 200);
         }}
-        className="shrink-0 rounded p-0.5 text-surface-primary/60 transition-colors hover:text-surface-primary"
+        className="shrink-0 rounded p-0.5 text-text-tertiary transition-colors hover:text-text-primary"
       >
         <X className="h-3.5 w-3.5" />
       </button>

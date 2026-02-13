@@ -83,7 +83,7 @@ export function NotFoundPage() {
         </div>
 
         {/* Search Hint */}
-        <div className="mt-8 rounded-lg border border-surface-border bg-surface-secondary/30 p-4">
+        <div className="mt-8 rounded-lg border border-glass-border bg-surface-secondary/30 p-4">
           <div className="flex items-center justify-center gap-2 text-sm text-text-tertiary">
             <Search className="h-4 w-4" />
             <span>

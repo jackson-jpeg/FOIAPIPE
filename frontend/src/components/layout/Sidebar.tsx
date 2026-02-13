@@ -22,32 +22,26 @@ export function Sidebar({
   const sidebarContent = (
     <div
       className={cn(
-        'flex h-full flex-col bg-surface-secondary border-r border-surface-border/50 transition-[width] duration-150 ease-out-expo',
+        'flex h-full flex-col glass-1 border-r border-glass-border transition-[width] duration-150 ease-out-expo',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Logo */}
       <div
         className={cn(
-          'flex h-14 items-center shrink-0',
+          'flex h-11 items-center shrink-0',
           collapsed ? 'justify-center px-2' : 'px-5'
         )}
       >
         {collapsed ? (
           <div className="flex flex-col items-center gap-1">
-            <span className="text-base font-bold text-accent-primary">FA</span>
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-pulse-subtle rounded-full bg-accent-primary opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-primary" />
-            </span>
+            <span className="text-2xs font-bold text-accent-primary tracking-[0.25em]">FA</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-primary" />
           </div>
         ) : (
           <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-pulse-subtle rounded-full bg-accent-primary opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-primary" />
-            </span>
-            <span className="text-sm font-semibold text-text-primary tracking-widest">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-primary" />
+            <span className="text-3xs font-semibold text-text-primary tracking-[0.25em]">
               FOIA ARCHIVE
             </span>
           </div>
@@ -55,7 +49,7 @@ export function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.path}
@@ -63,16 +57,16 @@ export function Sidebar({
             onClick={() => isMobile && onMobileClose()}
             className={({ isActive }) =>
               cn(
-                'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150',
+                'group relative flex items-center gap-3 rounded-md px-2.5 py-1.5 transition-colors duration-150',
                 collapsed && 'justify-center px-2',
                 isActive
-                  ? 'bg-accent-primary/10 text-accent-primary font-semibold'
-                  : 'text-text-tertiary hover:bg-surface-hover hover:text-text-primary'
+                  ? 'text-text-primary border-l-2 border-accent-primary pl-2'
+                  : 'text-text-quaternary hover:text-text-secondary'
               )
             }
           >
             <>
-              <item.icon className="shrink-0 transition-transform group-hover:rotate-3" size={18} strokeWidth={1.75} />
+              <item.icon className="shrink-0" size={16} strokeWidth={1.75} />
               {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
             </>
           </NavLink>
@@ -84,13 +78,13 @@ export function Sidebar({
         <div className="p-2">
           <button
             onClick={onToggleCollapse}
-            className="flex w-full items-center justify-center rounded-lg p-2 text-text-quaternary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            className="flex w-full items-center justify-center rounded-md p-1.5 text-text-quaternary transition-colors hover:text-text-secondary"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
             )}
           </button>
         </div>
@@ -103,7 +97,7 @@ export function Sidebar({
       <>
         {mobileOpen && (
           <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[6px] animate-fade-in"
             onClick={onMobileClose}
           />
         )}

@@ -19,6 +19,7 @@ interface Article {
   is_dismissed: boolean;
   auto_foia_eligible: boolean;
   auto_foia_filed: boolean;
+  predicted_revenue?: number | null;
 }
 
 interface ArticleTableProps {
@@ -30,6 +31,7 @@ interface ArticleTableProps {
   onFileFoia: (id: string) => void;
   onDismiss: (id: string) => void;
   onMarkReviewed: (id: string) => void;
+  onPrioritize?: (id: string) => void;
   sortBy: string;
   sortDir: 'asc' | 'desc';
   onSort: (key: string) => void;
@@ -37,37 +39,37 @@ interface ArticleTableProps {
 
 export function ArticleTable({
   articles, loading, selectedIds, onToggleSelect, onToggleSelectAll,
-  onFileFoia, onDismiss, onMarkReviewed, sortBy, sortDir, onSort
+  onFileFoia, onDismiss, onMarkReviewed, onPrioritize, sortBy, sortDir, onSort
 }: ArticleTableProps) {
   if (loading) {
     return (
-      <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+      <div className="overflow-x-auto rounded-lg glass-2">
         <table className="w-full">
-          <thead className="bg-surface-tertiary/50">
+          <thead>
             <tr>
-              <th className="px-4 py-4 w-10"></th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Sev</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Headline</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">Source</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden md:table-cell">Agency</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden lg:table-cell">Type</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Published</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">Status</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary w-20">Actions</th>
+              <th className="px-3 py-1.5 w-10"></th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary">Sev</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary">Headline</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden sm:table-cell">Source</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden md:table-cell">Agency</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden lg:table-cell">Type</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary">Published</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden sm:table-cell">Status</th>
+              <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 8 }).map((_, i) => (
-              <tr key={i} className="border-b border-surface-border/30">
-                <td className="px-4 py-4"><div className="shimmer h-3.5 w-3.5 rounded" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-2 w-2 rounded-full" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-3.5 w-3/4 rounded" /></td>
-                <td className="px-4 py-4 hidden sm:table-cell"><div className="shimmer h-3.5 w-20 rounded" /></td>
-                <td className="px-4 py-4 hidden md:table-cell"><div className="shimmer h-3.5 w-24 rounded" /></td>
-                <td className="px-4 py-4 hidden lg:table-cell"><div className="shimmer h-5 w-16 rounded-full" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-3.5 w-28 rounded" /></td>
-                <td className="px-4 py-4 hidden sm:table-cell"><div className="shimmer h-5 w-20 rounded-full" /></td>
-                <td className="px-4 py-4"><div className="flex gap-1"><div className="shimmer h-8 w-8 rounded" /><div className="shimmer h-8 w-8 rounded" /></div></td>
+              <tr key={i} className="border-t border-glass-border">
+                <td className="px-3 py-1.5"><div className="shimmer h-3 w-3 rounded" /></td>
+                <td className="px-3 py-1.5"><div className="shimmer h-2 w-2 rounded-full" /></td>
+                <td className="px-3 py-1.5"><div className="shimmer h-3 w-3/4 rounded" /></td>
+                <td className="px-3 py-1.5 hidden sm:table-cell"><div className="shimmer h-3 w-20 rounded" /></td>
+                <td className="px-3 py-1.5 hidden md:table-cell"><div className="shimmer h-3 w-24 rounded" /></td>
+                <td className="px-3 py-1.5 hidden lg:table-cell"><div className="shimmer h-4 w-16 rounded-full" /></td>
+                <td className="px-3 py-1.5"><div className="shimmer h-3 w-28 rounded" /></td>
+                <td className="px-3 py-1.5 hidden sm:table-cell"><div className="shimmer h-4 w-20 rounded-full" /></td>
+                <td className="px-3 py-1.5"><div className="flex gap-1"><div className="shimmer h-7 w-7 rounded" /><div className="shimmer h-7 w-7 rounded" /></div></td>
               </tr>
             ))}
           </tbody>
@@ -88,7 +90,7 @@ export function ArticleTable({
 
   const SortHeader = ({ label, field }: { label: string; field: string }) => (
     <th
-      className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary cursor-pointer transition-colors hover:text-text-secondary"
+      className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary cursor-pointer transition-colors hover:text-text-secondary"
       onClick={() => onSort(field)}
     >
       <div className="flex items-center gap-1">
@@ -103,11 +105,11 @@ export function ArticleTable({
   const allSelected = articles.length > 0 && articles.every(a => selectedIds.has(a.id));
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-surface-border shadow-card">
+    <div className="overflow-x-auto rounded-lg glass-2">
       <table className="w-full">
-        <thead className="bg-surface-tertiary/50">
+        <thead>
           <tr>
-            <th className="px-3 py-2.5 w-10">
+            <th className="px-3 py-1.5 w-10">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -116,12 +118,12 @@ export function ArticleTable({
             </th>
             <SortHeader label="Sev" field="severity_score" />
             <SortHeader label="Headline" field="headline" />
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden sm:table-cell">Source</th>
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden md:table-cell">Agency</th>
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden lg:table-cell">Type</th>
+            <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden sm:table-cell">Source</th>
+            <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden md:table-cell">Agency</th>
+            <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden lg:table-cell">Type</th>
             <SortHeader label="Published" field="published_at" />
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden sm:table-cell">Status</th>
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary w-20">Actions</th>
+            <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary hidden sm:table-cell">Status</th>
+            <th className="px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary w-20">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -134,6 +136,7 @@ export function ArticleTable({
               onFileFoia={onFileFoia}
               onDismiss={onDismiss}
               onMarkReviewed={onMarkReviewed}
+              onPrioritize={onPrioritize}
             />
           ))}
         </tbody>

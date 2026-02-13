@@ -14,6 +14,7 @@ import { RevenueTransactionsTable } from '@/components/analytics/RevenueTransact
 import { IncidentTypeChart } from '@/components/analytics/IncidentTypeChart';
 import { PublishingInsightsCard } from '@/components/analytics/PublishingInsightsCard';
 import { AgencyResponseCard } from '@/components/analytics/AgencyResponseCard';
+import { SeoInsightsCard } from '@/components/analytics/SeoInsightsCard';
 import { StatCard } from '@/components/ui/StatCard';
 import { StatCardSkeleton } from '@/components/ui/StatCardSkeleton';
 import { Button } from '@/components/ui/Button';
@@ -88,14 +89,11 @@ export function AnalyticsPage() {
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">Analytics</h1>
-          <p className="text-sm text-text-secondary">
-            Track YouTube performance metrics and revenue insights
-          </p>
+          <h1 className="heading-3">Analytics</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -166,13 +164,13 @@ export function AnalyticsPage() {
       ) : null}
 
       {/* Revenue & Views Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RevenueChart data={revenueData} />
         <ViewsChart data={viewsData} />
       </div>
 
       {/* Top Videos & Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <TopVideosTable videos={topVideos} />
         </div>
@@ -180,24 +178,27 @@ export function AnalyticsPage() {
       </div>
 
       {/* Agency Breakdown & Incident Type */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AgencyBreakdownChart data={agencyData} />
         <IncidentTypeChart data={incidentData} />
       </div>
 
       {/* Pipeline Velocity & Publishing Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <VelocityChart data={velocityData} />
         <PublishingInsightsCard />
       </div>
 
       {/* FOIA Performance & Break-Even */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <FoiaPerformanceTable data={foiaPerformance} />
         </div>
         <BreakEvenCard data={breakEven} />
       </div>
+
+      {/* SEO Insights */}
+      <SeoInsightsCard />
 
       {/* Agency Response Analytics */}
       <AgencyResponseCard data={agencyResponseData} />

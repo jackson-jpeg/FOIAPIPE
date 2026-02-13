@@ -144,14 +144,11 @@ export function VideoPipelinePage() {
   const selectedVideo = selectedId ? videos.find((v: any) => v.id === selectedId) || null : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">Video Pipeline</h1>
-          <p className="text-sm text-text-secondary">
-            Manage bodycam video processing from raw footage to YouTube publication
-          </p>
+          <h1 className="heading-3">Video Pipeline</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -182,7 +179,7 @@ export function VideoPipelinePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-surface-secondary border border-surface-border/50 p-6 space-y-3">
+            <div key={i} className="glass-2 rounded-lg p-6 space-y-3">
               <Skeleton variant="text" className="h-3 w-16" />
               <Skeleton variant="text" className="h-5 w-12" />
             </div>
@@ -224,7 +221,7 @@ export function VideoPipelinePage() {
             <span className="text-xs font-medium text-text-tertiary uppercase tracking-wider">Distribution</span>
             <span className="text-xs text-text-quaternary tabular-nums">{videos.length} videos</span>
           </div>
-          <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary/50">
+          <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary">
             {Object.entries(statusCounts).map(([status, count]) => {
               const info = VIDEO_STATUSES[status as keyof typeof VIDEO_STATUSES];
               const pct = (count / videos.length) * 100;

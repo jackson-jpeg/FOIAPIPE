@@ -157,6 +157,16 @@ export function NewsScannerPage() {
     }
   };
 
+  const handlePrioritize = async (id: string) => {
+    try {
+      const result = await newsApi.prioritizeArticle(id);
+      addToast({ type: 'success', title: `Predicted revenue: $${result.predicted_revenue.toFixed(2)}` });
+      loadArticles();
+    } catch {
+      addToast({ type: 'error', title: 'Failed to predict revenue' });
+    }
+  };
+
   const [bulkLoading, setBulkLoading] = useState(false);
   const [confirmBulkFoia, setConfirmBulkFoia] = useState(false);
 
@@ -224,14 +234,11 @@ export function NewsScannerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">News Scanner</h1>
-          <p className="text-sm text-text-secondary">
-            Monitor and classify police accountability news from Tampa Bay sources
-          </p>
+          <h1 className="heading-3">News Scanner</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -266,7 +273,7 @@ export function NewsScannerPage() {
       />
 
       {/* Feed Health & Scan Logs */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-1">
           <FeedHealthIndicators />
         </div>
@@ -276,7 +283,7 @@ export function NewsScannerPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1 border-b border-surface-border/50">
+      <div className="flex items-center gap-1 border-b border-glass-border">
         {tabs.map(tab => (
           <button
             key={tab.key}
@@ -332,6 +339,7 @@ export function NewsScannerPage() {
         onFileFoia={handleFileFoia}
         onDismiss={handleDismiss}
         onMarkReviewed={handleMarkReviewed}
+        onPrioritize={handlePrioritize}
         sortBy={sortBy}
         sortDir={sortDir}
         onSort={handleSort}

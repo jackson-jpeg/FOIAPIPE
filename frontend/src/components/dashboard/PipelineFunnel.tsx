@@ -28,26 +28,26 @@ export function PipelineFunnel({ stages }: PipelineFunnelProps) {
             <div key={stage.stage} className="flex items-end flex-1 min-w-0">
               {i > 0 && (
                 <div className="flex flex-col items-center justify-end pb-6 px-0.5 shrink-0">
-                  <span className="text-[9px] font-mono text-text-quaternary tabular-nums mb-0.5">
+                  <span className="text-3xs font-mono text-text-quaternary tabular-nums mb-0.5">
                     {conversionRate}%
                   </span>
-                  <ArrowRight className="h-3 w-3 text-text-quaternary" />
+                  <ArrowRight className="h-2.5 w-2.5 text-text-quaternary" />
                 </div>
               )}
-              <div className="flex flex-col items-center flex-1 min-w-0 gap-1.5">
-                <span className="text-sm font-semibold text-text-primary tabular-nums">
+              <div className="flex flex-col items-center flex-1 min-w-0 gap-1">
+                <span className="text-sm font-mono font-semibold text-text-primary tabular-nums">
                   {stage.count.toLocaleString()}
                 </span>
                 <div
-                  className="w-full rounded-md transition-all duration-700 ease-out-expo"
+                  className="w-full rounded-sm transition-all duration-700 ease-out-expo"
                   style={{
                     height: `${height}px`,
                     backgroundColor: stage.color,
-                    opacity: 0.8,
+                    opacity: 0.7,
                     minHeight: '12px',
                   }}
                 />
-                <span className="text-[10px] text-text-tertiary text-center leading-tight truncate w-full">
+                <span className="text-3xs font-mono uppercase text-text-quaternary text-center leading-tight truncate w-full">
                   {stage.stage}
                 </span>
               </div>

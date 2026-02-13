@@ -5,7 +5,6 @@ import { VideoCard } from './VideoCard';
 import { useBreakpoint } from '@/hooks/useMediaQuery';
 import { VIDEO_STATUSES } from '@/lib/constants';
 import { ChevronDown, ChevronRight, Film } from 'lucide-react';
-import { cn } from '@/lib/cn';
 import { formatDuration } from '@/lib/formatters';
 
 interface Video {
@@ -44,9 +43,9 @@ function MobileKanbanList({ videos, onStatusChange, onVideoClick }: KanbanBoardP
         const isExpanded = expandedStatus === status;
 
         return (
-          <div key={status} className="rounded-xl border border-surface-border bg-surface-primary overflow-hidden">
+          <div key={status} className="rounded-lg glass-1 overflow-hidden">
             <button
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-hover transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2 hover:bg-glass-highlight transition-colors"
               onClick={() => setExpandedStatus(isExpanded ? null : status)}
             >
               <div className="flex items-center gap-2">
@@ -57,23 +56,23 @@ function MobileKanbanList({ videos, onStatusChange, onVideoClick }: KanbanBoardP
                 <span className="text-sm font-medium text-text-primary">
                   {statusInfo?.label || status}
                 </span>
-                <span className="text-2xs tabular-nums text-text-quaternary bg-surface-tertiary/60 px-1.5 py-0.5 rounded-md">
+                <span className="text-3xs tabular-nums font-mono text-text-quaternary bg-glass-highlight px-1.5 py-0.5 rounded-md">
                   {statusVideos.length}
                 </span>
               </div>
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-text-quaternary" />
+                <ChevronDown className="h-3.5 w-3.5 text-text-quaternary" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-text-quaternary" />
+                <ChevronRight className="h-3.5 w-3.5 text-text-quaternary" />
               )}
             </button>
 
             {isExpanded && statusVideos.length > 0 && (
-              <div className="border-t border-surface-border divide-y divide-surface-border/30">
+              <div className="border-t border-glass-border divide-y divide-glass-border">
                 {statusVideos.map(video => (
                   <div
                     key={video.id}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-surface-hover transition-colors cursor-pointer"
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-glass-highlight transition-colors cursor-pointer"
                     onClick={() => onVideoClick(video.id)}
                   >
                     <div className="h-10 w-16 rounded bg-surface-tertiary overflow-hidden shrink-0 flex items-center justify-center">
@@ -103,7 +102,7 @@ function MobileKanbanList({ videos, onStatusChange, onVideoClick }: KanbanBoardP
                         onStatusChange(video.id, e.target.value);
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-2xs bg-surface-tertiary border border-surface-border rounded px-1.5 py-1 text-text-secondary shrink-0"
+                      className="text-3xs bg-transparent border glass-border rounded px-1.5 py-1 text-text-secondary shrink-0"
                     >
                       {COLUMN_ORDER.map(s => {
                         const info = VIDEO_STATUSES[s as keyof typeof VIDEO_STATUSES];
@@ -116,8 +115,8 @@ function MobileKanbanList({ videos, onStatusChange, onVideoClick }: KanbanBoardP
             )}
 
             {isExpanded && statusVideos.length === 0 && (
-              <div className="border-t border-surface-border px-4 py-6 text-center">
-                <p className="text-xs text-text-quaternary">No videos in this stage</p>
+              <div className="border-t border-glass-border px-3 py-4 text-center">
+                <p className="text-2xs text-text-quaternary">No videos in this stage</p>
               </div>
             )}
           </div>

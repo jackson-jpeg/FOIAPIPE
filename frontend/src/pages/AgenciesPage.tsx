@@ -243,14 +243,11 @@ export function AgenciesPage() {
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">Agencies</h1>
-          <p className="text-sm text-text-secondary">
-            Manage law enforcement agencies and their FOIA request configurations
-          </p>
+          <h1 className="heading-3">Agencies</h1>
         </div>
         <Button
           variant="primary"
@@ -345,10 +342,10 @@ export function AgenciesPage() {
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-surface-border/50 bg-surface-secondary">
+        <div className="overflow-x-auto glass-2 rounded-lg">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-surface-border/50 bg-surface-tertiary/30">
+              <tr className="border-b border-glass-border">
                 <SortableHeader label="Agency" field="name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="Jurisdiction" field="jurisdiction" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="FOIA Email" field="foia_email" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
@@ -357,7 +354,7 @@ export function AgenciesPage() {
                 <SortableHeader label="Status" field="is_active" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-border/30">
+            <tbody className="divide-y divide-glass-border">
               {sortedAgencies.map((agency) => (
                 <tr
                   key={agency.id}

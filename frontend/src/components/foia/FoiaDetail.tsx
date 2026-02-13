@@ -208,9 +208,9 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] animate-fade-in" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full sm:max-w-md bg-surface-secondary border-l border-surface-border shadow-overlay z-50 overflow-y-auto animate-slide-in-right">
+      <div className="fixed inset-y-0 right-0 w-full sm:max-w-md bg-surface-secondary border-l border-glass-border shadow-overlay z-50 overflow-y-auto animate-slide-in-right">
         {/* Header */}
-        <div className="sticky top-0 bg-surface-secondary/95 backdrop-blur-sm border-b border-surface-border px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-surface-secondary/95 backdrop-blur-sm border-b border-glass-border px-5 py-3.5 flex items-center justify-between z-10">
           <div>
             <h2 className="font-mono text-sm text-accent-primary">{request.case_number}</h2>
             <p className="text-2xs text-text-tertiary mt-0.5">{request.agency_name}</p>
@@ -298,7 +298,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
 
           {/* Costs */}
           {(request.estimated_cost != null || request.actual_cost != null) && (
-            <div className="rounded-lg border border-surface-border p-3.5 space-y-2">
+            <div className="rounded-lg border border-glass-border p-3.5 space-y-2">
               <h3 className="text-xs font-medium text-text-primary">Costs</h3>
               <div className="flex justify-between text-xs">
                 <span className="text-text-tertiary">Estimated:</span>
@@ -321,7 +321,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
 
           {/* Cost Prediction */}
           {costPrediction && (
-            <div className="rounded-lg border border-surface-border p-3.5 space-y-2">
+            <div className="rounded-lg border border-glass-border p-3.5 space-y-2">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-3.5 w-3.5 text-text-tertiary" />
                 <h3 className="text-xs font-medium text-text-primary">Cost Prediction</h3>
@@ -373,7 +373,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               ) : suggestions.improved_text ? (
                 <div className="space-y-2">
                   <p className="text-2xs text-text-tertiary">Suggested improved request text:</p>
-                  <div className="rounded-md bg-surface-tertiary/30 p-3 text-2xs text-text-secondary whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed">
+                  <div className="rounded-md bg-transparent p-3 text-2xs text-text-secondary whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed">
                     {suggestions.improved_text}
                   </div>
                 </div>
@@ -385,10 +385,10 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
 
           {/* Response Emails */}
           {responseEmails.length > 0 && (
-            <div className="rounded-lg border border-surface-border overflow-hidden">
+            <div className="rounded-lg border border-glass-border overflow-hidden">
               <button
                 onClick={() => setExpandedEmails(!expandedEmails)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-surface-hover transition-colors"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-glass-highlight transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <Mail className="h-3.5 w-3.5 text-text-tertiary" />
@@ -399,19 +399,19 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
                 {expandedEmails ? <ChevronUp className="h-3.5 w-3.5 text-text-quaternary" /> : <ChevronDown className="h-3.5 w-3.5 text-text-quaternary" />}
               </button>
               {expandedEmails && (
-                <div className="border-t border-surface-border/50 divide-y divide-surface-border/30">
+                <div className="border-t border-glass-border divide-y divide-glass-border">
                   {responseEmails.map((email: any, i: number) => (
                     <div
                       key={i}
                       className={cn(
                         'border-l-2 transition-colors',
                         emailBorderColor(email.response_type),
-                        expandedEmailIdx === i ? 'bg-surface-tertiary/20' : ''
+                        expandedEmailIdx === i ? 'bg-transparent' : ''
                       )}
                     >
                       <button
                         onClick={() => setExpandedEmailIdx(expandedEmailIdx === i ? null : i)}
-                        className="w-full px-3.5 py-2.5 text-left hover:bg-surface-hover/50 transition-colors"
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-glass-highlight/50 transition-colors"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-2xs font-medium text-text-secondary">
@@ -457,7 +457,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
                       {expandedEmailIdx === i && (
                         <div className="px-3.5 pb-3 space-y-2">
                           {email.body && (
-                            <div className="rounded-md bg-surface-tertiary/30 p-3 text-2xs text-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+                            <div className="rounded-md bg-transparent p-3 text-2xs text-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
                               {email.body}
                             </div>
                           )}
@@ -507,14 +507,14 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               <Spinner size="sm" />
             </div>
           ) : statusChanges.length > 0 ? (
-            <div className="rounded-lg border border-surface-border p-3.5">
+            <div className="rounded-lg border border-glass-border p-3.5">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-3.5 w-3.5 text-text-tertiary" />
                 <h3 className="text-xs font-medium text-text-primary">Status History</h3>
               </div>
               <div className="relative pl-4 space-y-3">
                 {/* Timeline line */}
-                <div className="absolute left-[5px] top-1 bottom-1 w-px bg-surface-border" />
+                <div className="absolute left-[5px] top-1 bottom-1 w-px bg-glass-border" />
                 {statusChanges.map((change: any, i: number) => {
                   const toInfo = FOIA_STATUSES[change.to_status];
                   return (
@@ -523,7 +523,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
                       <div
                         className={cn(
                           'absolute -left-4 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-secondary',
-                          i === statusChanges.length - 1 ? 'bg-accent-primary' : 'bg-surface-border'
+                          i === statusChanges.length - 1 ? 'bg-accent-primary' : 'bg-glass-border'
                         )}
                       />
                       <div className="flex items-start justify-between gap-2">
@@ -552,7 +552,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
 
           {/* Linked Videos */}
           {linkedVideos.length > 0 && (
-            <div className="rounded-lg border border-surface-border p-3.5">
+            <div className="rounded-lg border border-glass-border p-3.5">
               <div className="flex items-center gap-2 mb-3">
                 <Video className="h-3.5 w-3.5 text-text-tertiary" />
                 <h3 className="text-xs font-medium text-text-primary">Linked Videos ({linkedVideos.length})</h3>
@@ -561,7 +561,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
                 {linkedVideos.map((video: any) => {
                   const statusInfo = VIDEO_STATUSES[video.status];
                   return (
-                    <div key={video.id} className="flex items-center justify-between rounded-md bg-surface-tertiary/30 px-3 py-2">
+                    <div key={video.id} className="flex items-center justify-between rounded-md bg-transparent px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-text-primary truncate">{video.title || 'Untitled'}</p>
                         {statusInfo && (
@@ -588,13 +588,13 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
           {/* Request Text */}
           <div>
             <h3 className="text-xs font-medium text-text-primary mb-1.5">Request Text</h3>
-            <div className="rounded-lg border border-surface-border bg-surface-tertiary/30 p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+            <div className="rounded-lg border border-glass-border bg-transparent p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
               {request.request_text}
             </div>
           </div>
 
           {/* Update Status */}
-          <div className="rounded-lg border border-surface-border p-3.5 space-y-2.5">
+          <div className="rounded-lg border border-glass-border p-3.5 space-y-2.5">
             <h3 className="text-xs font-medium text-text-primary">Update Status</h3>
             <div className="flex gap-1.5">
               <div className="flex-1">
@@ -610,7 +610,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
           <div>
             <h3 className="text-xs font-medium text-text-primary mb-1.5">Notes</h3>
             <textarea
-              className="w-full rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[80px] transition-all duration-150"
+              className="w-full rounded-lg border border-glass-border bg-transparent px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[80px] transition-all duration-150"
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Add notes..."
@@ -637,7 +637,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               <Badge variant="warning" size="sm">{followupResult.days_overdue} days overdue</Badge>
               <span className="text-xs text-text-tertiary font-mono">{followupResult.case_number}</span>
             </div>
-            <div className="rounded-lg border border-surface-border bg-surface-tertiary/30 p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">
+            <div className="rounded-lg border border-glass-border bg-transparent p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">
               {followupResult.followup_text}
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -688,7 +688,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
             <div>
               <label className="block text-xs font-medium text-text-primary mb-1.5">Agency&apos;s Explanation (optional)</label>
               <textarea
-                className="w-full rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[60px] transition-all duration-150"
+                className="w-full rounded-lg border border-glass-border bg-transparent px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[60px] transition-all duration-150"
                 value={appealExplanation}
                 onChange={e => setAppealExplanation(e.target.value)}
                 placeholder="Paste the agency's denial explanation..."
@@ -713,7 +713,7 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
               <Badge variant="success" size="sm">Appeal Generated</Badge>
               <span className="text-xs text-text-tertiary font-mono">{appealResult.appeal_number}</span>
             </div>
-            <div className="rounded-lg border border-surface-border bg-surface-tertiary/30 p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">
+            <div className="rounded-lg border border-glass-border bg-transparent p-3.5 text-xs text-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">
               {appealResult.appeal_text}
             </div>
             {appealResult.recommendations && appealResult.recommendations.length > 0 && (

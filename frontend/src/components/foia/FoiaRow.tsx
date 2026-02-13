@@ -42,7 +42,7 @@ export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, on
   return (
     <>
       <tr
-        className="border-b border-surface-border/30 hover:bg-surface-hover cursor-pointer transition-colors"
+        className="border-b border-glass-border hover:bg-glass-highlight cursor-pointer transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <td className="px-3 py-2.5">
@@ -91,7 +91,7 @@ export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, on
         </td>
       </tr>
       {expanded && (
-        <tr className="border-b border-surface-border/30 bg-surface-tertiary/20">
+        <tr className="border-b border-glass-border bg-transparent">
           <td colSpan={9} className="px-6 py-4 animate-fade-in-fast">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">

@@ -37,70 +37,68 @@ export function AutoSubmitStats() {
       title="Auto-Submit"
       action={<Badge variant={badge.variant} size="sm">{badge.label}</Badge>}
     >
-      <div className="grid grid-cols-3 gap-4 text-center">
+      <div className="grid grid-cols-3 gap-3 text-center">
         <div>
           <p className={cn(
-            'text-2xl font-bold tabular-nums',
+            'text-lg font-mono tabular-nums',
             stats.today.filed > 0 ? 'text-accent-green' : 'text-text-primary',
           )}>
             {stats.today.filed}
           </p>
-          <div className="flex items-center justify-center gap-1 mt-1">
-            <FileText className="h-3 w-3 text-text-quaternary" />
-            <span className="text-xs text-text-tertiary">Filed</span>
+          <div className="flex items-center justify-center gap-1 mt-0.5">
+            <FileText className="h-2.5 w-2.5 text-text-quaternary" />
+            <span className="text-3xs uppercase tracking-wider text-text-quaternary">Filed</span>
           </div>
         </div>
         <div>
           <p className={cn(
-            'text-2xl font-bold tabular-nums',
+            'text-lg font-mono tabular-nums',
             stats.today.dry_run > 0 ? 'text-accent-amber' : 'text-text-primary',
           )}>
             {stats.today.dry_run}
           </p>
-          <div className="flex items-center justify-center gap-1 mt-1">
-            <AlertTriangle className="h-3 w-3 text-text-quaternary" />
-            <span className="text-xs text-text-tertiary">Dry Run</span>
+          <div className="flex items-center justify-center gap-1 mt-0.5">
+            <AlertTriangle className="h-2.5 w-2.5 text-text-quaternary" />
+            <span className="text-3xs uppercase tracking-wider text-text-quaternary">Dry Run</span>
           </div>
         </div>
         <div>
           <p className={cn(
-            'text-2xl font-bold tabular-nums',
+            'text-lg font-mono tabular-nums',
             stats.today.skipped > 0 ? 'text-accent-red' : 'text-text-primary',
           )}>
             {stats.today.skipped}
           </p>
-          <div className="flex items-center justify-center gap-1 mt-1">
-            <ShieldX className="h-3 w-3 text-text-quaternary" />
-            <span className="text-xs text-text-tertiary">Skipped</span>
+          <div className="flex items-center justify-center gap-1 mt-0.5">
+            <ShieldX className="h-2.5 w-2.5 text-text-quaternary" />
+            <span className="text-3xs uppercase tracking-wider text-text-quaternary">Skipped</span>
           </div>
         </div>
       </div>
 
-      {/* Skip reasons — only when there's signal */}
       {stats.today.skipped > 0 && Object.keys(stats.today.skip_reasons).length > 0 && (
-        <div className="mt-4 pt-4 border-t border-surface-border/30 space-y-2">
-          <p className="text-2xs text-text-quaternary uppercase tracking-wider">Skip Reasons</p>
+        <div className="mt-3 pt-3 border-t border-glass-border space-y-1.5">
+          <p className="text-3xs text-text-quaternary uppercase tracking-wider">Skip Reasons</p>
           {Object.entries(stats.today.skip_reasons).map(([reason, count]) => (
             <div key={reason} className="flex items-center justify-between">
-              <span className="text-xs text-text-secondary">
+              <span className="text-2xs text-text-secondary">
                 {SKIP_REASON_LABELS[reason] || reason}
               </span>
-              <span className="text-xs text-text-tertiary tabular-nums">{count}</span>
+              <span className="text-2xs font-mono text-text-tertiary tabular-nums">{count}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Week summary + audit link */}
-      <div className="mt-4 pt-4 border-t border-surface-border/30 flex items-center justify-between">
-        <span className="text-xs text-text-tertiary tabular-nums">
-          Week: {stats.week.filed} filed, {stats.week.dry_run} dry run, {stats.week.skipped} skipped
+      <div className="mt-3 pt-3 border-t border-glass-border flex items-center justify-between">
+        <span className="text-2xs font-mono text-text-quaternary tabular-nums">
+          Week: {stats.week.filed} filed, {stats.week.dry_run} dry, {stats.week.skipped} skip
         </span>
         <button
           onClick={() => navigate('/audit')}
-          className="text-xs text-accent-primary hover:text-accent-primary-hover flex items-center gap-1 transition-colors duration-150"
+          className="text-2xs text-accent-primary hover:text-accent-primary-hover flex items-center gap-1 transition-colors duration-150"
         >
-          Log <ArrowRight className="h-3 w-3" />
+          Log <ArrowRight className="h-2.5 w-2.5" />
         </button>
       </div>
     </Card>

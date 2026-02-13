@@ -130,14 +130,11 @@ export function FoiaTrackerPage() {
   const totalPages = Math.ceil(total / 25);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">FOIA Tracker</h1>
-          <p className="text-sm text-text-secondary">
-            Manage Freedom of Information Act requests and track responses
-          </p>
+          <h1 className="heading-3">FOIA Tracker</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleExportCsv} icon={<Download className="h-4 w-4" />}>

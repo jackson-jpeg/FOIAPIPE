@@ -13,7 +13,6 @@ import {
   Copy,
   ExternalLink,
   Pencil,
-  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -222,11 +221,11 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
     <div className="fixed inset-0 z-50 animate-fade-in flex items-stretch justify-end" onClick={onClose}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative h-full w-full sm:max-w-2xl animate-slide-in-right bg-surface-secondary border-l border-surface-border shadow-overlay"
+        className="relative h-full w-full sm:max-w-2xl animate-slide-in-right bg-surface-secondary border-l border-glass-border shadow-overlay"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-surface-border/50 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-glass-border px-6 py-5">
           <div className="flex items-center gap-3 min-w-0">
             <h2 className="text-lg font-semibold text-text-primary tracking-tight truncate">
               {agency.name}
@@ -269,7 +268,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
             <span className="text-xs text-text-secondary">{isActive ? 'Active' : 'Inactive'}</span>
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+              className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-glass-highlight hover:text-text-primary"
             >
               <X className="h-5 w-5" />
             </button>
@@ -281,7 +280,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
           <div className="p-6 space-y-6">
 
             {/* ── Contact Info Card ──────────────────────────────────────── */}
-            <section className="rounded-xl border border-surface-border/50 bg-surface-tertiary/20 p-4 space-y-3">
+            <section className="glass-2 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wider">Contact Info</h3>
                 {!editingInfo ? (
@@ -354,11 +353,11 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                 <div className="flex justify-center py-4"><Spinner size="sm" /></div>
               ) : stats ? (
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-surface-border/50 bg-surface-tertiary/20 p-3">
+                  <div className="rounded-lg border border-glass-border bg-transparent p-3">
                     <p className="text-xs text-text-tertiary mb-1">Total Requests</p>
                     <p className="text-2xl font-bold text-text-primary tabular-nums">{stats.total_requests}</p>
                   </div>
-                  <div className="rounded-lg border border-surface-border/50 bg-surface-tertiary/20 p-3">
+                  <div className="rounded-lg border border-glass-border bg-transparent p-3">
                     <p className="text-xs text-text-tertiary mb-1">Fulfillment Rate</p>
                     <p className={cn(
                       'text-2xl font-bold tabular-nums',
@@ -368,13 +367,13 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                       {stats.fulfillment_rate}%
                     </p>
                   </div>
-                  <div className="rounded-lg border border-surface-border/50 bg-surface-tertiary/20 p-3">
+                  <div className="rounded-lg border border-glass-border bg-transparent p-3">
                     <p className="text-xs text-text-tertiary mb-1">Avg Cost</p>
                     <p className="text-2xl font-bold text-text-primary tabular-nums">
                       {stats.avg_cost != null ? `$${stats.avg_cost.toFixed(2)}` : '--'}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-surface-border/50 bg-surface-tertiary/20 p-3">
+                  <div className="rounded-lg border border-glass-border bg-transparent p-3">
                     <p className="text-xs text-text-tertiary mb-1">Avg Response Days</p>
                     <p className="text-2xl font-bold text-text-primary tabular-nums">
                       {stats.avg_response_days_actual != null ? stats.avg_response_days_actual : '--'}
@@ -399,7 +398,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
               </div>
 
               {showAddContact && (
-                <div className="rounded-lg border border-accent-primary/30 bg-surface-tertiary/30 p-3 space-y-2">
+                <div className="rounded-lg border border-accent-primary/30 bg-transparent p-3 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <Input placeholder="Name *" value={newContactName} onChange={(e) => setNewContactName(e.target.value)} />
                     <Input placeholder="Title" value={newContactTitle} onChange={(e) => setNewContactTitle(e.target.value)} />
@@ -424,7 +423,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                   {contacts.map((contact) => (
                     <div
                       key={contact.id}
-                      className="flex items-center justify-between rounded-lg border border-surface-border/30 bg-surface-tertiary/10 px-3 py-2 group"
+                      className="flex items-center justify-between rounded-lg border border-glass-border bg-transparent px-3 py-2 group"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -462,7 +461,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                 rows={8}
                 placeholder="Custom FOIA request template..."
                 className={cn(
-                  'w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
+                  'w-full rounded-lg border border-glass-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
                   'transition-all duration-150 resize-y font-mono text-xs leading-relaxed',
                   'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20'
                 )}
@@ -471,7 +470,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                 <details className="text-xs">
                   <summary className="text-text-tertiary cursor-pointer hover:text-text-secondary">Preview with highlights</summary>
                   <div
-                    className="mt-2 rounded-lg border border-surface-border/30 bg-surface-tertiary/20 p-3 text-text-secondary font-mono whitespace-pre-wrap leading-relaxed"
+                    className="mt-2 rounded-lg border border-glass-border bg-transparent p-3 text-text-secondary font-mono whitespace-pre-wrap leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: highlightTemplate(template) }}
                   />
                 </details>
@@ -496,7 +495,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                 rows={3}
                 placeholder="Internal notes about this agency..."
                 className={cn(
-                  'w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
+                  'w-full rounded-lg border border-glass-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary',
                   'transition-all duration-150 resize-y',
                   'focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20'
                 )}
@@ -524,7 +523,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
                   {recentFoias.map((foia) => (
                     <div
                       key={foia.id}
-                      className="flex items-center justify-between rounded-lg border border-surface-border/30 bg-surface-tertiary/10 px-3 py-2"
+                      className="flex items-center justify-between rounded-lg border border-glass-border bg-transparent px-3 py-2"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -547,7 +546,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
 
             {/* Extra info */}
             {agency.typical_cost_per_hour != null && (
-              <div className="text-xs text-text-quaternary border-t border-surface-border/30 pt-4">
+              <div className="text-xs text-text-quaternary border-t border-glass-border pt-4">
                 Typical cost: ${Number(agency.typical_cost_per_hour).toFixed(2)}/hr
               </div>
             )}

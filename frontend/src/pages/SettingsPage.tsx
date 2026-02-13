@@ -23,8 +23,6 @@ import {
   Power,
   PowerOff,
   Gavel,
-  Clock,
-  Activity,
   Play,
   CheckCircle2,
   XCircle,
@@ -37,7 +35,6 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useToast } from '@/components/ui/Toast';
@@ -53,7 +50,7 @@ import {
   deleteNewsSource,
   type NewsSource,
 } from '@/api/newsSources';
-import { getTaskHealth, type TaskHealthResponse } from '@/api/tasks';
+import { getTaskHealth, triggerTask, type TaskHealthResponse } from '@/api/tasks';
 
 interface SystemHealth {
   status: string;
@@ -100,6 +97,7 @@ export function SettingsPage() {
   // Task Health state
   const [taskHealth, setTaskHealth] = useState<TaskHealthResponse | null>(null);
   const [taskHealthLoading, setTaskHealthLoading] = useState(true);
+  const [triggeringTask, setTriggeringTask] = useState<string | null>(null);
 
   // Auto-Appeal state
   const [autoAppealMode, setAutoAppealMode] = useState<'off' | 'dry_run' | 'live'>('off');
@@ -169,6 +167,18 @@ export function SettingsPage() {
       // silently fail
     } finally {
       setTaskHealthLoading(false);
+    }
+  };
+
+  const handleTriggerTask = async (scheduleName: string) => {
+    setTriggeringTask(scheduleName);
+    try {
+      await triggerTask(scheduleName);
+      addToast({ type: 'success', title: `Task "${scheduleName.replace(/-/g, ' ')}" triggered` });
+    } catch {
+      addToast({ type: 'error', title: 'Failed to trigger task' });
+    } finally {
+      setTriggeringTask(null);
     }
   };
 
@@ -334,14 +344,11 @@ export function SettingsPage() {
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="heading-3 mb-2">Settings</h1>
-          <p className="text-sm text-text-secondary">
-            Configure scanner behavior, notifications, and system integrations
-          </p>
+          <h1 className="heading-3">Settings</h1>
         </div>
         <Button
           variant="primary"
@@ -356,7 +363,7 @@ export function SettingsPage() {
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-surface-border bg-surface-secondary p-5 space-y-3">
+            <div key={i} className="glass-2 rounded-lg p-5 space-y-3">
               <Skeleton variant="text" className="h-3.5 w-32" />
               <Skeleton variant="text" className="h-3 w-full" />
               <Skeleton variant="text" className="h-3 w-3/4" />
@@ -364,9 +371,9 @@ export function SettingsPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left column */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* System Status */}
             <Card
               title="System Status"
@@ -449,7 +456,7 @@ export function SettingsPage() {
 
                   {/* Circuit Breakers */}
                   {health?.checks?.circuit_breakers && (
-                    <div className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors border-t border-surface-border/30 mt-2 pt-2">
+                    <div className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors border-t border-glass-border mt-2 pt-2">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-surface-tertiary text-text-tertiary">
                           <Shield className="h-4 w-4" />
@@ -606,6 +613,18 @@ export function SettingsPage() {
                             <span className="text-2xs text-text-quaternary tabular-nums">{task.last_duration}s</span>
                           )}
                           <span className="text-2xs text-text-tertiary tabular-nums">{lastRunStr}</span>
+                          <button
+                            onClick={() => handleTriggerTask(name)}
+                            disabled={triggeringTask === name}
+                            className="p-1 rounded hover:bg-accent-primary/10 text-text-quaternary hover:text-accent-primary transition-colors disabled:opacity-50"
+                            title="Run now"
+                          >
+                            {triggeringTask === name ? (
+                              <RefreshCw className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Play className="h-3 w-3" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     );
@@ -654,7 +673,7 @@ export function SettingsPage() {
           </div>
 
           {/* Right column */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Scanner Configuration */}
             <Card title="Scanner Configuration" action={<Scan className="h-4 w-4 text-text-quaternary" />}>
               <div className="space-y-4">
@@ -749,7 +768,7 @@ export function SettingsPage() {
                   />
                 </div>
 
-                <div className="border-t border-surface-border/30 pt-4">
+                <div className="border-t border-glass-border pt-4">
                   <Input
                     label="Scan Interval (min)"
                     type="number"

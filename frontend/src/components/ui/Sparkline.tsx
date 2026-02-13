@@ -56,25 +56,23 @@ export function Sparkline({
       aria-label="Sparkline chart"
       role="img"
     >
-      {/* Line */}
       <path
         d={pathData.path}
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity="0.5"
       />
 
-      {/* Optional dots for data points */}
       {showDots &&
         pathData.points?.map((point, index) => (
           <circle
             key={index}
             cx={point.x}
             cy={point.y}
-            r="1.5"
+            r="1"
             fill={color}
             opacity="0.6"
           />

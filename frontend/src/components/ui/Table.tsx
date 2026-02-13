@@ -49,15 +49,15 @@ export function Table<T extends Record<string, unknown>>({
 
   if (loading) {
     return (
-      <div className="overflow-hidden rounded-xl bg-surface-secondary border border-surface-border/50">
+      <div className="overflow-hidden rounded-lg glass-2">
         <table className="w-full">
           <thead>
-            <tr className="bg-surface-tertiary">
+            <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    'px-5 py-3 text-left text-xs font-medium text-text-secondary',
+                    'px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary',
                     col.width
                   )}
                 >
@@ -66,12 +66,12 @@ export function Table<T extends Record<string, unknown>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-border/30">
+          <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i} className="hover:bg-surface-hover transition-colors">
+              <tr key={i} className="border-t border-glass-border">
                 {columns.map((col) => (
-                  <td key={col.key} className={cn('px-5 py-3', col.width)}>
-                    <Skeleton variant="text" className="h-3.5 w-3/4" />
+                  <td key={col.key} className={cn('px-3 py-1.5', col.width)}>
+                    <Skeleton variant="text" className="h-3 w-3/4" />
                   </td>
                 ))}
               </tr>
@@ -84,27 +84,27 @@ export function Table<T extends Record<string, unknown>>({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center rounded-xl bg-surface-secondary border border-surface-border/50 py-16 text-text-tertiary">
+      <div className="flex items-center justify-center rounded-lg glass-2 py-12 text-text-tertiary">
         <p className="text-sm">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl bg-surface-secondary border border-surface-border/50">
+    <div className="overflow-hidden rounded-lg glass-2">
       <table className="w-full">
         <thead>
-          <tr className="bg-surface-tertiary">
+          <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={cn(
-                  'px-5 py-3 text-left text-xs font-medium text-text-secondary',
-                  col.sortable && 'cursor-pointer select-none transition-colors hover:text-text-primary'
+                  'px-3 py-1.5 text-left text-3xs font-medium uppercase tracking-widest text-text-quaternary',
+                  col.sortable && 'cursor-pointer select-none transition-colors hover:text-text-secondary'
                 )}
                 onClick={() => col.sortable && onSort?.(col.key)}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   {col.label}
                   {renderSortIcon(col)}
                 </div>
@@ -117,15 +117,15 @@ export function Table<T extends Record<string, unknown>>({
             <tr
               key={idx}
               className={cn(
-                'transition-colors border-t border-surface-border/30',
-                striped && idx % 2 === 1 && 'bg-surface-tertiary/30',
-                onRowClick && 'cursor-pointer hover:bg-surface-hover'
+                'transition-colors border-t border-glass-border',
+                striped && idx % 2 === 1 && 'bg-glass-highlight',
+                onRowClick && 'cursor-pointer hover:bg-glass-highlight'
               )}
             >
               {columns.map((col) => (
                 <td
                   key={col.key}
-                  className="px-5 py-3.5 text-sm text-text-primary"
+                  className="px-3 py-1.5 text-sm text-text-primary"
                   onClick={() => onRowClick?.(item)}
                 >
                   {col.render ? col.render(item) : (item[col.key] as ReactNode)}
