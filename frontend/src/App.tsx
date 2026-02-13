@@ -36,6 +36,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { SearchResultsPage } from '@/pages/SearchResultsPage';
 import { PublicDashboardPage } from '@/pages/PublicDashboardPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
+import { InboxPage } from '@/pages/InboxPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 function ProtectedRoute() {
@@ -83,6 +84,7 @@ export default function App() {
               <Route path="/news" element={<NewsScannerPage />} />
               <Route path="/foia" element={<FoiaTrackerPage />} />
               <Route path="/foia/editor/:id" element={<FoiaEditorPage />} />
+              <Route path="/inbox" element={<InboxPage />} />
               <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/videos" element={<VideoPipelinePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />

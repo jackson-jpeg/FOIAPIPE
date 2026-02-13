@@ -108,6 +108,11 @@ export async function applySuggestion(requestText: string, suggestion: string): 
   return data;
 }
 
+export async function getInbox(params: { response_type?: string; page?: number; page_size?: number } = {}) {
+  const { data } = await client.get('/foia/inbox', { params });
+  return data;
+}
+
 export async function getAppealReasons() {
   const { data } = await client.get('/foia/appeal-reasons');
   return data;

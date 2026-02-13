@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { FoiaTable } from '@/components/foia/FoiaTable';
 import { FoiaForm } from '@/components/foia/FoiaForm';
 import { BatchFoiaForm } from '@/components/foia/BatchFoiaForm';
@@ -19,6 +20,7 @@ import * as foiaApi from '@/api/foia';
 export function FoiaTrackerPage() {
   const { requests, loading, total, fetchRequests } = useFoiaStore();
   const { addToast } = useToast();
+  const location = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -48,6 +50,16 @@ export function FoiaTrackerPage() {
   }, [statusFilter, search, sortBy, sortDir, page, fetchRequests]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Open detail from navigation state (e.g. from Inbox "View Request")
+  useEffect(() => {
+    const state = location.state as { openDetail?: string } | null;
+    if (state?.openDetail) {
+      setDetailId(state.openDetail);
+      // Clear the state so it doesn't re-trigger on back navigation
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
 
   const handleCreateFoia = async (data: { agency_id: string; request_text: string; priority: string }) => {
     await foiaApi.createFoiaRequest(data);

@@ -113,6 +113,69 @@ def _to_detail_response(foia: FoiaRequest) -> FoiaRequestDetail:
 # ── Reporting endpoints (registered before /{foia_id} to avoid conflicts) ─
 
 
+@router.get("/inbox")
+async def inbox(
+    response_type: str | None = Query(None, description="Filter by response type"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Return a flat, paginated list of all email responses across FOIA requests."""
+    stmt = (
+        select(FoiaRequest)
+        .where(FoiaRequest.response_emails.isnot(None))
+        .options(selectinload(FoiaRequest.agency))
+    )
+    result = await db.execute(stmt)
+    requests = result.scalars().all()
+
+    # Flatten all response_emails, enriching each with FOIA context
+    all_emails: list[dict] = []
+    for foia in requests:
+        if not foia.response_emails:
+            continue
+        agency_name = foia.agency.name if foia.agency else "Unknown"
+        for email in foia.response_emails:
+            entry = {
+                **email,
+                "foia_id": str(foia.id),
+                "case_number": foia.case_number,
+                "agency_name": agency_name,
+                "foia_status": foia.status.value,
+            }
+            all_emails.append(entry)
+
+    # Filter by response_type if provided
+    if response_type:
+        all_emails = [e for e in all_emails if e.get("response_type") == response_type]
+
+    # Sort by date descending (newest first)
+    def sort_key(e: dict) -> str:
+        return e.get("date") or ""
+    all_emails.sort(key=sort_key, reverse=True)
+
+    # Paginate
+    total = len(all_emails)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = all_emails[start:end]
+
+    # Summary counts by response type
+    type_counts: dict[str, int] = {}
+    for e in all_emails:
+        rt = e.get("response_type", "unknown")
+        type_counts[rt] = type_counts.get(rt, 0) + 1
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "type_counts": type_counts,
+    }
+
+
 @router.get("/status-summary", response_model=FoiaStatusSummary)
 async def status_summary(
     db: AsyncSession = Depends(get_db),

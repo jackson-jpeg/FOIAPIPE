@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Newspaper,
   FileText,
+  Inbox,
   Video,
   BarChart3,
   Settings,
@@ -62,6 +63,13 @@ export function CommandBar() {
       icon: <FileText className="h-3.5 w-3.5" />,
       category: 'Navigation',
       onSelect: () => { navigate('/foia'); close(); },
+    },
+    {
+      id: 'nav-inbox',
+      label: 'Inbox',
+      icon: <Inbox className="h-3.5 w-3.5" />,
+      category: 'Navigation',
+      onSelect: () => { navigate('/inbox'); close(); },
     },
     {
       id: 'nav-videos',
