@@ -26,6 +26,8 @@ export interface NewsArticle {
   dismissed_reason: string | null;
   auto_foia_eligible: boolean;
   auto_foia_filed: boolean;
+  predicted_revenue: number | null;
+  priority_factors: Record<string, any> | null;
   created_at: string;
   updated_at: string | null;
 }

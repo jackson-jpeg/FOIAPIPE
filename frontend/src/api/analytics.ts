@@ -118,3 +118,17 @@ export async function getAgencyResponseAnalytics() {
   const { data } = await client.get('/analytics/agency-response');
   return data;
 }
+
+export interface SeoInsights {
+  top_titles: { title: string; views: number; revenue: number }[];
+  top_keywords: [string, number][];
+  duration_buckets: Record<string, { views: number; revenue: number; count: number; avg_views: number; avg_revenue: number }>;
+  top_tags: { tag: string; views: number; revenue: number; count: number; avg_views: number }[];
+  incident_rankings: { incident_type: string; video_count: number; total_views: number; total_revenue: number; avg_views: number; avg_revenue: number }[];
+  recommendations: { type: string; title: string; detail: string }[];
+}
+
+export async function getSeoInsights(): Promise<SeoInsights> {
+  const { data } = await client.get('/analytics/seo-insights');
+  return data;
+}

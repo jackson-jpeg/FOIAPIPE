@@ -7,6 +7,7 @@ import {
   Settings,
   Building2,
   History,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -68,5 +69,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Video Pipeline', path: '/videos', icon: Video },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Audit Log', path: '/audit', icon: History },
+  { label: 'Notifications', path: '/notifications', icon: Bell },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];

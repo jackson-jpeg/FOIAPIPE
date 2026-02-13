@@ -413,3 +413,27 @@ async def task_health(
         "summary": {"green": green, "amber": amber, "red": red, "unknown": unknown, "total": len(tasks_health)},
         "tasks": tasks_health,
     }
+
+
+@tasks_router.post("/{schedule_name}/trigger")
+async def trigger_task(
+    schedule_name: str,
+    _user: str = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Manually trigger a scheduled Celery task by its schedule name."""
+    from app.tasks.beat_schedule import CELERY_BEAT_SCHEDULE
+    from app.tasks.celery_app import celery_app
+
+    if schedule_name not in CELERY_BEAT_SCHEDULE:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Unknown task: {schedule_name}")
+
+    task_full_name = CELERY_BEAT_SCHEDULE[schedule_name]["task"]
+    result = celery_app.send_task(task_full_name)
+
+    return {
+        "schedule_name": schedule_name,
+        "task": task_full_name,
+        "task_id": result.id,
+        "status": "triggered",
+    }

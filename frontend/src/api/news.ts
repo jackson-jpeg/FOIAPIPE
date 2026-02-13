@@ -92,3 +92,15 @@ export async function getCircuitBreakers(): Promise<{ items: CircuitBreaker[]; t
 export async function resetCircuitBreaker(sourceName: string): Promise<void> {
   await client.post(`/circuit-breakers/${encodeURIComponent(sourceName)}/reset`);
 }
+
+export interface PrioritizeResult {
+  article_id: string;
+  predicted_revenue: number;
+  priority_factors: Record<string, any>;
+  score_multiplier: number;
+}
+
+export async function prioritizeArticle(id: string): Promise<PrioritizeResult> {
+  const { data } = await client.post(`/news/${id}/prioritize`);
+  return data;
+}

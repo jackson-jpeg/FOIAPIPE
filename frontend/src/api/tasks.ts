@@ -62,3 +62,8 @@ export async function getTaskStatus(): Promise<any> {
   const { data } = await client.get('/tasks/status');
   return data;
 }
+
+export async function triggerTask(scheduleName: string): Promise<{ schedule_name: string; task: string; task_id: string; status: string }> {
+  const { data } = await client.post(`/tasks/${encodeURIComponent(scheduleName)}/trigger`);
+  return data;
+}
