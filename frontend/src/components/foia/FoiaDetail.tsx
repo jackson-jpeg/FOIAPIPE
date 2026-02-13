@@ -59,7 +59,11 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
         // Fetch cost prediction if we have an agency_id and request isn't fulfilled/closed
         if (data.agency_id && !['fulfilled', 'closed', 'denied'].includes(data.status)) {
           foiaApi.getCostPrediction({ agency_id: data.agency_id })
-            .then(setCostPrediction)
+            .then((raw) => setCostPrediction({
+              predicted_cost: raw.predicted_cost ?? raw.estimated_cost ?? 0,
+              confidence: raw.confidence,
+              cost_range: raw.cost_range ?? (raw.range_low != null ? { low: raw.range_low, high: raw.range_high } : null),
+            }))
             .catch(() => setCostPrediction(null));
         }
       })

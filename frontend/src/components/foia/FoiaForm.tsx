@@ -45,10 +45,17 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
     if (!agencyId) { setCostPrediction(null); setRoiProjection(null); return; }
     foiaApi.getCostPrediction({ agency_id: agencyId })
       .then((data) => {
-        setCostPrediction(data);
+        // Backend returns estimated_cost/range_low/range_high; normalize to frontend shape
+        const cost = data.predicted_cost ?? data.estimated_cost ?? 0;
+        const normalized: CostPrediction = {
+          predicted_cost: cost,
+          confidence: data.confidence,
+          cost_range: data.cost_range ?? { low: data.range_low ?? 0, high: data.range_high ?? 0 },
+        };
+        setCostPrediction(normalized);
         // Chain ROI projection from predicted cost
-        if (data.predicted_cost > 0) {
-          foiaApi.getRoiProjection({ predicted_cost: data.predicted_cost })
+        if (cost > 0) {
+          foiaApi.getRoiProjection({ predicted_cost: cost })
             .then(setRoiProjection)
             .catch(() => setRoiProjection(null));
         }
