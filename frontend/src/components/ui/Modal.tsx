@@ -70,23 +70,27 @@ export function Modal({
             : cn('w-full rounded-xl animate-scale-in', sizeStyles[size])
         )}
       >
-        <div className="flex items-center justify-between border-b glass-border px-4 py-3">
-          <h2 className="text-sm font-semibold text-text-primary tracking-tight">{title}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1.5 text-text-tertiary transition-colors hover:text-text-primary"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className={cn(isSlideOver ? 'h-[calc(100%-3.5rem)] overflow-y-auto p-4' : 'p-4')}>
-          {children}
-        </div>
-        {footer && (
-          <div className="flex items-center justify-end gap-2 border-t glass-border px-4 py-3">
-            {footer}
+        <div className={cn(
+          isSlideOver && 'flex flex-col h-full'
+        )}>
+          <div className="flex items-center justify-between border-b glass-border px-4 py-3 shrink-0">
+            <h2 className="text-sm font-semibold text-text-primary tracking-tight">{title}</h2>
+            <button
+              onClick={onClose}
+              className="rounded-md p-1.5 text-text-tertiary transition-colors hover:text-text-primary"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-        )}
+          <div className={cn(isSlideOver ? 'flex-1 overflow-y-auto p-4' : 'p-4')}>
+            {children}
+          </div>
+          {footer && (
+            <div className="flex items-center justify-end gap-2 border-t glass-border px-4 py-3 shrink-0">
+              {footer}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
