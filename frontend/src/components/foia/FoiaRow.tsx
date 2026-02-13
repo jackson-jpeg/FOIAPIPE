@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { formatDate, formatCurrency } from '@/lib/formatters';
-import { ChevronDown, ChevronRight, Send, FileText, StickyNote, Star } from 'lucide-react';
+import { ChevronDown, ChevronRight, Send, FileText, StickyNote, Star, Pencil } from 'lucide-react';
 
 interface FoiaRequest {
   id: string;
@@ -33,6 +34,7 @@ interface FoiaRowProps {
 const priorityStars: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
 
 export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, onViewDetail }: FoiaRowProps) {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const stars = priorityStars[request.priority] || 2;
   const dueDate = request.due_date ? new Date(request.due_date) : null;
@@ -82,9 +84,14 @@ export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, on
         <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             {request.status === 'draft' && (
-              <Button variant="primary" size="sm" onClick={() => onSubmit(request.id)} icon={<Send className="h-3 w-3" />}>
-                Submit
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => navigate(`/foia/editor/${request.id}`)} icon={<Pencil className="h-3 w-3" />}>
+                  Edit
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => onSubmit(request.id)} icon={<Send className="h-3 w-3" />}>
+                  Submit
+                </Button>
+              </>
             )}
             <Button variant="ghost" size="sm" onClick={() => onViewDetail(request.id)} icon={<FileText className="h-3 w-3" />} />
           </div>

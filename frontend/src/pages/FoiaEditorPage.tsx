@@ -209,17 +209,17 @@ export function FoiaEditorPage() {
   return (
     <div className="fixed inset-0 z-50 bg-surface-primary">
       {/* Minimal Header */}
-      <header className="border-b border-surface-border bg-surface-secondary/80 backdrop-blur-xl">
+      <header className="border-b border-glass-border glass-1">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={handleClose}
-              className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-surface-tertiary hover:text-text-secondary"
+              className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-glass-highlight hover:text-text-secondary"
               aria-label="Close editor"
             >
               <X className="h-4 w-4" />
             </button>
-            <div className="h-5 w-px bg-surface-border" />
+            <div className="h-5 w-px bg-glass-border" />
             <h1 className="text-sm font-medium text-text-secondary">
               {isNewRequest ? 'New FOIA Request' : 'Edit FOIA Request'}
             </h1>
@@ -302,7 +302,7 @@ export function FoiaEditorPage() {
                 <button
                   onClick={handleRefreshSuggestions}
                   disabled={isLoadingSuggestions}
-                  className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-surface-tertiary hover:text-text-secondary disabled:opacity-50"
+                  className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-glass-highlight hover:text-text-secondary disabled:opacity-50"
                   aria-label="Refresh suggestions"
                 >
                   <RefreshCw className={cn("h-3.5 w-3.5", isLoadingSuggestions && "animate-spin")} />
@@ -312,8 +312,8 @@ export function FoiaEditorPage() {
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-surface-border" />
-                      <div className="h-4 w-full animate-pulse rounded bg-surface-border" />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-glass-border" />
+                      <div className="h-4 w-full animate-pulse rounded bg-glass-border" />
                     </div>
                   ))}
                 </div>

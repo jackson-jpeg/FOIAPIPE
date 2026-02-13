@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ScannerStatus } from '@/components/news/ScannerStatus';
 import { ScanLogTable } from '@/components/news/ScanLogTable';
 import { FeedHealthIndicators } from '@/components/news/FeedHealthIndicators';
@@ -23,6 +24,7 @@ type FilterTab = 'all' | 'high_priority' | 'unreviewed' | 'auto_filed';
 
 export function NewsScannerPage() {
   const { articles, loading, total, filters, setFilters, fetchArticles } = useNewsStore();
+  const navigate = useNavigate();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [search, setSearch] = useState('');
@@ -143,10 +145,10 @@ export function NewsScannerPage() {
     if (!foiaModalArticleId || !selectedAgencyId) return;
     setFilingFoia(true);
     try {
-      await newsApi.fileFoiaFromArticle(foiaModalArticleId, selectedAgencyId);
-      addToast({ type: 'success', title: 'FOIA request created' });
+      const result = await newsApi.fileFoiaFromArticle(foiaModalArticleId, selectedAgencyId);
+      addToast({ type: 'success', title: 'FOIA draft created — opening editor' });
       setFoiaModalArticleId(null);
-      loadArticles();
+      navigate(`/foia/editor/${result.foia_request_id}`);
     } catch {
       addToast({ type: 'error', title: 'Failed to file FOIA' });
     } finally {

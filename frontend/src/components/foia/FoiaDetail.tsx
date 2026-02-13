@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -8,7 +9,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { formatDate, formatRelativeTime, formatCurrency } from '@/lib/formatters';
 import { FOIA_STATUSES, VIDEO_STATUSES } from '@/lib/constants';
 import {
-  X, Send, Save, FileDown, Gavel, Clock, Mail, Video,
+  X, Send, Save, FileDown, Gavel, Clock, Mail, Video, Pencil,
   ArrowRight, ExternalLink, ChevronDown, ChevronUp, TrendingUp,
   Paperclip, RefreshCw, Sparkles,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ interface FoiaDetailProps {
 }
 
 export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit, onUpdateNotes }: FoiaDetailProps) {
+  const navigate = useNavigate();
   const [notes, setNotes] = useState(request?.notes || '');
   const [newStatus, setNewStatus] = useState('');
   const [detail, setDetail] = useState<any>(null);
@@ -240,9 +242,14 @@ export function FoiaDetail({ request, isOpen, onClose, onUpdateStatus, onSubmit,
             <StatusBadge status={request.status} size="md" />
             <div className="flex items-center gap-2">
               {request.status === 'draft' && (
-                <Button variant="primary" size="sm" onClick={() => onSubmit(request.id)} icon={<Send className="h-3 w-3" />}>
-                  Submit
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/foia/editor/${request.id}`)} icon={<Pencil className="h-3 w-3" />}>
+                    Edit
+                  </Button>
+                  <Button variant="primary" size="sm" onClick={() => onSubmit(request.id)} icon={<Send className="h-3 w-3" />}>
+                    Submit
+                  </Button>
+                </>
               )}
               {['draft', 'ready'].includes(request.status) && (
                 <Button
