@@ -48,11 +48,11 @@ export function ArticleTable({
               <th className="px-4 py-4 w-10"></th>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Sev</th>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Headline</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Source</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Agency</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Type</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">Source</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden md:table-cell">Agency</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden lg:table-cell">Type</th>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Published</th>
-              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary">Status</th>
+              <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">Status</th>
               <th className="px-4 py-4 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary w-20">Actions</th>
             </tr>
           </thead>
@@ -62,11 +62,11 @@ export function ArticleTable({
                 <td className="px-4 py-4"><div className="shimmer h-3.5 w-3.5 rounded" /></td>
                 <td className="px-4 py-4"><div className="shimmer h-2 w-2 rounded-full" /></td>
                 <td className="px-4 py-4"><div className="shimmer h-3.5 w-3/4 rounded" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-3.5 w-20 rounded" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-3.5 w-24 rounded" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-5 w-16 rounded-full" /></td>
+                <td className="px-4 py-4 hidden sm:table-cell"><div className="shimmer h-3.5 w-20 rounded" /></td>
+                <td className="px-4 py-4 hidden md:table-cell"><div className="shimmer h-3.5 w-24 rounded" /></td>
+                <td className="px-4 py-4 hidden lg:table-cell"><div className="shimmer h-5 w-16 rounded-full" /></td>
                 <td className="px-4 py-4"><div className="shimmer h-3.5 w-28 rounded" /></td>
-                <td className="px-4 py-4"><div className="shimmer h-5 w-20 rounded-full" /></td>
+                <td className="px-4 py-4 hidden sm:table-cell"><div className="shimmer h-5 w-20 rounded-full" /></td>
                 <td className="px-4 py-4"><div className="flex gap-1"><div className="shimmer h-8 w-8 rounded" /><div className="shimmer h-8 w-8 rounded" /></div></td>
               </tr>
             ))}
@@ -116,11 +116,11 @@ export function ArticleTable({
             </th>
             <SortHeader label="Sev" field="severity_score" />
             <SortHeader label="Headline" field="headline" />
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Source</th>
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Agency</th>
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Type</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden sm:table-cell">Source</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden md:table-cell">Agency</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden lg:table-cell">Type</th>
             <SortHeader label="Published" field="published_at" />
-            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary">Status</th>
+            <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary hidden sm:table-cell">Status</th>
             <th className="px-3 py-2.5 text-left text-2xs font-medium text-text-tertiary w-20">Actions</th>
           </tr>
         </thead>

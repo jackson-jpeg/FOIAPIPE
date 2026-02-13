@@ -14,6 +14,8 @@ export interface NotificationListParams {
   page?: number;
   page_size?: number;
   is_read?: boolean;
+  unread_only?: boolean;
+  notification_type?: 'foia' | 'video' | 'revenue' | 'system';
 }
 
 export interface NotificationListResponse {

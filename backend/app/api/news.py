@@ -373,6 +373,20 @@ async def update_article(
 # ── POST /api/news/{article_id}/file-foia ────────────────────────────────
 
 
+@router.post("/{article_id}/prioritize")
+async def prioritize_article(
+    article_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Compute predicted revenue and priority factors for an article."""
+    from app.services.article_prioritizer import prioritize_article as _prioritize
+    result = await _prioritize(db, str(article_id))
+    if "error" in result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
+    return result
+
+
 @router.post("/{article_id}/file-foia", response_model=FileFoiaResponse, status_code=status.HTTP_201_CREATED)
 async def file_foia_from_article(
     article_id: uuid.UUID,

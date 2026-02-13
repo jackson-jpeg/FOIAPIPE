@@ -687,3 +687,193 @@ async def break_even_analysis(
         "avg_revenue_per_video": round(total_revenue / max(total_videos, 1), 2),
         "break_even_at": "N/A" if total_revenue >= total_expenses else f"Need ${round(total_expenses - total_revenue, 2)} more revenue",
     }
+
+
+@router.get("/seo-insights")
+async def seo_insights(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+):
+    """Analyze historical data to provide actionable SEO recommendations."""
+    from app.models.agency import Agency
+
+    # 1. Top-performing title patterns (by average views)
+    title_performance = (
+        await db.execute(
+            select(
+                Video.title,
+                func.sum(VideoAnalytics.views).label("total_views"),
+                func.sum(VideoAnalytics.estimated_revenue).label("total_revenue"),
+            )
+            .join(VideoAnalytics, VideoAnalytics.video_id == Video.id)
+            .where(Video.title.isnot(None))
+            .group_by(Video.id, Video.title)
+            .order_by(func.sum(VideoAnalytics.views).desc())
+            .limit(10)
+        )
+    ).all()
+
+    top_titles = [
+        {
+            "title": row.title[:100] if row.title else "",
+            "views": row.total_views,
+            "revenue": round(float(row.total_revenue or 0), 2),
+        }
+        for row in title_performance
+    ]
+
+    # Analyze title keywords from top performers
+    keyword_views: dict[str, int] = {}
+    important_words = set()
+    for row in title_performance:
+        if row.title:
+            words = [w.lower() for w in row.title.split() if len(w) > 3]
+            for word in words:
+                keyword_views[word] = keyword_views.get(word, 0) + (row.total_views or 0)
+                important_words.add(word)
+
+    top_keywords = sorted(keyword_views.items(), key=lambda x: -x[1])[:15]
+
+    # 2. Optimal video length ranges
+    length_performance = (
+        await db.execute(
+            select(
+                Video.duration_seconds,
+                func.sum(VideoAnalytics.views).label("total_views"),
+                func.sum(VideoAnalytics.estimated_revenue).label("total_revenue"),
+            )
+            .join(VideoAnalytics, VideoAnalytics.video_id == Video.id)
+            .where(Video.duration_seconds.isnot(None))
+            .group_by(Video.id, Video.duration_seconds)
+        )
+    ).all()
+
+    # Bucket by duration ranges
+    duration_buckets: dict[str, dict] = {
+        "0-5min": {"views": 0, "revenue": 0.0, "count": 0},
+        "5-10min": {"views": 0, "revenue": 0.0, "count": 0},
+        "10-20min": {"views": 0, "revenue": 0.0, "count": 0},
+        "20-30min": {"views": 0, "revenue": 0.0, "count": 0},
+        "30min+": {"views": 0, "revenue": 0.0, "count": 0},
+    }
+    for row in length_performance:
+        mins = (row.duration_seconds or 0) / 60
+        if mins < 5:
+            bucket = "0-5min"
+        elif mins < 10:
+            bucket = "5-10min"
+        elif mins < 20:
+            bucket = "10-20min"
+        elif mins < 30:
+            bucket = "20-30min"
+        else:
+            bucket = "30min+"
+        duration_buckets[bucket]["views"] += row.total_views or 0
+        duration_buckets[bucket]["revenue"] += float(row.total_revenue or 0)
+        duration_buckets[bucket]["count"] += 1
+
+    for bucket in duration_buckets.values():
+        if bucket["count"] > 0:
+            bucket["avg_views"] = round(bucket["views"] / bucket["count"])
+            bucket["avg_revenue"] = round(bucket["revenue"] / bucket["count"], 2)
+        else:
+            bucket["avg_views"] = 0
+            bucket["avg_revenue"] = 0.0
+
+    # 3. Best-performing tags
+    tag_performance: dict[str, dict] = {}
+    tag_videos = (
+        await db.execute(
+            select(
+                Video.tags,
+                func.sum(VideoAnalytics.views).label("total_views"),
+                func.sum(VideoAnalytics.estimated_revenue).label("total_revenue"),
+            )
+            .join(VideoAnalytics, VideoAnalytics.video_id == Video.id)
+            .where(Video.tags.isnot(None))
+            .group_by(Video.id, Video.tags)
+        )
+    ).all()
+
+    for row in tag_videos:
+        tags = row.tags if isinstance(row.tags, list) else []
+        for tag in tags:
+            if tag not in tag_performance:
+                tag_performance[tag] = {"views": 0, "revenue": 0.0, "count": 0}
+            tag_performance[tag]["views"] += row.total_views or 0
+            tag_performance[tag]["revenue"] += float(row.total_revenue or 0)
+            tag_performance[tag]["count"] += 1
+
+    top_tags = sorted(
+        [
+            {"tag": tag, **stats, "avg_views": round(stats["views"] / max(stats["count"], 1))}
+            for tag, stats in tag_performance.items()
+        ],
+        key=lambda x: -x["avg_views"],
+    )[:15]
+
+    # 4. Incident type revenue ranking
+    incident_revenue = (
+        await db.execute(
+            select(
+                NewsArticle.incident_type,
+                func.count(func.distinct(Video.id)).label("video_count"),
+                func.sum(VideoAnalytics.views).label("total_views"),
+                func.sum(VideoAnalytics.estimated_revenue).label("total_revenue"),
+            )
+            .join(FoiaRequest, FoiaRequest.news_article_id == NewsArticle.id)
+            .join(Video, Video.foia_request_id == FoiaRequest.id)
+            .join(VideoAnalytics, VideoAnalytics.video_id == Video.id)
+            .where(NewsArticle.incident_type.isnot(None))
+            .group_by(NewsArticle.incident_type)
+            .order_by(func.sum(VideoAnalytics.estimated_revenue).desc())
+        )
+    ).all()
+
+    incident_rankings = [
+        {
+            "incident_type": row.incident_type.value if row.incident_type else "unknown",
+            "video_count": row.video_count,
+            "total_views": row.total_views,
+            "total_revenue": round(float(row.total_revenue or 0), 2),
+            "avg_views": round((row.total_views or 0) / max(row.video_count, 1)),
+            "avg_revenue": round(float(row.total_revenue or 0) / max(row.video_count, 1), 2),
+        }
+        for row in incident_revenue
+    ]
+
+    # 5. Generate recommendations
+    recommendations = []
+    if duration_buckets:
+        best_bucket = max(duration_buckets.items(), key=lambda x: x[1].get("avg_views", 0))
+        if best_bucket[1]["count"] > 0:
+            recommendations.append({
+                "type": "duration",
+                "title": f"Optimal video length: {best_bucket[0]}",
+                "detail": f"Videos in the {best_bucket[0]} range average {best_bucket[1]['avg_views']:,} views and ${best_bucket[1]['avg_revenue']:.2f} revenue.",
+            })
+
+    if top_keywords:
+        top_kws = ", ".join(kw for kw, _ in top_keywords[:5])
+        recommendations.append({
+            "type": "keywords",
+            "title": "High-performing title keywords",
+            "detail": f"Top keywords by total views: {top_kws}. Consider using these in video titles.",
+        })
+
+    if incident_rankings:
+        best_type = incident_rankings[0]
+        recommendations.append({
+            "type": "incident_type",
+            "title": f"Most profitable incident type: {best_type['incident_type']}",
+            "detail": f"Averaging ${best_type['avg_revenue']:.2f} and {best_type['avg_views']:,} views per video.",
+        })
+
+    return {
+        "top_titles": top_titles,
+        "top_keywords": [{"keyword": kw, "total_views": v} for kw, v in top_keywords],
+        "duration_performance": duration_buckets,
+        "top_tags": top_tags,
+        "incident_type_rankings": incident_rankings,
+        "recommendations": recommendations,
+    }

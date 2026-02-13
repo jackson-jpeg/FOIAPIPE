@@ -89,3 +89,29 @@ def run_database_backup():
     except Exception as e:
         logger.error(f"Backup failed: {e}")
         return {"error": str(e)}
+
+
+# ── Agency Report Card Recalculation ──────────────────────────────────
+
+
+async def _recalculate_grades_async():
+    from app.database import async_session_factory
+    from app.services.agency_grader import recalculate_all_grades
+
+    async with async_session_factory() as db:
+        result = await recalculate_all_grades(db)
+        await db.commit()
+        return result
+
+
+@celery_app.task(name="app.tasks.maintenance_tasks.recalculate_agency_grades")
+def recalculate_agency_grades():
+    """Recalculate report card grades for all active agencies."""
+    logger.info("Recalculating agency report card grades")
+    try:
+        result = _run_async(_recalculate_grades_async())
+        logger.info(f"Grade recalculation: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Grade recalculation failed: {e}")
+        return {"error": str(e)}

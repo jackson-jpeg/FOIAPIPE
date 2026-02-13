@@ -3,8 +3,64 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Calendar, XCircle, Clock } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import * as videosApi from '@/api/videos';
 import { useToast } from '@/components/ui/Toast';
+
+function useCountdown(targetDate: string | null) {
+  const [remaining, setRemaining] = useState('');
+  const [isUrgent, setIsUrgent] = useState(false);
+
+  useEffect(() => {
+    if (!targetDate) return;
+
+    const update = () => {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) {
+        setRemaining('Publishing...');
+        setIsUrgent(true);
+        return;
+      }
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        setRemaining(`${days}d ${hours % 24}h`);
+        setIsUrgent(false);
+      } else if (hours > 0) {
+        setRemaining(`${hours}h ${mins}m`);
+        setIsUrgent(hours < 1);
+      } else {
+        setRemaining(`${mins}m ${secs}s`);
+        setIsUrgent(true);
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  return { remaining, isUrgent };
+}
+
+function CountdownBadge({ scheduledAt }: { scheduledAt: string | null }) {
+  const { remaining, isUrgent } = useCountdown(scheduledAt);
+  if (!scheduledAt) return null;
+
+  return (
+    <span className={cn(
+      'text-2xs font-medium tabular-nums px-1.5 py-0.5 rounded-full',
+      isUrgent
+        ? 'bg-accent-primary/20 text-accent-primary animate-pulse'
+        : 'bg-surface-tertiary text-text-secondary',
+    )}>
+      {remaining}
+    </span>
+  );
+}
 
 interface ScheduledVideo {
   id: string;
@@ -77,8 +133,9 @@ export function PublishQueue({ onRefresh }: PublishQueueProps) {
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Clock className="h-2.5 w-2.5 text-text-quaternary" />
-                  <span className="text-2xs text-text-tertiary tabular-nums">
-                    {video.scheduled_at ? new Date(video.scheduled_at).toLocaleString() : 'N/A'}
+                  <CountdownBadge scheduledAt={video.scheduled_at} />
+                  <span className="text-2xs text-text-quaternary tabular-nums">
+                    {video.scheduled_at ? new Date(video.scheduled_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                   </span>
                   {video.foia_case_number && (
                     <span className="text-2xs font-mono text-text-quaternary">{video.foia_case_number}</span>

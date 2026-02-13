@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { StatusOrb } from '@/components/ui/StatusOrb';
 import { useNewsStore } from '@/stores/newsStore';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSSE } from '@/hooks/useSSE';
 import { RefreshCw, FileText, X, Check, Sparkles, Download } from 'lucide-react';
@@ -156,14 +157,29 @@ export function NewsScannerPage() {
     }
   };
 
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [confirmBulkFoia, setConfirmBulkFoia] = useState(false);
+
   const handleBulkAction = async (action: 'dismiss' | 'file_foia' | 'mark_reviewed') => {
+    if (action === 'file_foia') {
+      setConfirmBulkFoia(true);
+      return;
+    }
+    await executeBulkAction(action);
+  };
+
+  const executeBulkAction = async (action: 'dismiss' | 'file_foia' | 'mark_reviewed') => {
+    setBulkLoading(true);
     try {
       await newsApi.bulkAction({ article_ids: Array.from(selectedIds), action });
-      addToast({ type: 'success', title: `Bulk ${action} completed` });
+      addToast({ type: 'success', title: `Bulk ${action.replace('_', ' ')} completed` });
       setSelectedIds(new Set());
       loadArticles();
     } catch {
       addToast({ type: 'error', title: 'Bulk action failed' });
+    } finally {
+      setBulkLoading(false);
+      setConfirmBulkFoia(false);
     }
   };
 
@@ -294,13 +310,13 @@ export function NewsScannerPage() {
         <div className="flex items-center gap-3 rounded-xl bg-accent-primary-subtle border border-accent-primary/20 px-5 py-4 shadow-elevated animate-slide-up">
           <span className="text-sm font-bold text-text-primary">{selectedIds.size} selected</span>
           <div className="h-4 w-px bg-accent-primary/30" />
-          <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />}>
+          <Button variant="primary" size="sm" onClick={() => handleBulkAction('file_foia')} icon={<FileText className="h-3.5 w-3.5" />} loading={bulkLoading}>
             File FOIAs
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('dismiss')} icon={<X className="h-3.5 w-3.5" />}>
+          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('dismiss')} icon={<X className="h-3.5 w-3.5" />} loading={bulkLoading}>
             Dismiss
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('mark_reviewed')} icon={<Check className="h-3.5 w-3.5" />}>
+          <Button variant="ghost" size="sm" onClick={() => handleBulkAction('mark_reviewed')} icon={<Check className="h-3.5 w-3.5" />} loading={bulkLoading}>
             Reviewed
           </Button>
         </div>
@@ -412,6 +428,18 @@ export function NewsScannerPage() {
           )}
         </div>
       </Modal>
+
+      {/* Bulk FOIA Filing Confirmation */}
+      <ConfirmDialog
+        isOpen={confirmBulkFoia}
+        onClose={() => setConfirmBulkFoia(false)}
+        onConfirm={() => executeBulkAction('file_foia')}
+        title={`File ${selectedIds.size} FOIA Requests?`}
+        message={`This will create ${selectedIds.size} FOIA request draft(s) based on the selected articles. Each will need to be reviewed and submitted individually.`}
+        confirmLabel="File FOIAs"
+        variant="warning"
+        loading={bulkLoading}
+      />
     </div>
   );
 }

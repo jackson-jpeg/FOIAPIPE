@@ -353,6 +353,7 @@ export function AgenciesPage() {
                 <SortableHeader label="Jurisdiction" field="jurisdiction" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="FOIA Email" field="foia_email" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="Avg Response" field="avg_response_days" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                <th className="text-left text-xs font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Grade</th>
                 <SortableHeader label="Status" field="is_active" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
@@ -392,6 +393,22 @@ export function AgenciesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <ResponseDot days={agency.avg_response_days} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {agency.report_card_grade ? (
+                      <span className={cn(
+                        'inline-flex items-center justify-center h-7 w-7 rounded-md border text-xs font-bold',
+                        agency.report_card_grade === 'A' && 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+                        agency.report_card_grade === 'B' && 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+                        agency.report_card_grade === 'C' && 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+                        agency.report_card_grade === 'D' && 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+                        agency.report_card_grade === 'F' && 'text-red-400 bg-red-500/10 border-red-500/30',
+                      )}>
+                        {agency.report_card_grade}
+                      </span>
+                    ) : (
+                      <span className="text-text-quaternary text-sm">&mdash;</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={agency.is_active ? 'success' : 'default'} dot>

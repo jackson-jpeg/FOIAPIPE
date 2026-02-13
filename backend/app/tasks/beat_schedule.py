@@ -28,6 +28,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=8, minute=0),  # Daily 8 AM EST
         "options": {"queue": "default"},
     },
+    "auto-appeal-denied-foias": {
+        "task": "app.tasks.foia_tasks.auto_appeal_denied_foias",
+        "schedule": crontab(hour=10, minute=0),  # Daily 10 AM EST
+        "options": {"queue": "default"},
+    },
     "poll-youtube-analytics": {
         "task": "app.tasks.youtube_tasks.poll_youtube_analytics",
         "schedule": crontab(hour=2, minute=0),  # Daily 2 AM EST
@@ -51,6 +56,11 @@ CELERY_BEAT_SCHEDULE = {
     "daily-database-backup": {
         "task": "app.tasks.maintenance_tasks.run_database_backup",
         "schedule": crontab(hour=3, minute=0),  # 3 AM daily
+        "options": {"queue": "default"},
+    },
+    "recalculate-agency-grades": {
+        "task": "app.tasks.maintenance_tasks.recalculate_agency_grades",
+        "schedule": crontab(hour=4, minute=0, day_of_week="monday"),  # Weekly Monday 4 AM
         "options": {"queue": "default"},
     },
 }

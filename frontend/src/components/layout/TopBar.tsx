@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Bell, CheckCheck } from 'lucide-react';
+import { Menu, Bell, CheckCheck, Search, Command } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -144,6 +144,21 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Global Search Trigger */}
+        <button
+          onClick={() => {
+            // Dispatch Cmd+K to open CommandBar
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+          }}
+          className="hidden sm:flex items-center gap-2 rounded-lg border border-surface-border bg-surface-primary/50 px-3 py-1.5 text-sm text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
+        >
+          <Search className="h-3 w-3" />
+          <span className="text-2xs">Search...</span>
+          <kbd className="ml-2 flex items-center gap-0.5 rounded bg-surface-tertiary px-1.5 py-0.5 text-2xs font-mono text-text-quaternary">
+            <Command className="h-2.5 w-2.5" />K
+          </kbd>
+        </button>
+
         {/* Scanner status with StatusOrb */}
         <div className="mr-1 hidden items-center sm:flex">
           <StatusOrb color="success" label="Scanner active" size="sm" />
@@ -240,8 +255,8 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
                 )}
               </div>
 
-              {notifications.length > 0 && (
-                <div className="border-t border-surface-border/50 px-3 py-2">
+              <div className="border-t border-surface-border/50 px-3 py-2 space-y-1">
+                {notifications.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -252,8 +267,16 @@ export function TopBar({ title, onMenuToggle, sidebarCollapsed, isMobile }: TopB
                   >
                     Mark all read
                   </Button>
-                </div>
-              )}
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setOpen(false); navigate('/notifications'); }}
+                  className="w-full text-accent-primary"
+                >
+                  View all notifications
+                </Button>
+              </div>
             </div>
           )}
         </div>

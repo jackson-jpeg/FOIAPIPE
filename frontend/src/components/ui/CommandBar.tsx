@@ -324,7 +324,15 @@ export function CommandBar() {
                   Select
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-2xs text-text-tertiary">
+              <div className="flex items-center gap-2 text-2xs text-text-tertiary">
+                {search.length >= 2 && (
+                  <button
+                    onClick={() => { navigate(`/search?q=${encodeURIComponent(search)}`); close(); }}
+                    className="text-accent-primary hover:underline mr-2"
+                  >
+                    View all results
+                  </button>
+                )}
                 <Command className="h-3 w-3" />
                 <span className="font-mono">K</span>
               </div>

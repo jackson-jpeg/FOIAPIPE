@@ -75,6 +75,7 @@ export function AnalyticsPage() {
         setAgencyResponseData(agencyResp || []);
       } catch (error) {
         console.error('Analytics load error:', error);
+        addToast({ type: 'error', title: 'Failed to load some analytics data' });
       } finally {
         setLoading(false);
       }

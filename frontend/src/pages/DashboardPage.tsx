@@ -98,8 +98,8 @@ export function DashboardPage() {
     fetchDashboard();
 
     // Load extended data in background
-    getDashboardSummary().then(setSummary).catch(() => {});
-    getSystemMetrics().then(setMetrics).catch(() => {});
+    getDashboardSummary().then(setSummary).catch(() => addToast({ type: 'error', title: 'Failed to load summary' }));
+    getSystemMetrics().then(setMetrics).catch(() => addToast({ type: 'error', title: 'Failed to load metrics' }));
   }, []);
 
   // SSE: refetch dashboard stats on any event

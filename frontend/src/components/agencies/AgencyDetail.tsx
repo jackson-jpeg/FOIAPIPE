@@ -13,6 +13,7 @@ import {
   Copy,
   ExternalLink,
   Pencil,
+  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -221,7 +222,7 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
     <div className="fixed inset-0 z-50 animate-fade-in flex items-stretch justify-end" onClick={onClose}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative h-full w-full max-w-2xl animate-slide-in-right bg-surface-secondary border-l border-surface-border shadow-overlay"
+        className="relative h-full w-full sm:max-w-2xl animate-slide-in-right bg-surface-secondary border-l border-surface-border shadow-overlay"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -232,6 +233,18 @@ export function AgencyDetail({ agency, onClose, onUpdate }: AgencyDetailProps) {
             </h2>
             {agency.abbreviation && (
               <Badge variant="info" size="sm">{agency.abbreviation}</Badge>
+            )}
+            {agency.report_card_grade && (
+              <span className={cn(
+                'inline-flex items-center justify-center h-8 w-8 rounded-lg border text-sm font-bold shrink-0',
+                agency.report_card_grade === 'A' && 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+                agency.report_card_grade === 'B' && 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+                agency.report_card_grade === 'C' && 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+                agency.report_card_grade === 'D' && 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+                agency.report_card_grade === 'F' && 'text-red-400 bg-red-500/10 border-red-500/30',
+              )}>
+                {agency.report_card_grade}
+              </span>
             )}
           </div>
           <div className="flex items-center gap-3 shrink-0">

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useFoiaStore } from '@/stores/foiaStore';
 import { FOIA_STATUSES } from '@/lib/constants';
 import { Plus, Calendar, Download, Layers } from 'lucide-react';
@@ -54,14 +55,26 @@ export function FoiaTrackerPage() {
     loadData();
   };
 
-  const handleSubmit = async (id: string) => {
+  const [pendingSubmitId, setPendingSubmitId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitRequest = (id: string) => {
+    setPendingSubmitId(id);
+  };
+
+  const confirmSubmit = async () => {
+    if (!pendingSubmitId) return;
+    setSubmitting(true);
     try {
-      await foiaApi.submitFoiaRequest(id);
+      await foiaApi.submitFoiaRequest(pendingSubmitId);
       addToast({ type: 'success', title: 'FOIA submitted' });
       loadData();
     } catch (error: any) {
       const detail = error.response?.data?.detail || 'An unexpected error occurred';
       addToast({ type: 'error', title: 'Submit failed', message: detail });
+    } finally {
+      setSubmitting(false);
+      setPendingSubmitId(null);
     }
   };
 
@@ -178,7 +191,7 @@ export function FoiaTrackerPage() {
         sortBy={sortBy}
         sortDir={sortDir}
         onSort={handleSort}
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmitRequest}
         onUpdateStatus={handleUpdateStatus}
         onViewDetail={setDetailId}
       />
@@ -206,8 +219,20 @@ export function FoiaTrackerPage() {
         isOpen={!!detailId}
         onClose={() => setDetailId(null)}
         onUpdateStatus={handleUpdateStatus}
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmitRequest}
         onUpdateNotes={handleUpdateNotes}
+      />
+
+      {/* Submit Confirmation */}
+      <ConfirmDialog
+        isOpen={!!pendingSubmitId}
+        onClose={() => setPendingSubmitId(null)}
+        onConfirm={confirmSubmit}
+        title="Submit FOIA Request?"
+        message="This will email the FOIA request to the agency. FOIA requests are legally binding public records requests and cannot be easily retracted."
+        confirmLabel="Submit FOIA"
+        variant="warning"
+        loading={submitting}
       />
     </div>
   );

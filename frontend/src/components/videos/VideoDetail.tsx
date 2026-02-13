@@ -204,7 +204,7 @@ export function VideoDetail({ video, isOpen, onClose, onUpdate, onUploadRaw, onG
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] animate-fade-in" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-surface-secondary border-l border-surface-border shadow-overlay z-50 overflow-y-auto animate-slide-in-right">
+      <div className="fixed inset-y-0 right-0 w-full sm:max-w-lg bg-surface-secondary border-l border-surface-border shadow-overlay z-50 overflow-y-auto animate-slide-in-right">
         <div className="sticky top-0 bg-surface-secondary/95 backdrop-blur-sm border-b border-surface-border px-5 py-3.5 flex items-center justify-between z-10">
           <div>
             <h2 className="text-sm font-medium text-text-primary">{video.title || 'Untitled Video'}</h2>

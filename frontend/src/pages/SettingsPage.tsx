@@ -15,11 +15,29 @@ import {
   Bell,
   Scan,
   AlertTriangle,
+  Rss,
+  Globe,
+  Plus,
+  Pencil,
+  Trash2,
+  Power,
+  PowerOff,
+  Gavel,
+  Clock,
+  Activity,
+  Play,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useToast } from '@/components/ui/Toast';
@@ -28,6 +46,14 @@ import client from '@/api/client';
 import { getSystemMetrics, type SystemMetrics } from '@/api/dashboard';
 import { getAuditSummary, type AuditSummary } from '@/api/audit';
 import { getBackupInfo } from '@/api/exports';
+import {
+  getNewsSources,
+  createNewsSource,
+  updateNewsSource,
+  deleteNewsSource,
+  type NewsSource,
+} from '@/api/newsSources';
+import { getTaskHealth, type TaskHealthResponse } from '@/api/tasks';
 
 interface SystemHealth {
   status: string;
@@ -56,6 +82,34 @@ export function SettingsPage() {
   const [auditSummary, setAuditSummary] = useState<AuditSummary | null>(null);
   const [backupInfo, setBackupInfo] = useState<any>(null);
 
+  // News Sources state
+  const [newsSources, setNewsSources] = useState<NewsSource[]>([]);
+  const [newsSourcesLoading, setNewsSourcesLoading] = useState(true);
+  const [showSourceModal, setShowSourceModal] = useState(false);
+  const [editingSource, setEditingSource] = useState<NewsSource | null>(null);
+  const [sourceForm, setSourceForm] = useState({
+    name: '',
+    url: '',
+    source_type: 'rss' as 'rss' | 'web_scrape',
+    selectors: '',
+    scan_interval_minutes: 30,
+    is_active: true,
+  });
+  const [sourceSaving, setSourceSaving] = useState(false);
+
+  // Task Health state
+  const [taskHealth, setTaskHealth] = useState<TaskHealthResponse | null>(null);
+  const [taskHealthLoading, setTaskHealthLoading] = useState(true);
+
+  // Auto-Appeal state
+  const [autoAppealMode, setAutoAppealMode] = useState<'off' | 'dry_run' | 'live'>('off');
+  const [maxAppealsPerDay, setMaxAppealsPerDay] = useState(3);
+  const [appealAgencyCooldownDays, setAppealAgencyCooldownDays] = useState(30);
+
+  // Confirmation dialogs
+  const [confirmLiveSubmit, setConfirmLiveSubmit] = useState(false);
+  const [confirmLiveAppeal, setConfirmLiveAppeal] = useState(false);
+
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
@@ -77,6 +131,9 @@ export function SettingsPage() {
       setScanInterval(Number(settings.scan_interval_minutes) || 30);
       setEmailNotifications(Boolean(settings.email_notifications_enabled ?? true));
       setSmsNotifications(Boolean(settings.sms_notifications_enabled));
+      setAutoAppealMode((settings.auto_appeal_mode as 'off' | 'dry_run' | 'live') || 'off');
+      setMaxAppealsPerDay(Number(settings.max_appeals_per_day) || 3);
+      setAppealAgencyCooldownDays(Number(settings.appeal_agency_cooldown_days) || 30);
     }
   }, [settings]);
 
@@ -91,11 +148,37 @@ export function SettingsPage() {
     }
   };
 
+  const loadNewsSources = async () => {
+    try {
+      setNewsSourcesLoading(true);
+      const data = await getNewsSources();
+      setNewsSources(data.items);
+    } catch {
+      // silently fail
+    } finally {
+      setNewsSourcesLoading(false);
+    }
+  };
+
+  const loadTaskHealth = async () => {
+    try {
+      setTaskHealthLoading(true);
+      const data = await getTaskHealth();
+      setTaskHealth(data);
+    } catch {
+      // silently fail
+    } finally {
+      setTaskHealthLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadHealth();
-    getSystemMetrics().then(setSysMetrics).catch(() => {});
-    getAuditSummary(30).then(setAuditSummary).catch(() => {});
-    getBackupInfo().then(setBackupInfo).catch(() => {});
+    loadNewsSources();
+    loadTaskHealth();
+    getSystemMetrics().then(setSysMetrics).catch(() => addToast({ type: 'error', title: 'Failed to load system metrics' }));
+    getAuditSummary(30).then(setAuditSummary).catch(() => addToast({ type: 'error', title: 'Failed to load audit summary' }));
+    getBackupInfo().then(setBackupInfo).catch(() => addToast({ type: 'error', title: 'Failed to load backup info' }));
   }, []);
 
   const handleRefreshHealth = async () => {
@@ -116,7 +199,10 @@ export function SettingsPage() {
         scan_interval_minutes: scanInterval,
         email_notifications_enabled: emailNotifications,
         sms_notifications_enabled: smsNotifications,
-      });
+        auto_appeal_mode: autoAppealMode,
+        max_appeals_per_day: maxAppealsPerDay,
+        appeal_agency_cooldown_days: appealAgencyCooldownDays,
+      } as any);
       addToast({ type: 'success', title: 'Settings saved successfully' });
     } catch {
       addToast({ type: 'error', title: 'Failed to save settings' });
@@ -152,6 +238,83 @@ export function SettingsPage() {
       : status === 'degraded' || status === 'incomplete' ? 'warning'
       : 'default';
     return <Badge variant={variant} size="sm">{status}</Badge>;
+  };
+
+  const openAddSource = () => {
+    setEditingSource(null);
+    setSourceForm({ name: '', url: '', source_type: 'rss', selectors: '', scan_interval_minutes: 30, is_active: true });
+    setShowSourceModal(true);
+  };
+
+  const openEditSource = (source: NewsSource) => {
+    setEditingSource(source);
+    const selectorsStr = source.selectors
+      ? JSON.stringify(source.selectors, null, 2)
+      : '';
+    setSourceForm({
+      name: source.name,
+      url: source.url,
+      source_type: source.source_type,
+      selectors: selectorsStr,
+      scan_interval_minutes: source.scan_interval_minutes,
+      is_active: source.is_active,
+    });
+    setShowSourceModal(true);
+  };
+
+  const handleSaveSource = async () => {
+    setSourceSaving(true);
+    try {
+      const payload: any = {
+        name: sourceForm.name,
+        url: sourceForm.url,
+        source_type: sourceForm.source_type,
+        scan_interval_minutes: sourceForm.scan_interval_minutes,
+        is_active: sourceForm.is_active,
+      };
+      if (sourceForm.selectors.trim()) {
+        try {
+          payload.selectors = JSON.parse(sourceForm.selectors);
+        } catch {
+          addToast({ type: 'error', title: 'Invalid JSON in selectors field' });
+          setSourceSaving(false);
+          return;
+        }
+      }
+      if (editingSource) {
+        await updateNewsSource(editingSource.id, payload);
+        addToast({ type: 'success', title: 'Feed source updated' });
+      } else {
+        await createNewsSource(payload);
+        addToast({ type: 'success', title: 'Feed source added' });
+      }
+      setShowSourceModal(false);
+      loadNewsSources();
+    } catch {
+      addToast({ type: 'error', title: 'Failed to save feed source' });
+    } finally {
+      setSourceSaving(false);
+    }
+  };
+
+  const handleToggleSource = async (source: NewsSource) => {
+    try {
+      await updateNewsSource(source.id, { is_active: !source.is_active });
+      setNewsSources(prev => prev.map(s => s.id === source.id ? { ...s, is_active: !s.is_active } : s));
+      addToast({ type: 'success', title: `${source.name} ${source.is_active ? 'disabled' : 'enabled'}` });
+    } catch {
+      addToast({ type: 'error', title: 'Failed to toggle source' });
+    }
+  };
+
+  const handleDeleteSource = async (source: NewsSource) => {
+    try {
+      await deleteNewsSource(source.id);
+      setNewsSources(prev => prev.filter(s => s.id !== source.id));
+      addToast({ type: 'success', title: `${source.name} deleted` });
+    } catch {
+      addToast({ type: 'error', title: 'Failed to delete source' });
+    }
   };
 
   const serviceItems = [
@@ -305,6 +468,154 @@ export function SettingsPage() {
               )}
             </Card>
 
+            {/* Feed Sources */}
+            <Card
+              title="Feed Sources"
+              action={
+                <Button variant="ghost" size="sm" onClick={openAddSource} icon={<Plus className="h-3 w-3" />}>
+                  Add
+                </Button>
+              }
+            >
+              {newsSourcesLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <Skeleton variant="text" className="h-3.5 w-40" />
+                      <Skeleton variant="text" className="h-3.5 w-16" />
+                    </div>
+                  ))}
+                </div>
+              ) : newsSources.length === 0 ? (
+                <p className="text-sm text-text-tertiary py-4 text-center">No feed sources configured. Using hardcoded defaults.</p>
+              ) : (
+                <div className="space-y-1 max-h-80 overflow-y-auto">
+                  {newsSources.map((source) => (
+                    <div
+                      key={source.id}
+                      className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={cn(
+                          'flex items-center justify-center h-8 w-8 rounded-lg flex-shrink-0',
+                          source.is_active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-tertiary text-text-tertiary'
+                        )}>
+                          {source.source_type === 'rss' ? <Rss className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <span className={cn('text-sm truncate block', source.is_active ? 'text-text-primary' : 'text-text-tertiary')}>
+                            {source.name}
+                          </span>
+                          <p className="text-2xs text-text-quaternary truncate">{source.url.substring(0, 50)}...</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <button
+                          onClick={() => handleToggleSource(source)}
+                          className="p-1.5 rounded-md hover:bg-surface-tertiary text-text-tertiary hover:text-text-primary transition-colors"
+                          title={source.is_active ? 'Disable' : 'Enable'}
+                        >
+                          {source.is_active ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                        </button>
+                        <button
+                          onClick={() => openEditSource(source)}
+                          className="p-1.5 rounded-md hover:bg-surface-tertiary text-text-tertiary hover:text-text-primary transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSource(source)}
+                          className="p-1.5 rounded-md hover:bg-red-500/10 text-text-tertiary hover:text-red-400 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Background Tasks */}
+            <Card
+              title="Background Tasks"
+              action={
+                <div className="flex items-center gap-2">
+                  {taskHealth && (
+                    <span className="text-xs text-text-tertiary tabular-nums">
+                      {taskHealth.summary.green}/{taskHealth.summary.total} healthy
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={loadTaskHealth}
+                    loading={taskHealthLoading}
+                    icon={<RefreshCw className="h-3 w-3" />}
+                  >
+                    Refresh
+                  </Button>
+                </div>
+              }
+            >
+              {taskHealthLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <Skeleton variant="text" className="h-3.5 w-40" />
+                      <Skeleton variant="text" className="h-3.5 w-16" />
+                    </div>
+                  ))}
+                </div>
+              ) : taskHealth ? (
+                <div className="space-y-1 max-h-96 overflow-y-auto">
+                  {Object.entries(taskHealth.tasks).map(([name, task]) => {
+                    const healthIcon = task.health === 'green' ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                      : task.health === 'amber' ? <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                      : task.health === 'red' ? <XCircle className="h-3.5 w-3.5 text-red-400" />
+                      : <HelpCircle className="h-3.5 w-3.5 text-text-quaternary" />;
+
+                    const lastRunStr = task.last_run
+                      ? new Date(task.last_run).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : 'Never';
+
+                    return (
+                      <div
+                        key={name}
+                        className="flex items-center justify-between rounded-lg px-3 py-2.5 -mx-3 hover:bg-surface-hover transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={cn(
+                            'flex items-center justify-center h-8 w-8 rounded-lg flex-shrink-0',
+                            task.health === 'green' ? 'bg-emerald-500/10' :
+                            task.health === 'amber' ? 'bg-amber-500/10' :
+                            task.health === 'red' ? 'bg-red-500/10' :
+                            'bg-surface-tertiary'
+                          )}>
+                            {healthIcon}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-sm text-text-primary truncate block">{name.replace(/-/g, ' ')}</span>
+                            <p className="text-2xs text-text-quaternary">{task.schedule}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {task.last_duration !== null && (
+                            <span className="text-2xs text-text-quaternary tabular-nums">{task.last_duration}s</span>
+                          )}
+                          <span className="text-2xs text-text-tertiary tabular-nums">{lastRunStr}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-text-tertiary py-4 text-center">No task data available</p>
+              )}
+            </Card>
+
             {/* Quick Links */}
             <Card title="Quick Links">
               <div className="space-y-1">
@@ -377,7 +688,11 @@ export function SettingsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAutoSubmitMode('live')}
+                      onClick={() => {
+                        if (autoSubmitMode !== 'live') {
+                          setConfirmLiveSubmit(true);
+                        }
+                      }}
                       className={cn(
                         'rounded-lg border px-3 py-2.5 text-center text-sm flex items-center justify-center gap-1.5 transition-colors duration-150',
                         autoSubmitMode === 'live'
@@ -442,6 +757,84 @@ export function SettingsPage() {
                     max={1440}
                     value={scanInterval}
                     onChange={(e) => setScanInterval(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {/* Auto-Appeal Configuration */}
+            <Card title="Auto-Appeal" action={<Gavel className="h-4 w-4 text-text-quaternary" />}>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-text-primary mb-2">Auto-appeal Mode</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAutoAppealMode('off')}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-center text-sm transition-colors duration-150',
+                        autoAppealMode === 'off'
+                          ? 'border-surface-border-light bg-surface-tertiary text-text-primary font-medium'
+                          : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
+                      )}
+                    >
+                      Off
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutoAppealMode('dry_run')}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-center text-sm flex items-center justify-center gap-1.5 transition-colors duration-150',
+                        autoAppealMode === 'dry_run'
+                          ? 'border-accent-amber/50 bg-accent-amber-subtle text-accent-amber font-medium'
+                          : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
+                      )}
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Dry Run
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (autoAppealMode !== 'live') {
+                          setConfirmLiveAppeal(true);
+                        }
+                      }}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-center text-sm flex items-center justify-center gap-1.5 transition-colors duration-150',
+                        autoAppealMode === 'live'
+                          ? 'border-accent-red/50 bg-accent-red-subtle text-accent-red font-medium'
+                          : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
+                      )}
+                    >
+                      Live
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-text-tertiary">
+                    {autoAppealMode === 'off' && 'Auto-appeal is disabled. Appeals must be filed manually.'}
+                    {autoAppealMode === 'dry_run' && 'Dry run: Appeals will be drafted for review but NOT sent.'}
+                    {autoAppealMode === 'live' && 'Live: High-confidence appeals will be automatically emailed. These are legally binding.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Max Appeals / Day"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={maxAppealsPerDay}
+                    onChange={(e) => setMaxAppealsPerDay(Number(e.target.value))}
+                    disabled={autoAppealMode === 'off'}
+                  />
+                  <Input
+                    label="Agency Cooldown (days)"
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={appealAgencyCooldownDays}
+                    onChange={(e) => setAppealAgencyCooldownDays(Number(e.target.value))}
+                    disabled={autoAppealMode === 'off'}
                   />
                 </div>
               </div>
@@ -589,6 +982,113 @@ export function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* News Source Add/Edit Modal */}
+      <Modal
+        isOpen={showSourceModal}
+        onClose={() => setShowSourceModal(false)}
+        title={editingSource ? 'Edit Feed Source' : 'Add Feed Source'}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setShowSourceModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveSource} loading={sourceSaving}>
+              {editingSource ? 'Update' : 'Add'} Source
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <Input
+            label="Source Name"
+            placeholder="e.g. WFLA Crime"
+            value={sourceForm.name}
+            onChange={(e) => setSourceForm(prev => ({ ...prev, name: e.target.value }))}
+          />
+          <Input
+            label="URL"
+            placeholder="https://www.example.com/feed.rss"
+            value={sourceForm.url}
+            onChange={(e) => setSourceForm(prev => ({ ...prev, url: e.target.value }))}
+          />
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1.5">Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSourceForm(prev => ({ ...prev, source_type: 'rss' }))}
+                className={cn(
+                  'rounded-lg border px-3 py-2 text-center text-sm flex items-center justify-center gap-2 transition-colors',
+                  sourceForm.source_type === 'rss'
+                    ? 'border-accent-primary/50 bg-accent-primary-subtle text-accent-primary font-medium'
+                    : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
+                )}
+              >
+                <Rss className="h-3.5 w-3.5" /> RSS Feed
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceForm(prev => ({ ...prev, source_type: 'web_scrape' }))}
+                className={cn(
+                  'rounded-lg border px-3 py-2 text-center text-sm flex items-center justify-center gap-2 transition-colors',
+                  sourceForm.source_type === 'web_scrape'
+                    ? 'border-accent-primary/50 bg-accent-primary-subtle text-accent-primary font-medium'
+                    : 'border-surface-border text-text-tertiary hover:bg-surface-hover',
+                )}
+              >
+                <Globe className="h-3.5 w-3.5" /> Web Scrape
+              </button>
+            </div>
+          </div>
+          {sourceForm.source_type === 'web_scrape' && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1.5">CSS Selectors (JSON)</label>
+              <textarea
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-quaternary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/30 font-mono"
+                rows={3}
+                placeholder='{"selectors": ["h2 a", "h3 a"]}'
+                value={sourceForm.selectors}
+                onChange={(e) => setSourceForm(prev => ({ ...prev, selectors: e.target.value }))}
+              />
+            </div>
+          )}
+          <Input
+            label="Scan Interval (min)"
+            type="number"
+            min={5}
+            max={1440}
+            value={sourceForm.scan_interval_minutes}
+            onChange={(e) => setSourceForm(prev => ({ ...prev, scan_interval_minutes: Number(e.target.value) }))}
+          />
+        </div>
+      </Modal>
+
+      {/* Confirmation: Auto-submit Live Mode */}
+      <ConfirmDialog
+        isOpen={confirmLiveSubmit}
+        onClose={() => setConfirmLiveSubmit(false)}
+        onConfirm={() => {
+          setAutoSubmitMode('live');
+          setConfirmLiveSubmit(false);
+        }}
+        title="Enable Live Auto-Submit?"
+        message="This will automatically email FOIA requests to agencies. These are legally binding public records requests. Make sure your safety controls (daily limits, cost cap, cooldowns) are properly configured."
+        confirmLabel="Enable Live Mode"
+        variant="danger"
+      />
+
+      {/* Confirmation: Auto-appeal Live Mode */}
+      <ConfirmDialog
+        isOpen={confirmLiveAppeal}
+        onClose={() => setConfirmLiveAppeal(false)}
+        onConfirm={() => {
+          setAutoAppealMode('live');
+          setConfirmLiveAppeal(false);
+        }}
+        title="Enable Live Auto-Appeal?"
+        message="This will automatically email appeal letters to agencies for denied FOIA requests. Appeals are legally binding communications. Verify your daily limits and cooldown settings."
+        confirmLabel="Enable Live Mode"
+        variant="danger"
+      />
     </div>
   );
 }

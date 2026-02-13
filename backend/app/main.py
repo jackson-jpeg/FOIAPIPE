@@ -37,7 +37,9 @@ from app.api.exports import router as exports_router
 from app.api.foia import router as foia_router
 from app.api.health import router as health_router, tasks_router
 from app.api.news import router as news_router
+from app.api.news_sources import router as news_sources_router
 from app.api.notifications import router as notifications_router
+from app.api.public import router as public_router
 from app.api.search import router as search_router
 from app.api.settings import router as settings_router
 from app.api.sse import router as sse_router
@@ -159,7 +161,9 @@ app.include_router(exports_router)
 app.include_router(agencies_router)
 app.include_router(foia_router)
 app.include_router(news_router)
+app.include_router(news_sources_router)
 app.include_router(notifications_router)
+app.include_router(public_router)
 app.include_router(search_router)
 app.include_router(settings_router)
 app.include_router(sse_router)

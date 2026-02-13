@@ -91,6 +91,57 @@ def _to_response(video: Video) -> VideoResponse:
 # ── Pipeline counts (registered before /{video_id} to avoid conflicts) ──
 
 
+@router.get("/transcript-search")
+async def transcript_search(
+    q: str = Query(..., min_length=2, description="Search keyword for transcripts"),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Search video transcripts for keywords and return matching videos with snippets."""
+    pattern = f"%{q}%"
+    result = await db.execute(
+        select(Video)
+        .where(Video.transcript_text.ilike(pattern))
+        .order_by(Video.created_at.desc())
+        .limit(limit)
+    )
+    videos = result.scalars().all()
+
+    matches = []
+    for video in videos:
+        # Find matching segments with timestamps
+        snippets = []
+        if video.transcript_segments:
+            segments = video.transcript_segments if isinstance(video.transcript_segments, list) else video.transcript_segments.get("segments", [])
+            for seg in segments:
+                text = seg.get("text", "")
+                if q.lower() in text.lower():
+                    snippets.append({
+                        "start": seg.get("start"),
+                        "end": seg.get("end"),
+                        "text": text,
+                    })
+        elif video.transcript_text:
+            # Fallback: extract snippet from full text
+            idx = video.transcript_text.lower().find(q.lower())
+            if idx >= 0:
+                start = max(0, idx - 50)
+                end = min(len(video.transcript_text), idx + len(q) + 50)
+                snippets.append({"text": f"...{video.transcript_text[start:end]}..."})
+
+        matches.append({
+            "id": str(video.id),
+            "title": video.title,
+            "status": video.status.value if video.status else None,
+            "youtube_url": video.youtube_url,
+            "snippet_count": len(snippets),
+            "snippets": snippets[:5],  # Limit snippets
+        })
+
+    return {"query": q, "total": len(matches), "matches": matches}
+
+
 @router.get("/pipeline-counts", response_model=VideoPipelineCounts)
 async def pipeline_counts(
     db: AsyncSession = Depends(get_db),
@@ -1258,3 +1309,167 @@ async def get_video_analytics(
         },
         "daily": daily,
     }
+
+
+# ── Subtitle Content (View/Edit) ────────────────────────────────────────
+
+
+@router.get("/{video_id}/subtitles/{subtitle_id}/content")
+async def get_subtitle_content(
+    video_id: uuid.UUID,
+    subtitle_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Fetch parsed subtitle segments as JSON for viewing/editing."""
+    subtitle = await db.get(VideoSubtitle, subtitle_id)
+    if not subtitle or str(subtitle.video_id) != str(video_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subtitle not found")
+
+    # Try to download and parse the subtitle file from S3
+    segments = []
+    if subtitle.storage_key:
+        try:
+            from app.services.storage import download_file
+            content = download_file(subtitle.storage_key)
+            if content:
+                text = content.decode("utf-8", errors="replace")
+                segments = _parse_srt_to_segments(text)
+        except Exception as e:
+            logger.warning(f"Failed to download subtitle file: {e}")
+
+    return {
+        "subtitle_id": str(subtitle.id),
+        "video_id": str(video_id),
+        "language": subtitle.language,
+        "format": subtitle.format,
+        "segments": segments,
+        "total_segments": len(segments),
+    }
+
+
+@router.put("/{video_id}/subtitles/{subtitle_id}/content")
+async def update_subtitle_content(
+    video_id: uuid.UUID,
+    subtitle_id: uuid.UUID,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Save edited subtitle segments, regenerate file, and re-upload to S3."""
+    subtitle = await db.get(VideoSubtitle, subtitle_id)
+    if not subtitle or str(subtitle.video_id) != str(video_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subtitle not found")
+
+    segments = body.get("segments", [])
+    if not segments:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Segments required")
+
+    # Regenerate SRT content from segments
+    srt_content = _segments_to_srt(segments)
+
+    # Upload to S3
+    if subtitle.storage_key:
+        try:
+            upload_file(
+                srt_content.encode("utf-8"),
+                subtitle.storage_key,
+                content_type="text/plain",
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to upload: {e}",
+            )
+
+    # Also update transcript on the video if this is the primary subtitle
+    video = await db.get(Video, video_id)
+    if video:
+        video.transcript_text = " ".join(s.get("text", "") for s in segments)
+        video.transcript_segments = {"segments": segments}
+
+    await db.flush()
+
+    return {
+        "success": True,
+        "subtitle_id": str(subtitle.id),
+        "segments_saved": len(segments),
+    }
+
+
+def _parse_srt_to_segments(srt_text: str) -> list[dict]:
+    """Parse SRT format into a list of {index, start, end, text} segments."""
+    segments = []
+    blocks = srt_text.strip().split("\n\n")
+    for block in blocks:
+        lines = block.strip().split("\n")
+        if len(lines) >= 3:
+            try:
+                index = int(lines[0].strip())
+                times = lines[1].strip()
+                text = "\n".join(lines[2:])
+                if " --> " in times:
+                    start, end = times.split(" --> ")
+                    segments.append({
+                        "index": index,
+                        "start": start.strip(),
+                        "end": end.strip(),
+                        "text": text.strip(),
+                    })
+            except (ValueError, IndexError):
+                continue
+    return segments
+
+
+@router.post("/{video_id}/generate-ai-thumbnail")
+async def generate_ai_thumbnail_endpoint(
+    video_id: uuid.UUID,
+    body: dict | None = None,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate an AI thumbnail using DALL-E 3 for a video."""
+    video = await db.get(Video, video_id)
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+
+    from app.services.thumbnail_generator import (
+        generate_ai_thumbnail,
+        download_and_store_thumbnail,
+    )
+
+    # Build context from video and FOIA
+    incident_desc = None
+    if video.foia_request and video.foia_request.news_article:
+        incident_desc = video.foia_request.news_article.headline
+
+    result = await generate_ai_thumbnail(
+        title=video.title or "Untitled Video",
+        incident_description=incident_desc or (body or {}).get("incident_description"),
+        frame_description=(body or {}).get("frame_description"),
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+
+    # Download and store if URL returned
+    if result.get("url"):
+        store_result = await download_and_store_thumbnail(result["url"], str(video_id))
+        if store_result.get("success"):
+            video.thumbnail_storage_key = store_result["storage_key"]
+            await db.flush()
+            result["storage_key"] = store_result["storage_key"]
+            result["stored"] = True
+
+    return result
+
+
+def _segments_to_srt(segments: list[dict]) -> str:
+    """Convert segments back to SRT format."""
+    lines = []
+    for i, seg in enumerate(segments, 1):
+        lines.append(str(seg.get("index", i)))
+        lines.append(f"{seg.get('start', '00:00:00,000')} --> {seg.get('end', '00:00:00,000')}")
+        lines.append(seg.get("text", ""))
+        lines.append("")
+    return "\n".join(lines)

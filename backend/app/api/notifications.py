@@ -16,6 +16,7 @@ async def list_notifications(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     unread_only: bool = Query(False),
+    notification_type: str | None = Query(None, description="Filter by type category: foia, video, revenue, system"),
     db: AsyncSession = Depends(get_db),
     _user: str = Depends(get_current_user),
 ):
@@ -24,6 +25,19 @@ async def list_notifications(
     unread_stmt = select(func.count(Notification.id)).where(
         Notification.is_read.is_(False)
     )
+
+    # Type category filter
+    _TYPE_CATEGORIES = {
+        "foia": ["foia_submitted", "foia_acknowledged", "foia_fulfilled", "foia_denied", "foia_overdue"],
+        "video": ["video_uploaded", "video_published"],
+        "revenue": ["revenue_milestone"],
+        "system": ["scan_complete", "system_error"],
+    }
+
+    if notification_type and notification_type in _TYPE_CATEGORIES:
+        type_values = _TYPE_CATEGORIES[notification_type]
+        stmt = stmt.where(Notification.type.in_(type_values))
+        count_stmt = count_stmt.where(Notification.type.in_(type_values))
 
     if unread_only:
         stmt = stmt.where(Notification.is_read.is_(False))

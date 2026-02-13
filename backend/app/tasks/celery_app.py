@@ -34,3 +34,6 @@ celery_app.conf.update(
 from app.tasks.beat_schedule import CELERY_BEAT_SCHEDULE  # noqa: E402
 
 celery_app.conf.beat_schedule = CELERY_BEAT_SCHEDULE
+
+# Import task monitor to register Celery signals
+import app.tasks.task_monitor  # noqa: F401, E402

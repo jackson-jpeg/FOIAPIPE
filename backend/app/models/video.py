@@ -16,7 +16,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -82,6 +82,8 @@ class Video(Base):
     scheduled_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
+    transcript_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    transcript_segments: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # ── Relationships ─────────────────────────────────────────────────────
     foia_request: Mapped[FoiaRequest | None] = relationship(

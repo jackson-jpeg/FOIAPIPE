@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -35,6 +35,12 @@ class Agency(Base):
     foia_template: Mapped[str | None] = mapped_column(Text, nullable=True)
     typical_cost_per_hour: Mapped[Decimal | None] = mapped_column(
         Numeric(precision=10, scale=2), nullable=True
+    )
+
+    # Report card
+    report_card_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    report_card_updated_at: Mapped[str | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     # ── Relationships ─────────────────────────────────────────────────────

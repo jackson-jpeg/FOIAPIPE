@@ -8,10 +8,12 @@ from app.models.base import Base
 from app.models.foia_request import FoiaPriority, FoiaRequest, FoiaStatus
 from app.models.foia_status_change import FoiaStatusChange
 from app.models.news_article import IncidentType, NewsArticle
+from app.models.news_source import NewsSource, SourceType
 from app.models.news_source_health import NewsSourceHealth
 from app.models.notification import Notification, NotificationChannel, NotificationType
 from app.models.revenue_transaction import RevenueTransaction, TransactionType
 from app.models.scan_log import ScanLog, ScanStatus, ScanType
+from app.models.task_run import TaskRun, TaskRunStatus
 from app.models.video import Video, VideoStatus
 from app.models.video_analytics import VideoAnalytics
 from app.models.video_status_change import VideoStatusChange
@@ -27,10 +29,12 @@ __all__ = [
     "FoiaRequest",
     "FoiaStatusChange",
     "NewsArticle",
+    "NewsSource",
     "NewsSourceHealth",
     "Notification",
     "RevenueTransaction",
     "ScanLog",
+    "TaskRun",
     "Video",
     "VideoAnalytics",
     "VideoStatusChange",
@@ -43,6 +47,8 @@ __all__ = [
     "IncidentType",
     "NotificationChannel",
     "NotificationType",
+    "SourceType",
+    "TaskRunStatus",
     "ScanStatus",
     "ScanType",
     "TransactionType",

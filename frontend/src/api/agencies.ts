@@ -15,6 +15,8 @@ export interface Agency {
   notes: string | null;
   foia_template: string | null;
   typical_cost_per_hour: number | null;
+  report_card_grade: string | null;
+  report_card_updated_at: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -148,5 +150,22 @@ export async function deleteAgencyTemplate(agencyId: string): Promise<void> {
 
 export async function getAgencyContact(agencyId: string, contactId: string): Promise<AgencyContact> {
   const response = await client.get(`/agencies/${agencyId}/contacts/${contactId}`);
+  return response.data;
+}
+
+// ── Report Card Grades ──────────────────────────────────────────────────
+
+export async function getAgencyGrade(agencyId: string): Promise<{
+  grade: string;
+  score: number | null;
+  breakdown?: Record<string, number>;
+  metrics?: Record<string, number | null>;
+}> {
+  const response = await client.get(`/agencies/${agencyId}/grade`);
+  return response.data;
+}
+
+export async function recalculateGrades(): Promise<{ updated: number; skipped: number; errors: number }> {
+  const response = await client.post('/agencies/recalculate-grades');
   return response.data;
 }

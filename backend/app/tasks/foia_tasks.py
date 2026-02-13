@@ -681,3 +681,336 @@ def auto_submit_foia(article_id: str):
     except Exception as e:
         logger.error(f"Auto-submit failed: {e}")
         return {"error": str(e)}
+
+
+# ── Auto-Appeal System ─────────────────────────────────────────────────
+
+
+# Success rate thresholds parsed from appeal_generator recommendations
+_APPEAL_SUCCESS_RATES = {
+    "vague_request": 0.87,     # 80-95% → midpoint
+    "excessive_cost": 0.80,    # 70-90%
+    "privacy": 0.70,           # 60-80%
+    "active_investigation": 0.50,  # 40-60%
+    "public_safety": 0.30,     # 20-40%
+    "no_records": 0.20,        # 10-30%
+    "other": 0.30,
+}
+
+AUTO_APPEAL_CONFIDENCE_THRESHOLD = 0.60  # Only auto-appeal if success rate > 60%
+
+
+async def _auto_appeal_denied_foias_async():
+    """Scan denied FOIAs and auto-appeal those with high success probability."""
+    from sqlalchemy import and_, func, select
+
+    from app.database import async_session_factory
+    from app.models.agency import Agency
+    from app.models.app_setting import AppSetting
+    from app.models.audit_log import AuditLog, AuditAction
+    from app.models.foia_request import FoiaRequest, FoiaStatus
+    from app.models.foia_status_change import FoiaStatusChange
+    from app.models.notification import Notification, NotificationChannel, NotificationType
+    from app.services.appeal_generator import (
+        DenialReason,
+        generate_appeal_text,
+        generate_appeal_pdf,
+    )
+    from app.services.cache import publish_sse
+    from app.services.email_sender import send_foia_email
+    from app.services.foia_generator import assign_case_number
+    from app.services.storage import upload_file
+
+    async with async_session_factory() as db:
+        # ── Safety Check 1: Auto-appeal mode (off / dry_run / live) ──────
+        mode_setting = (
+            await db.execute(
+                select(AppSetting).where(AppSetting.key == "auto_appeal_mode")
+            )
+        ).scalar_one_or_none()
+        auto_appeal_mode = mode_setting.value if mode_setting else "off"
+
+        if auto_appeal_mode == "off":
+            logger.info("Auto-appeal mode is off, skipping")
+            return {"skipped": True, "reason": "Auto-appeal mode is off"}
+
+        # ── Safety Check 2: Daily quota ──────────────────────────────────
+        max_per_day_setting = (
+            await db.execute(
+                select(AppSetting).where(AppSetting.key == "max_appeals_per_day")
+            )
+        ).scalar_one_or_none()
+        max_per_day = int(max_per_day_setting.value) if max_per_day_setting else 3
+
+        today_start = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        # Count appeals already filed today (via audit log)
+        today_appeal_count = (
+            await db.execute(
+                select(func.count(AuditLog.id)).where(
+                    and_(
+                        AuditLog.action == AuditAction.foia_auto_submit_decision,
+                        AuditLog.user == "auto_appeal_system",
+                        AuditLog.created_at >= today_start,
+                    )
+                )
+            )
+        ).scalar_one()
+
+        if today_appeal_count >= max_per_day:
+            logger.info(f"Daily appeal quota reached ({today_appeal_count}/{max_per_day})")
+            return {"skipped": True, "reason": f"Daily quota ({today_appeal_count}/{max_per_day})"}
+
+        # ── Safety Check 3: Per-agency cooldown ──────────────────────────
+        cooldown_setting = (
+            await db.execute(
+                select(AppSetting).where(AppSetting.key == "appeal_agency_cooldown_days")
+            )
+        ).scalar_one_or_none()
+        cooldown_days = int(cooldown_setting.value) if cooldown_setting else 30
+
+        # ── Find denied FOIAs from last 7 days ──────────────────────────
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+
+        denied_foias = (
+            await db.execute(
+                select(FoiaRequest)
+                .where(
+                    and_(
+                        FoiaRequest.status == FoiaStatus.denied,
+                        FoiaRequest.created_at >= seven_days_ago,
+                    )
+                )
+                .order_by(FoiaRequest.created_at.desc())
+            )
+        ).scalars().all()
+
+        results = {
+            "processed": 0,
+            "appealed": 0,
+            "skipped": 0,
+            "errors": 0,
+            "mode": auto_appeal_mode,
+        }
+
+        for foia in denied_foias:
+            if today_appeal_count + results["appealed"] >= max_per_day:
+                break
+
+            # Check denial reason from status change metadata
+            last_denial = (
+                await db.execute(
+                    select(FoiaStatusChange)
+                    .where(
+                        and_(
+                            FoiaStatusChange.foia_request_id == foia.id,
+                            FoiaStatusChange.to_status == FoiaStatus.denied.value,
+                        )
+                    )
+                    .order_by(FoiaStatusChange.created_at.desc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+
+            # Determine denial reason
+            denial_reason_str = "other"
+            if last_denial and last_denial.extra_metadata:
+                denial_reason_str = last_denial.extra_metadata.get("denial_reason", "other")
+
+            # Also check response emails for clues
+            if denial_reason_str == "other" and foia.response_emails:
+                for email in foia.response_emails:
+                    body_lower = (email.get("body", "") + email.get("subject", "")).lower()
+                    if "vague" in body_lower or "clarif" in body_lower:
+                        denial_reason_str = "vague_request"
+                    elif "cost" in body_lower or "fee" in body_lower:
+                        denial_reason_str = "excessive_cost"
+                    elif "privacy" in body_lower:
+                        denial_reason_str = "privacy"
+                    elif "investigation" in body_lower:
+                        denial_reason_str = "active_investigation"
+
+            try:
+                denial_reason = DenialReason(denial_reason_str)
+            except ValueError:
+                denial_reason = DenialReason.other
+
+            # Check success rate threshold
+            success_rate = _APPEAL_SUCCESS_RATES.get(denial_reason.value, 0.30)
+            if success_rate < AUTO_APPEAL_CONFIDENCE_THRESHOLD:
+                results["skipped"] += 1
+                continue
+
+            # Get agency
+            agency = await db.get(Agency, foia.agency_id)
+            if not agency or not agency.foia_email:
+                results["skipped"] += 1
+                continue
+
+            # Per-agency cooldown: check if we've already appealed this agency recently
+            cooldown_cutoff = datetime.now(timezone.utc) - timedelta(days=cooldown_days)
+            recent_appeal = (
+                await db.execute(
+                    select(func.count(AuditLog.id)).where(
+                        and_(
+                            AuditLog.action == AuditAction.foia_auto_submit_decision,
+                            AuditLog.user == "auto_appeal_system",
+                            AuditLog.created_at >= cooldown_cutoff,
+                            AuditLog.details["agency_id"].as_string() == str(agency.id),
+                        )
+                    )
+                )
+            ).scalar_one()
+
+            if recent_appeal > 0:
+                results["skipped"] += 1
+                continue
+
+            results["processed"] += 1
+
+            try:
+                # Generate appeal
+                appeal_text = generate_appeal_text(
+                    original_request_text=foia.request_text or "",
+                    case_number=foia.case_number,
+                    agency_name=agency.name,
+                    denial_reason=denial_reason,
+                )
+
+                appeal_case_number = f"APL-{foia.case_number}"
+                appeal_pdf = generate_appeal_pdf(
+                    appeal_text, foia.case_number, appeal_case_number
+                )
+
+                # Upload PDF to S3
+                storage_key = f"appeals/{appeal_case_number}.pdf"
+                try:
+                    upload_file(appeal_pdf, storage_key, content_type="application/pdf")
+                except Exception as s3_err:
+                    logger.error(f"S3 upload failed for appeal {appeal_case_number}: {s3_err}")
+
+                if auto_appeal_mode == "dry_run":
+                    # Draft only, no email
+                    notification = Notification(
+                        type=NotificationType.foia_submitted,
+                        channel=NotificationChannel.in_app,
+                        title=f"Dry Run: Appeal {appeal_case_number} drafted",
+                        message=(
+                            f"Auto-appeal dry run for {foia.case_number} to {agency.name}. "
+                            f"Denial reason: {denial_reason.value} (est. {success_rate*100:.0f}% success)"
+                        ),
+                        link=f"/foia?detail={foia.id}",
+                    )
+                    db.add(notification)
+
+                    # Audit log
+                    audit = AuditLog(
+                        action=AuditAction.foia_auto_submit_decision,
+                        user="auto_appeal_system",
+                        resource_type="foia_request",
+                        resource_id=str(foia.id),
+                        details={
+                            "decision": "dry_run",
+                            "appeal_case_number": appeal_case_number,
+                            "denial_reason": denial_reason.value,
+                            "success_rate": success_rate,
+                            "agency_name": agency.name,
+                            "agency_id": str(agency.id),
+                        },
+                        success=True,
+                    )
+                    db.add(audit)
+                    results["appealed"] += 1
+
+                    logger.info(
+                        f"Dry-run appeal {appeal_case_number} drafted for {foia.case_number}"
+                    )
+
+                else:
+                    # LIVE: send email
+                    subject = f"Appeal of Public Records Request Denial - {foia.case_number}"
+                    email_result = await send_foia_email(
+                        to_email=agency.foia_email,
+                        subject=subject,
+                        body_text=appeal_text,
+                        pdf_bytes=appeal_pdf,
+                        pdf_filename=f"{appeal_case_number}.pdf",
+                    )
+
+                    if not email_result.get("success"):
+                        raise Exception(f"Email failed: {email_result.get('message')}")
+
+                    # Update FOIA status to appealed
+                    old_status = foia.status
+                    foia.status = FoiaStatus.appealed if hasattr(FoiaStatus, 'appealed') else FoiaStatus.processing
+
+                    # Record status change
+                    status_change = FoiaStatusChange(
+                        foia_request_id=foia.id,
+                        from_status=old_status.value,
+                        to_status=foia.status.value,
+                        changed_by="auto_appeal_system",
+                        reason=f"Auto-appeal filed: {denial_reason.value} (est. {success_rate*100:.0f}% success)",
+                        extra_metadata={
+                            "appeal_case_number": appeal_case_number,
+                            "denial_reason": denial_reason.value,
+                            "success_rate": success_rate,
+                        },
+                    )
+                    db.add(status_change)
+
+                    notification = Notification(
+                        type=NotificationType.foia_submitted,
+                        channel=NotificationChannel.in_app,
+                        title=f"Appeal Filed: {appeal_case_number}",
+                        message=(
+                            f"Auto-appeal sent for {foia.case_number} to {agency.name}. "
+                            f"Denial reason: {denial_reason.value}"
+                        ),
+                        link=f"/foia?detail={foia.id}",
+                    )
+                    db.add(notification)
+
+                    audit = AuditLog(
+                        action=AuditAction.foia_auto_submit_decision,
+                        user="auto_appeal_system",
+                        resource_type="foia_request",
+                        resource_id=str(foia.id),
+                        details={
+                            "decision": "filed",
+                            "appeal_case_number": appeal_case_number,
+                            "denial_reason": denial_reason.value,
+                            "success_rate": success_rate,
+                            "agency_name": agency.name,
+                            "agency_id": str(agency.id),
+                        },
+                        success=True,
+                    )
+                    db.add(audit)
+                    results["appealed"] += 1
+
+                    logger.info(
+                        f"Appeal {appeal_case_number} filed for {foia.case_number}"
+                    )
+
+            except Exception as e:
+                results["errors"] += 1
+                logger.error(f"Auto-appeal failed for {foia.case_number}: {e}")
+
+        await db.commit()
+        return results
+
+
+@celery_app.task(name="app.tasks.foia_tasks.auto_appeal_denied_foias")
+def auto_appeal_denied_foias():
+    """Auto-appeal denied FOIAs with high success probability."""
+    logger.info("Running auto-appeal scan")
+    try:
+        result = _run_async(_auto_appeal_denied_foias_async())
+        logger.info(f"Auto-appeal result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Auto-appeal failed: {e}")
+        return {"error": str(e)}

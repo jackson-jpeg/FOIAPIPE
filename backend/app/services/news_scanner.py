@@ -53,6 +53,66 @@ DEDUP_SIMILARITY_THRESHOLD = 85
 DEDUP_LOOKBACK_DAYS = 7
 
 
+async def _load_rss_feeds_from_db(db: AsyncSession) -> list[dict]:
+    """Load active RSS feeds from the news_sources table, fall back to hardcoded if empty."""
+    from app.models.news_source import NewsSource, SourceType
+
+    result = await db.execute(
+        select(NewsSource).where(
+            NewsSource.source_type == SourceType.rss,
+            NewsSource.is_active == True,
+        )
+    )
+    sources = result.scalars().all()
+    if not sources:
+        return RSS_FEEDS
+    return [{"url": s.url, "source": s.name, "db_id": str(s.id)} for s in sources]
+
+
+async def _load_web_sources_from_db(db: AsyncSession) -> list[dict]:
+    """Load active web scrape sources from the news_sources table, fall back to hardcoded if empty."""
+    from app.models.news_source import NewsSource, SourceType
+
+    result = await db.execute(
+        select(NewsSource).where(
+            NewsSource.source_type == SourceType.web_scrape,
+            NewsSource.is_active == True,
+        )
+    )
+    sources = result.scalars().all()
+    if not sources:
+        return WEB_SOURCES
+    return [
+        {
+            "url": s.url,
+            "source": s.name,
+            "selectors": (s.selectors or {}).get("selectors", []),
+            "db_id": str(s.id),
+        }
+        for s in sources
+    ]
+
+
+async def _update_source_scan_status(
+    db: AsyncSession, db_id: str | None, error: str | None = None
+) -> None:
+    """Update last_scanned_at and error tracking on a NewsSource row."""
+    if not db_id:
+        return
+    from app.models.news_source import NewsSource
+
+    source = await db.get(NewsSource, db_id)
+    if not source:
+        return
+    source.last_scanned_at = datetime.now(timezone.utc)
+    if error:
+        source.error_count = (source.error_count or 0) + 1
+        source.last_error = error[:500]
+    else:
+        source.error_count = 0
+        source.last_error = None
+
+
 async def scan_rss_feed(feed_url: str, source_name: str, db: AsyncSession) -> dict:
     """Parse a single RSS feed and return statistics.
 
@@ -196,7 +256,8 @@ async def scan_all_rss(db: AsyncSession) -> dict:
     skipped_sources: list[str] = []
 
     try:
-        for feed in RSS_FEEDS:
+        feeds = await _load_rss_feeds_from_db(db)
+        for feed in feeds:
             stats = await scan_rss_feed(feed["url"], feed["source"], db)
             total["found"] += stats["found"]
             total["new"] += stats["new"]
@@ -210,6 +271,11 @@ async def scan_all_rss(db: AsyncSession) -> dict:
 
             if "error_message" in stats:
                 error_messages.append(f"{feed['source']}: {stats['error_message']}")
+
+            # Update DB source tracking
+            await _update_source_scan_status(
+                db, feed.get("db_id"), stats.get("error_message")
+            )
 
         log.status = ScanStatus.completed
         logger.info(
@@ -389,13 +455,19 @@ async def scan_all_web_sources(db: AsyncSession) -> dict:
     total: dict = {"found": 0, "new": 0, "duplicate": 0, "filtered": 0, "errors": 0}
 
     try:
-        for source in WEB_SOURCES:
+        web_sources = await _load_web_sources_from_db(db)
+        for source in web_sources:
             stats = await scrape_web_source(source, db)
             total["found"] += stats["found"]
             total["new"] += stats["new"]
             total["duplicate"] += stats["duplicate"]
             total["filtered"] += stats.get("filtered", 0)
             total["errors"] += stats["errors"]
+
+            # Update DB source tracking
+            await _update_source_scan_status(
+                db, source.get("db_id"), stats.get("error_message")
+            )
 
         log.status = ScanStatus.completed
         logger.info(

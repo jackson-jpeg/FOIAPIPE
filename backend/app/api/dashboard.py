@@ -325,6 +325,10 @@ async def dashboard_summary(
 
     Returns today's stats, trends, top performers, and system health.
     """
+    cached = await cache_get("dashboard:summary")
+    if cached is not None:
+        return cached
+
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=7)
@@ -589,7 +593,7 @@ async def dashboard_summary(
         for foia in recent_foias_result.scalars().all()
     ]
 
-    return {
+    result = {
         "timestamp": now.isoformat(),
         "today": {
             "articles": articles_today,
@@ -627,6 +631,9 @@ async def dashboard_summary(
         },
     }
 
+    await cache_set("dashboard:summary", result, ttl=120)
+    return result
+
 
 @router.get("/system-metrics")
 async def system_metrics(
@@ -642,6 +649,10 @@ async def system_metrics(
         - API usage statistics
         - Error rates
     """
+    cached = await cache_get("dashboard:system-metrics")
+    if cached is not None:
+        return cached
+
     import psutil
     import os
 
@@ -815,7 +826,7 @@ async def system_metrics(
 
     overall_health = round(sum(health_factors) / len(health_factors), 1)
 
-    return {
+    result = {
         "timestamp": now.isoformat(),
         "overall_health_score": overall_health,
         "database": db_metrics,
@@ -824,6 +835,9 @@ async def system_metrics(
         "system_resources": system_metrics,
         "circuit_breakers": circuit_metrics,
     }
+
+    await cache_set("dashboard:system-metrics", result, ttl=30)
+    return result
 
 
 @router.get("/auto-submit-stats")

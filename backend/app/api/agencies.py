@@ -582,3 +582,37 @@ async def delete_agency(
     await db.delete(agency)
     await db.flush()
     await cache_delete_pattern("agencies:*")
+
+
+# ── Report Card Grade ────────────────────────────────────────────────────
+
+
+@router.get("/{agency_id}/grade")
+async def get_agency_grade(
+    agency_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Get computed report card grade for an agency."""
+    from app.services.agency_grader import compute_agency_grade
+
+    agency = await db.get(Agency, agency_id)
+    if not agency:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agency not found"
+        )
+    return await compute_agency_grade(db, str(agency_id))
+
+
+@router.post("/recalculate-grades")
+async def recalculate_all_agency_grades(
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Recalculate report card grades for all active agencies."""
+    from app.services.agency_grader import recalculate_all_grades
+
+    result = await recalculate_all_grades(db)
+    await db.commit()
+    await cache_delete_pattern("agencies:*")
+    return result

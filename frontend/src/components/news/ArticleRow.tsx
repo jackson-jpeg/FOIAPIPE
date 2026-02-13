@@ -62,9 +62,9 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
             <span className="text-sm text-text-primary truncate">{article.headline}</span>
           </div>
         </td>
-        <td className="px-3 py-2.5 text-xs text-text-secondary">{article.source}</td>
-        <td className="px-3 py-2.5 text-xs text-text-secondary">{article.detected_agency || '\u2014'}</td>
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-2.5 text-xs text-text-secondary hidden sm:table-cell">{article.source}</td>
+        <td className="px-3 py-2.5 text-xs text-text-secondary hidden md:table-cell">{article.detected_agency || '\u2014'}</td>
+        <td className="px-3 py-2.5 hidden lg:table-cell">
           {incidentInfo && (
             <StatusOrb
               color={incidentInfo.variant as 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'default'}
@@ -75,7 +75,7 @@ export function ArticleRow({ article, selected, onToggleSelect, onFileFoia, onDi
         <td className="px-3 py-2.5 text-xs text-text-tertiary tabular-nums">
           {article.published_at ? formatDateTime(article.published_at) : '\u2014'}
         </td>
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-2.5 hidden sm:table-cell">
           <div className="flex items-center gap-2">
             {article.is_reviewed && <StatusOrb color="success" size="sm" label="Reviewed" />}
             {article.is_dismissed && <StatusOrb color="default" size="sm" label="Dismissed" />}

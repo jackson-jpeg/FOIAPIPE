@@ -33,6 +33,9 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { AgenciesPage } from '@/pages/AgenciesPage';
 import { AuditLogPage } from '@/pages/AuditLogPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { SearchResultsPage } from '@/pages/SearchResultsPage';
+import { PublicDashboardPage } from '@/pages/PublicDashboardPage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 function ProtectedRoute() {
@@ -69,6 +72,7 @@ export default function App() {
           <CommandBar />
           <Routes>
             {/* Public routes */}
+            <Route path="/public" element={<PublicDashboardPage />} />
             <Route element={<PublicRoute />}>
               <Route path="/login" element={<LoginPage />} />
             </Route>
@@ -84,6 +88,8 @@ export default function App() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/audit" element={<AuditLogPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/search" element={<SearchResultsPage />} />
             </Route>
 
             {/* Root redirect */}

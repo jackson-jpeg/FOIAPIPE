@@ -6,8 +6,8 @@ import enum
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import Boolean, DateTime, Enum, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -56,6 +56,10 @@ class NewsArticle(Base):
     auto_foia_filed: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    predicted_revenue: Mapped[float | None] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
+    priority_factors: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # ── Relationships ─────────────────────────────────────────────────────
     foia_requests: Mapped[list[FoiaRequest]] = relationship(

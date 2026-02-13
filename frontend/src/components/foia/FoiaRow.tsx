@@ -51,8 +51,8 @@ export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, on
             <span className="font-mono text-xs text-accent-primary">{request.case_number}</span>
           </div>
         </td>
-        <td className="px-3 py-2.5 text-xs text-text-secondary">{request.agency_name || '\u2014'}</td>
-        <td className="px-3 py-2.5 text-xs text-text-secondary max-w-xs truncate">{request.article_headline || 'Manual Request'}</td>
+        <td className="px-3 py-2.5 text-xs text-text-secondary hidden sm:table-cell">{request.agency_name || '\u2014'}</td>
+        <td className="px-3 py-2.5 text-xs text-text-secondary max-w-xs truncate hidden lg:table-cell">{request.article_headline || 'Manual Request'}</td>
         <td className="px-3 py-2.5"><StatusBadge status={request.status} /></td>
         <td className="px-3 py-2.5 text-xs text-text-tertiary tabular-nums">
           {request.submitted_at ? formatDate(request.submitted_at) : '\u2014'}
@@ -69,10 +69,10 @@ export function FoiaRow({ request, onSubmit, onUpdateStatus: _onUpdateStatus, on
             </span>
           ) : '\u2014'}
         </td>
-        <td className="px-3 py-2.5 text-xs tabular-nums text-text-tertiary">
+        <td className="px-3 py-2.5 text-xs tabular-nums text-text-tertiary hidden md:table-cell">
           {request.estimated_cost != null ? formatCurrency(request.estimated_cost) : '\u2014'}
         </td>
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-2.5 hidden md:table-cell">
           <div className="flex items-center">
             {Array.from({ length: stars }).map((_, i) => (
               <Star key={i} className="h-3 w-3 text-accent-amber fill-accent-amber" />
