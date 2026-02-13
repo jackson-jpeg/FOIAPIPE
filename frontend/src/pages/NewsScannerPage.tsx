@@ -41,6 +41,8 @@ export function NewsScannerPage() {
   const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState('');
   const [filingFoia, setFilingFoia] = useState(false);
+  const [draftPreview, setDraftPreview] = useState<string | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
@@ -121,7 +123,21 @@ export function NewsScannerPage() {
       ? agencyList.find(a => a.name === article.detected_agency)
       : null;
     setSelectedAgencyId(matchedAgency?.id || '');
+    setDraftPreview(null);
   };
+
+  // Fetch live draft preview when article + agency are both selected
+  useEffect(() => {
+    if (!foiaModalArticleId || !selectedAgencyId) {
+      setDraftPreview(null);
+      return;
+    }
+    setDraftLoading(true);
+    newsApi.getDraftPreview(foiaModalArticleId, selectedAgencyId)
+      .then((res) => setDraftPreview(res.request_text))
+      .catch(() => setDraftPreview(null))
+      .finally(() => setDraftLoading(false));
+  }, [foiaModalArticleId, selectedAgencyId]);
 
   const handleConfirmFileFoia = async () => {
     if (!foiaModalArticleId || !selectedAgencyId) return;
@@ -379,26 +395,30 @@ export function NewsScannerPage() {
           </>
         }
       >
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Workflow Progression Indicator */}
-          <div className="flex items-center gap-3 pb-4 border-b border-surface-border">
+          <div className="flex items-center gap-3 pb-4 border-b border-glass-border">
             <StatusOrb size="sm" color="success" label="Article Analyzed" />
-            <div className="h-px flex-1 bg-surface-border" />
+            <div className="h-px flex-1 bg-glass-border" />
             <StatusOrb
               size="sm"
               color={selectedAgencyId ? "success" : "default"}
               label="Agency Selected"
             />
-            <div className="h-px flex-1 bg-surface-border" />
-            <StatusOrb size="sm" color="default" label="Draft Generated" />
+            <div className="h-px flex-1 bg-glass-border" />
+            <StatusOrb
+              size="sm"
+              color={draftPreview ? "success" : draftLoading ? "warning" : "default"}
+              label="Draft Generated"
+            />
           </div>
 
           {/* Article Preview */}
           {foiaModalArticleId && (() => {
             const article = articles.find(a => a.id === foiaModalArticleId);
             return article ? (
-              <div className="rounded-lg border border-surface-border bg-surface-tertiary/20 p-4">
-                <h3 className="text-sm font-semibold text-text-primary mb-2">Article</h3>
+              <div className="glass-2 rounded-lg p-4">
+                <h3 className="text-2xs font-medium uppercase tracking-wider text-text-tertiary mb-2">Article</h3>
                 <p className="text-sm text-text-primary font-medium mb-2">{article.headline}</p>
                 <div className="flex items-center gap-3 text-xs text-text-tertiary">
                   <span>{article.source}</span>
@@ -424,14 +444,24 @@ export function NewsScannerPage() {
 
           {/* AI-Generated Draft Preview */}
           {selectedAgencyId && (
-            <div className="rounded-lg border-2 border-dashed border-accent-purple/20 bg-accent-purple-subtle p-4">
+            <div className="glass-2 rounded-lg p-4 border border-accent-purple/10">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-accent-purple" />
-                <h3 className="text-sm font-semibold text-text-primary">AI-Generated Draft</h3>
+                <Sparkles className="h-3.5 w-3.5 text-accent-purple" />
+                <h3 className="text-2xs font-medium uppercase tracking-wider text-text-tertiary">AI-Generated Draft</h3>
               </div>
-              <p className="text-xs text-text-secondary leading-relaxed">
-                A FOIA request will be automatically generated based on the article content and submitted to the selected agency. You can edit the request in Focus Mode after filing.
-              </p>
+              {draftLoading ? (
+                <div className="space-y-2">
+                  <div className="h-3 w-full rounded shimmer" />
+                  <div className="h-3 w-5/6 rounded shimmer" />
+                  <div className="h-3 w-4/6 rounded shimmer" />
+                  <div className="h-3 w-full rounded shimmer" />
+                  <div className="h-3 w-3/4 rounded shimmer" />
+                </div>
+              ) : draftPreview ? (
+                <pre className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap font-sans">{draftPreview}</pre>
+              ) : (
+                <p className="text-xs text-text-quaternary">Failed to generate draft preview.</p>
+              )}
             </div>
           )}
         </div>

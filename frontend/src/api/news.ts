@@ -23,6 +23,11 @@ export async function updateArticle(id: string, update: NewsArticleUpdate): Prom
   return data;
 }
 
+export async function getDraftPreview(id: string, agencyId: string): Promise<{ request_text: string; agency_name: string }> {
+  const { data } = await client.post(`/news/${id}/draft-preview`, { agency_id: agencyId });
+  return data;
+}
+
 export async function fileFoiaFromArticle(id: string, agencyId?: string): Promise<FileFoiaResponse> {
   const { data } = await client.post(`/news/${id}/file-foia`, { agency_id: agencyId });
   return data;

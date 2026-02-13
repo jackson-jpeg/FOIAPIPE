@@ -28,15 +28,13 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [costPrediction, setCostPrediction] = useState<CostPrediction | null>(null);
   const [roiProjection, setRoiProjection] = useState<any>(null);
+  const [loadingRoi, setLoadingRoi] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       agenciesApi.getAgencies()
         .then((data) => setAgencies(data.items || data || []))
-        .catch((error) => {
-          console.error('Failed to load agencies:', error);
-          setAgencies([]);
-        });
+        .catch(() => setAgencies([]));
     }
   }, [isOpen]);
 
@@ -55,9 +53,11 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
         setCostPrediction(normalized);
         // Chain ROI projection from predicted cost
         if (cost > 0) {
+          setLoadingRoi(true);
           foiaApi.getRoiProjection({ predicted_cost: cost })
             .then(setRoiProjection)
-            .catch(() => setRoiProjection(null));
+            .catch(() => setRoiProjection(null))
+            .finally(() => setLoadingRoi(false));
         }
       })
       .catch(() => setCostPrediction(null));
@@ -91,9 +91,9 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
         <Select label="Agency" options={agencyOptions} value={agencyId} onChange={setAgencyId} placeholder="Select agency..." />
         <Select label="Priority" options={priorityOptions} value={priority} onChange={setPriority} />
         <div>
-          <label className="block text-xs font-medium text-text-secondary mb-1.5">Request Text</label>
+          <label className="block text-3xs font-medium uppercase tracking-wider text-text-quaternary mb-1.5">Request Text</label>
           <textarea
-            className="w-full rounded-lg border border-surface-border bg-surface-tertiary/30 px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary/40 min-h-[180px] transition-all duration-150"
+            className="w-full rounded-lg border border-glass-border bg-transparent px-3 py-2 text-xs text-text-primary placeholder-text-quaternary focus:outline-none focus:border-accent-primary/40 min-h-[180px] transition-colors duration-150"
             value={requestText}
             onChange={e => setRequestText(e.target.value)}
             placeholder="Enter your FOIA request text..."
@@ -102,27 +102,33 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
         {/* Cost & ROI Prediction */}
         {costPrediction && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-surface-border bg-surface-tertiary/20 p-3">
+            <div className="glass-2 rounded-lg p-3">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <DollarSign className="h-3.5 w-3.5 text-accent-amber" />
                 <span className="text-2xs font-medium text-text-secondary">Estimated Cost</span>
               </div>
-              <p className="text-sm font-semibold text-text-primary tabular-nums">{formatCurrency(costPrediction.predicted_cost)}</p>
-              <p className="text-2xs text-text-quaternary mt-0.5">
+              <p className="text-sm font-semibold text-text-primary tabular-nums font-mono">{formatCurrency(costPrediction.predicted_cost)}</p>
+              <p className="text-2xs text-text-quaternary mt-0.5 tabular-nums font-mono">
                 {formatCurrency(costPrediction.cost_range.low)}–{formatCurrency(costPrediction.cost_range.high)} range
               </p>
               <p className="text-2xs text-text-quaternary capitalize">{costPrediction.confidence} confidence</p>
             </div>
-            {roiProjection && (
-              <div className="rounded-lg border border-surface-border bg-surface-tertiary/20 p-3">
+            {loadingRoi ? (
+              <div className="glass-2 rounded-lg p-3 space-y-2">
+                <div className="h-3 w-24 rounded shimmer" />
+                <div className="h-5 w-16 rounded shimmer" />
+                <div className="h-3 w-20 rounded shimmer" />
+              </div>
+            ) : roiProjection ? (
+              <div className="glass-2 rounded-lg p-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <TrendingUp className="h-3.5 w-3.5 text-accent-emerald" />
                   <span className="text-2xs font-medium text-text-secondary">ROI Projection</span>
                 </div>
-                <p className={`text-sm font-semibold tabular-nums ${roiProjection.roi_percentage >= 0 ? 'text-accent-emerald' : 'text-accent-red'}`}>
+                <p className={`text-sm font-semibold tabular-nums font-mono ${roiProjection.roi_percentage >= 0 ? 'text-accent-emerald' : 'text-accent-red'}`}>
                   {roiProjection.roi_percentage >= 0 ? '+' : ''}{roiProjection.roi_percentage?.toFixed(0)}%
                 </p>
-                <p className="text-2xs text-text-quaternary mt-0.5">
+                <p className="text-2xs text-text-quaternary mt-0.5 tabular-nums font-mono">
                   Est. revenue: {formatCurrency(roiProjection.estimated_revenue || 0)}
                 </p>
                 <p className={`text-2xs font-medium mt-0.5 ${
@@ -133,7 +139,7 @@ export function FoiaForm({ isOpen, onClose, onSubmit }: FoiaFormProps) {
                   {roiProjection.recommendation}
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>

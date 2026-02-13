@@ -387,6 +387,39 @@ async def prioritize_article(
     return result
 
 
+@router.post("/{article_id}/draft-preview")
+async def draft_preview(
+    article_id: uuid.UUID,
+    body: FileFoiaFromArticle | None = None,
+    db: AsyncSession = Depends(get_db),
+    _user: str = Depends(get_current_user),
+) -> dict:
+    """Generate a FOIA draft preview without creating a record."""
+    article = await db.get(NewsArticle, article_id)
+    if not article:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Article not found")
+
+    agency: Agency | None = None
+    if body and body.agency_id:
+        agency = await db.get(Agency, body.agency_id)
+    elif article.detected_agency:
+        result = await db.execute(
+            select(Agency).where(Agency.name == article.detected_agency).limit(1)
+        )
+        agency = result.scalar_one_or_none()
+
+    if not agency:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No agency could be determined.")
+
+    request_text = generate_request_text(
+        incident_description=article.headline or "incident",
+        incident_date=article.published_at.strftime("%B %d, %Y") if article.published_at else None,
+        agency_name=agency.name,
+        custom_template=agency.foia_template,
+    )
+    return {"request_text": request_text, "agency_name": agency.name}
+
+
 @router.post("/{article_id}/file-foia", response_model=FileFoiaResponse, status_code=status.HTTP_201_CREATED)
 async def file_foia_from_article(
     article_id: uuid.UUID,
