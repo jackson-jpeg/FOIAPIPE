@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import case, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.rate_limit import limiter
 from app.models.agency import Agency
 from app.models.foia_request import FoiaRequest, FoiaStatus
 from app.services.cache import cache_get, cache_set
@@ -20,7 +21,9 @@ router = APIRouter(prefix="/api/public", tags=["public"])
 
 
 @router.get("/stats")
+@limiter.limit("30/minute")
 async def public_stats(
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Public aggregate FOIA statistics — no auth required."""
@@ -141,7 +144,9 @@ async def public_stats(
 
 
 @router.get("/agency-report-cards")
+@limiter.limit("30/minute")
 async def agency_report_cards(
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Per-agency letter grades — no auth required."""

@@ -554,7 +554,7 @@ async def dashboard_summary(
     videos_ready = (
         await db.execute(
             select(func.count(Video.id)).where(
-                Video.status == VideoStatus.ready_for_upload
+                Video.status == VideoStatus.ready
             )
         )
     ).scalar() or 0
@@ -569,8 +569,8 @@ async def dashboard_summary(
         {
             "id": str(article.id),
             "headline": article.headline,
-            "severity": article.severity.value if article.severity else None,
-            "source": article.source_name,
+            "severity": article.severity_score,
+            "source": article.source,
             "created_at": article.created_at.isoformat() if article.created_at else None,
         }
         for article in recent_articles_result.scalars().all()
@@ -653,8 +653,11 @@ async def system_metrics(
     if cached is not None:
         return cached
 
-    import psutil
     import os
+    try:
+        import psutil
+    except ImportError:
+        psutil = None  # type: ignore[assignment]
 
     now = datetime.now(timezone.utc)
     hour_ago = now - timedelta(hours=1)
@@ -758,20 +761,22 @@ async def system_metrics(
     }
 
     # System resources
-    system_metrics = {}
-    try:
-        process = psutil.Process(os.getpid())
-        memory_info = process.memory_info()
-
-        system_metrics = {
-            "cpu_percent": psutil.cpu_percent(interval=0.1),
-            "memory_used_mb": round(memory_info.rss / 1024 / 1024, 2),
-            "memory_percent": process.memory_percent(),
-            "threads": process.num_threads(),
-            "open_files": len(process.open_files()),
-        }
-    except Exception as e:
-        system_metrics = {"error": str(e)}
+    system_metrics: dict = {}
+    if psutil is not None:
+        try:
+            process = psutil.Process(os.getpid())
+            memory_info = process.memory_info()
+            system_metrics = {
+                "cpu_percent": psutil.cpu_percent(interval=0.1),
+                "memory_used_mb": round(memory_info.rss / 1024 / 1024, 2),
+                "memory_percent": process.memory_percent(),
+                "threads": process.num_threads(),
+                "open_files": len(process.open_files()),
+            }
+        except Exception as e:
+            system_metrics = {"error": str(e)}
+    else:
+        system_metrics = {"error": "psutil not available"}
 
     # Circuit breaker health
     circuit_metrics = {}

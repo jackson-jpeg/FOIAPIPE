@@ -70,7 +70,8 @@ async def login(
     await _check_login_rate_limit(request)
 
     # Validate credentials
-    if body.username != "admin" or body.password != settings.ADMIN_PASSWORD:
+    import hmac
+    if body.username != "admin" or not hmac.compare_digest(body.password, settings.ADMIN_PASSWORD):
         # Log failed login attempt
         await log_audit_event(
             db=db,

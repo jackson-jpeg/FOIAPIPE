@@ -38,17 +38,20 @@ async def _daily_summary_async():
             )
         ).scalar() or 0
 
+        from app.models.foia_request import FoiaStatus
+        from app.models.video import VideoStatus
+
         active_foias = (
             await db.execute(
                 select(func.count(FoiaRequest.id)).where(
-                    FoiaRequest.status.not_in(["closed", "denied", "fulfilled"])
+                    FoiaRequest.status.notin_([FoiaStatus.closed, FoiaStatus.denied, FoiaStatus.fulfilled])
                 )
             )
         ).scalar() or 0
 
         videos_in_pipeline = (
             await db.execute(
-                select(func.count(Video.id)).where(Video.status != "published")
+                select(func.count(Video.id)).where(Video.status != VideoStatus.published)
             )
         ).scalar() or 0
 

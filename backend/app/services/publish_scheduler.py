@@ -249,7 +249,7 @@ async def get_publish_recommendations(db: AsyncSession) -> dict:
     # Get videos ready for publishing
     result = await db.execute(
         select(Video)
-        .where(Video.status == VideoStatus.ready_for_upload)
+        .where(Video.status == VideoStatus.ready)
         .order_by(Video.created_at.desc())
         .limit(10)
     )

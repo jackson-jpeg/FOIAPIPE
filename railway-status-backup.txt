@@ -1,0 +1,3 @@
+Project: foiapipe-backend
+Environment: production
+Service: celery-worker

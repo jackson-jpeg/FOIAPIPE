@@ -70,22 +70,14 @@ export interface FileFoiaResponse {
 
 export type VideoStatus =
   | 'raw_received'
-  | 'ingesting'
   | 'editing'
   | 'ai_processing'
-  | 'ai_review'
   | 'review'
-  | 'manual_review'
   | 'ready'
-  | 'ready_for_upload'
   | 'scheduled'
   | 'uploading'
-  | 'processing_youtube'
   | 'published'
-  | 'unlisted'
-  | 'private'
-  | 'archived'
-  | 'removed';
+  | 'archived';
 
 export interface Video {
   id: string;
@@ -135,17 +127,15 @@ export interface VideoUpdate {
 
 export type FoiaStatus =
   | 'draft'
-  | 'pending_review'
+  | 'ready'
   | 'submitted'
   | 'acknowledged'
   | 'processing'
   | 'fulfilled'
-  | 'partially_fulfilled'
+  | 'partial'
   | 'denied'
   | 'appealed'
-  | 'appeal_denied'
-  | 'withdrawn'
-  | 'expired';
+  | 'closed';
 
 export interface FoiaRequest {
   id: string;

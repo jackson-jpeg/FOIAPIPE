@@ -100,5 +100,8 @@ async def send_foia_email(
             start_tls=settings.SMTP_PORT == 587,
         )
         return {"success": True, "message": "Email sent successfully"}
+    except (aiosmtplib.SMTPException, ConnectionError, TimeoutError):
+        raise  # Let tenacity retry these
     except Exception as e:
+        logger.error(f"Non-retryable email error: {e}")
         return {"success": False, "message": str(e)}

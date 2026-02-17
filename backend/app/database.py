@@ -37,7 +37,11 @@ async_session = async_session_factory
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI dependency that yields an async database session."""
+    """FastAPI dependency that yields an async database session.
+
+    Note: API routers should import get_db from app.api.deps instead.
+    This copy exists for non-FastAPI contexts that need the same pattern.
+    """
     async with async_session_factory() as session:
         try:
             yield session
