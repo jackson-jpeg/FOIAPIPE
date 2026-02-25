@@ -430,8 +430,9 @@ async def upload_raw_video(
     logger.info(f"Uploading raw video for {video_id}: {file.filename}")
 
     # Validate file type
+    from app.config import settings
     ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".flv", ".m4v"}
-    MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
+    MAX_FILE_SIZE = settings.MAX_UPLOAD_SIZE_BYTES
 
     filename = file.filename or ""
     ext = os.path.splitext(filename)[1].lower()

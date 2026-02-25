@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = ""
     S3_REGION: str = "us-east-1"
 
+    # ── Upload Limits ─────────────────────────────────────────────────────
+    MAX_UPLOAD_SIZE_BYTES: int = 2 * 1024 * 1024 * 1024  # 2 GB default
+
     # ── YouTube ───────────────────────────────────────────────────────────
     YOUTUBE_CLIENT_ID: str = ""
     YOUTUBE_CLIENT_SECRET: str = ""
