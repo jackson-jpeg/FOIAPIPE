@@ -17,6 +17,8 @@ import json
 import logging
 from typing import Optional
 
+from app.models.video import VideoStatus
+
 logger = logging.getLogger(__name__)
 
 
