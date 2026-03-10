@@ -63,4 +63,9 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=4, minute=0, day_of_week="monday"),  # Weekly Monday 4 AM
         "options": {"queue": "default"},
     },
+    "cleanup-expired-temp-files": {
+        "task": "app.tasks.maintenance_tasks.cleanup_expired_temp_files",
+        "schedule": crontab(hour=1, minute=0),  # Daily 1 AM EST
+        "options": {"queue": "default"},
+    },
 }

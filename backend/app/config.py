@@ -89,6 +89,14 @@ class Settings(BaseSettings):
     # ── Sentry (Error Tracking) ───────────────────────────────────────────
     SENTRY_DSN: str = ""  # Optional: Sentry.io DSN for error tracking
 
+    # ── Temporary File Cleanup ────────────────────────────────────────────
+    TEMP_CLEANUP_ENABLED: bool = True  # Enable automated cleanup of expired temp files
+    TEMP_RETENTION_HOURS: int = 24  # How long to keep temporary files (hours)
+    TEMP_MAX_DISK_USAGE_PERCENT: int = 85  # Trigger cleanup when disk usage exceeds this %
+    TEMP_MIN_FREE_GB: int = 5  # Minimum free space (GB) before forced cleanup
+    TEMP_CLEANUP_INTERVAL_MINUTES: int = 30  # How often to check for cleanup (minutes)
+    TEMP_BASE_PATH: str = "/tmp/foiaarchive"  # Base directory for temporary files
+
     # ── CORS ──────────────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]  # Override in production via env var
 
