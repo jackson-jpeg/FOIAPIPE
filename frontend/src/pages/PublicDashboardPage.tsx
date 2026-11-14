@@ -229,6 +229,14 @@ export function PublicDashboardPage() {
           <p className="text-xs text-white/30">
             FOIA Archive is an automated public records pipeline. Data is updated in real-time.
           </p>
+          <p className="mt-3 text-xs text-white/30 max-w-2xl mx-auto">
+            Visitor analytics: we count visits to this page with Umami, running on our own server, so
+            nothing goes to an analytics company. It sets no cookies and does not follow you to other
+            sites. For each visit it records the page, the referring site, your browser, operating
+            system, device type, screen size, language and an approximate location (country, region
+            and city, worked out from your IP address; the address itself is not stored). Visit
+            records are deleted after 24 months. Updated November 14, 2026.
+          </p>
         </div>
       </div>
     </div>

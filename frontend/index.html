@@ -17,6 +17,15 @@
         padding: 0;
       }
     </style>
+    <!-- Self-hosted Umami visitor count (no cookies). Public page only:
+         the before-send hook drops every hit except /public, so the login
+         and admin pages are never counted. -->
+    <script>
+      window.foiaUmamiBeforeSend = function (type, payload) {
+        return window.location.pathname === '/public' ? payload : false;
+      };
+    </script>
+    <script defer src="https://a.unpossible.studio/a/sgj.js" data-website-id="16d9198a-7fa8-4b2b-94f1-f9e2cfeedac0" data-host-url="https://a.unpossible.studio/a" data-before-send="foiaUmamiBeforeSend"></script>
   </head>
   <body>
     <div id="root"></div>
