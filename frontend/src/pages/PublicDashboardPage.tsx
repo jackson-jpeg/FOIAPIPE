@@ -235,7 +235,13 @@ export function PublicDashboardPage() {
             sites. For each visit it records the page, the referring site, your browser, operating
             system, device type, screen size, language and an approximate location (country, region
             and city, worked out from your IP address; the address itself is not stored). Visit
-            records are deleted after 24 months. Updated November 14, 2026.
+            records are deleted after 24 months. Cookies and Do Not Track: this page sets no cookies
+            and keeps nothing in your browser&apos;s storage (signing in to the staff side keeps one
+            sign-in token in local storage, <code>foiaarchive_token</code>, which is strictly
+            necessary for sign-in), and its fonts are served from foiaarchive.com. Because our visit
+            counting does not follow you to other sites and sets no cookies, the site treats every
+            visitor the same way whether or not your browser sends a Do Not Track signal. Effective
+            November 16, 2026.
           </p>
         </div>
       </div>
