@@ -1,10 +1,36 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+/**
+ * Parked (2026-11-19): the backend (Railway app and database) is gone, so a sign-in cannot work.
+ * The page asks the API's health check first and shows "Parked. Back later." when it does not
+ * answer, instead of a form that can only fail. A running backend brings the form back by itself.
+ */
+type Backend = 'checking' | 'up' | 'down';
+
+async function probeBackend(): Promise<Backend> {
+  try {
+    const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(6000) });
+    return r.ok ? 'up' : 'down';
+  } catch {
+    return 'down';
+  }
+}
+
 export function LoginPage() {
+  const [backend, setBackend] = useState<Backend>('checking');
+  useEffect(() => {
+    let live = true;
+    probeBackend().then((b) => live && setBackend(b));
+    return () => {
+      live = false;
+    };
+  }, []);
   const navigate = useNavigate();
   const { login, isLoading, error, clearError } = useAuthStore();
   const [username, setUsername] = useState('');
@@ -32,6 +58,15 @@ export function LoginPage() {
           </div>
         </div>
 
+        {backend === 'down' && (
+          <div className="glass-3 rounded-xl p-6 text-center" data-testid="parked">
+            <p className="text-sm text-text-primary">Parked. Back later.</p>
+          </div>
+        )}
+
+        {backend === 'checking' && <div className="glass-3 rounded-xl p-6" aria-busy="true" />}
+
+        {backend === 'up' && (
         <div className="glass-3 rounded-xl p-6">
           <form onSubmit={handleSubmit} className="space-y-3">
             <Input
@@ -74,9 +109,13 @@ export function LoginPage() {
             </Button>
           </form>
         </div>
+        )}
 
         <p className="mt-4 text-center text-3xs text-text-quaternary">
-          Internal tool &middot; Authorized access only
+          Internal tool &middot; Authorized access only &middot;{' '}
+          <a href="/privacy.html" className="underline">
+            Privacy
+          </a>
         </p>
       </div>
     </div>
